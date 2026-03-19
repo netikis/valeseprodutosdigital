@@ -76,6 +76,11 @@
         .view-section { display: none; }
         .view-section.active { display: block; }
 
+        /* Lista de Funcionários */
+        .func-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fafcff; border-radius: 8px; margin-bottom: 8px;}
+        .btn-excluir { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;}
+        .btn-excluir:hover { background: #c9302c; }
+
         /* Recibo e Assinatura */
         #area-recibo { border: 1px solid #e0e6ed; padding: 25px; border-radius: 15px; margin-top: 20px; background: #fafcff; position: relative; }
         .recibo-header { text-align: center; font-weight: 700; border-bottom: 2px solid var(--dark-navy); padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: var(--dark-navy); }
@@ -93,12 +98,12 @@
 
 <div class="main-card" id="tela-patrao" style="display: none;">
     <div class="header-logo">
-        <img src="logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="logo.jpeg?v=2" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
         <div class="title-top">Painel de Gestão - RH</div>
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="mudarAba('cadastrar')">1. Funcionários</div>
+        <div class="tab active" onclick="mudarAba('cadastrar')">1. Equipe</div>
         <div class="tab" onclick="mudarAba('criar')">2. Criar Vale</div>
         <div class="tab" onclick="mudarAba('buscar')">3. Arquivo</div>
     </div>
@@ -111,6 +116,12 @@
         <input type="number" id="c-tel" placeholder="Ex: 43999999999">
 
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+        <label>Equipe Cadastrada:</label>
+        <div id="lista-funcionarios-gerencial" style="margin-top: 15px;">
+            <p style="text-align: center; color: #888; font-size: 13px;">Carregando funcionários...</p>
+        </div>
     </div>
 
     <div id="aba-criar" class="view-section">
@@ -153,10 +164,9 @@
     </div>
 </div>
 
-
 <div class="main-card" id="tela-funcionario" style="display: none;">
     <div class="header-logo">
-        <img src="logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="logo.jpeg?v=2" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
         <div class="title-top">Recibo Digital Oficial</div>
     </div>
 
@@ -176,10 +186,9 @@
     <button class="btn-gold" id="btnAssinar" style="margin-top: 25px;">CONFIRMAR E ASSINAR</button>
 </div>
 
-
 <div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
     <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
-        <img src="logo.jpeg" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
+        <img src="logo.jpeg?v=2" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
         <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
         <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
     </div>
@@ -194,8 +203,9 @@
 </div>
 
 <script type="module">
+    // Adicionado "deleteDoc" para podermos excluir funcionários
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBKlQXW4JRrPxv_NcoG8Jq2-7KZZALrTuU",
@@ -209,7 +219,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Identificar modo Patrão x Funcionário
     const urlParams = new URLSearchParams(window.location.search);
     const valeId = urlParams.get('id');
 
@@ -232,26 +241,69 @@
         document.getElementById(`aba-${aba}`).classList.add('active');
     };
 
+    // FUNÇÃO ATUALIZADA: Carrega a lista nas seleções E na visualização de gerência
     async function carregarListaDeFuncionarios() {
         try {
             const q = query(collection(db, "funcionarios"), orderBy("nome"));
             const querySnapshot = await getDocs(q);
             
             let opcoesHTML = '<option value="">Selecione um funcionário...</option>';
+            let gerenciaHTML = '';
             window.listaFuncionarios = {};
+
+            if (querySnapshot.empty) {
+                gerenciaHTML = '<p style="text-align: center; color: #888; font-size: 13px;">Nenhum funcionário cadastrado ainda.</p>';
+            }
 
             querySnapshot.forEach((docSnap) => {
                 const func = docSnap.data();
                 window.listaFuncionarios[docSnap.id] = func;
                 opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
+                
+                // Monta a lista visual de funcionários com botão de excluir
+                gerenciaHTML += `
+                    <div class="func-item">
+                        <div>
+                            <b style="color:var(--dark-navy);">${func.nome}</b><br>
+                            <span style="font-size: 12px; color: #666;">📱 ${func.tel}</span>
+                        </div>
+                        <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
+                    </div>
+                `;
             });
 
             document.getElementById('p-func-select').innerHTML = opcoesHTML;
             document.getElementById('b-func-select').innerHTML = opcoesHTML;
+            document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
         } catch(e) {
             console.error("Erro ao carregar funcionários:", e);
         }
     }
+
+    // NOVA FUNÇÃO: Excluir funcionário
+    window.excluirFuncionario = async function(id, nome) {
+        Swal.fire({
+            title: 'Excluir Funcionário?',
+            text: `Você tem certeza que deseja excluir ${nome} da equipe?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "funcionarios", id));
+                    Swal.fire('Excluído!', 'O funcionário foi removido da base de dados.', 'success');
+                    carregarListaDeFuncionarios(); // Atualiza tudo
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('Erro', 'Não foi possível excluir. Tente novamente.', 'error');
+                }
+            }
+        });
+    };
 
     document.getElementById('btnCadastrarFunc').onclick = async function() {
         const nome = document.getElementById('c-nome').value;
@@ -404,7 +456,7 @@
             if (docSnap.exists()) {
                 const dados = docSnap.data();
                 if(dados.status === 'assinado') {
-                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
+                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg?v=2" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
                     return;
                 }
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao;
@@ -427,7 +479,7 @@
         canvas.height = canvas.offsetHeight * ratio;
         ctx.scale(ratio, ratio);
         ctx.lineWidth = 2.5;
-        ctx.strokeStyle = "#1a2a43"; /* Tinta da caneta em azul marinho */
+        ctx.strokeStyle = "#1a2a43";
     }
 
     const getPos = (e) => {
@@ -466,7 +518,7 @@
                 allowOutsideClick: false,
                 confirmButtonColor: '#1a2a43'
             }).then(() => {
-                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
+                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg?v=2" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
             });
 
         } catch(e) {
