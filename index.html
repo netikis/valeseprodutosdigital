@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FH Construções - Vales</title>
+    <title>FH Construções - Vales e Produtos</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -15,20 +15,19 @@
         
         .logo-container { text-align: center; margin-bottom: 20px; }
         .logo-img { max-width: 180px; height: auto; margin-bottom: 10px; }
-        .title-top { color: var(--azul-fh); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .title-top { color: var(--azul-fh); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; color: #555; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 12px; color: #555; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; font-family: inherit; }
 
         #area-recibo { border: 1px solid #eee; padding: 20px; border-radius: 12px; margin-top: 25px; background: #fff; }
         .recibo-header { text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: #000; }
-        .data-recibo { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
+        .data-recibo { text-align: center; font-size: 11px; color: #888; margin-bottom: 10px; }
         
-        canvas { border: 1px solid #f0f0f0; background: #fafafa; width: 100%; height: 150px; border-radius: 8px; touch-action: none; margin-top: 10px; }
-        .btn-limpar { background: none; border: none; color: #d9534f; font-size: 11px; cursor: pointer; margin-top: 5px; display: block; width: 100%; text-align: center; }
+        canvas { border: 1px solid #f0f0f0; background: #fafafa; width: 100%; height: 140px; border-radius: 8px; touch-action: none; margin-top: 10px; }
+        .btn-limpar { background: none; border: none; color: #d9534f; font-size: 10px; cursor: pointer; margin-top: 5px; display: block; width: 100%; text-align: center; }
 
         .btn-enviar { background: var(--azul-fh); color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
-        
         .config-btn { text-align: center; margin-top: 20px; font-size: 11px; color: #ccc; cursor: pointer; text-decoration: none; display: block; }
     </style>
 </head>
@@ -37,44 +36,66 @@
 <div class="card">
     <div class="logo-container">
         <img src="logo.jpg" alt="FH Construções" class="logo-img">
-        <div class="title-top">RECIBO DIGITAL DE VALES</div>
+        <div class="title-top">Recibo Digital de Vales e Produtos</div>
     </div>
 
     <label>Nome do Funcionário</label>
-    <input type="text" id="nome" placeholder="Digite o nome">
+    <input type="text" id="nome" placeholder="Nome completo">
 
-    <label>Valor (R$)</label>
-    <input type="number" id="valor" placeholder="0,00">
+    <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+            <label>Valor (R$)</label>
+            <input type="number" id="valor" placeholder="0,00">
+        </div>
+        <div style="flex: 1;">
+            <label>Tipo</label>
+            <select id="tipo">
+                <option value="Dinheiro">💰 Dinheiro</option>
+                <option value="Produto">📦 Produto</option>
+            </select>
+        </div>
+    </div>
+
+    <label>Descrição</label>
+    <textarea id="desc" rows="2" placeholder="Ex: Adiantamento de semana"></textarea>
 
     <div id="area-recibo">
         <div class="recibo-header">RECIBO</div>
-        <div class="data-recibo" id="data-atual">Carregando data...</div>
+        <div class="data-recibo" id="data-atual">--/--/----</div>
         
-        <div style="font-size: 15px; line-height: 1.6;">
-            Eu, <b id="res-nome">__________</b>, recebi da empresa <b>FH Construções</b> o valor de <b>R$ <span id="res-valor">0,00</span></b>.
+        <div style="font-size: 14px; line-height: 1.5;">
+            Eu, <b id="res-nome">__________</b>, recebi da empresa <b>FH Construções</b> o valor/produto referente a <b><span id="res-tipo">Dinheiro</span></b> no total de <b>R$ <span id="res-valor">0,00</span></b>.
+            <br><br>
+            <b>Descrição:</b> <span id="res-desc">...</span>
         </div>
         
-        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 25px; margin-bottom: 5px;">Assinatura:</p>
+        <p style="font-size: 11px; color: #888; text-align: center; margin-top: 20px; margin-bottom: 5px;">Assinatura do Funcionário:</p>
         <canvas id="signature-pad"></canvas>
         <button class="btn-limpar" onclick="limpar()">Limpar Assinatura</button>
     </div>
 
     <button class="btn-enviar" id="btnFinalizar">ENVIAR PARA WHATSAPP</button>
     
-    <a class="config-btn" onclick="configurar()">⚙️ Configurações de Telefone</a>
+    <a class="config-btn" onclick="configurar()">⚙️ Configurações</a>
 </div>
 
 <script>
-    // Gerar Data Automática
-    const dataAtual = new Date();
-    const opcoes = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    document.getElementById('data-atual').innerText = dataAtual.toLocaleDateString('pt-BR', opcoes);
+    // Data Automática
+    const dt = new Date();
+    document.getElementById('data-atual').innerText = dt.toLocaleDateString('pt-BR');
 
-    const n = document.getElementById('nome');
-    const v = document.getElementById('valor');
-    n.oninput = () => document.getElementById('res-nome').innerText = n.value || '__________';
-    v.oninput = () => document.getElementById('res-valor').innerText = v.value || '0,00';
+    // Atualização em Tempo Real
+    const campos = ['nome', 'valor', 'tipo', 'desc'];
+    campos.forEach(id => {
+        document.getElementById(id).oninput = () => {
+            document.getElementById('res-nome').innerText = document.getElementById('nome').value || '__________';
+            document.getElementById('res-valor').innerText = document.getElementById('valor').value || '0,00';
+            document.getElementById('res-tipo').innerText = document.getElementById('tipo').value;
+            document.getElementById('res-desc').innerText = document.getElementById('desc').value || '...';
+        };
+    });
 
+    // Assinatura
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -111,25 +132,30 @@
 
     function configurar() {
         Swal.fire({
-            title: 'Número do WhatsApp',
+            title: 'Configurar WhatsApp',
             input: 'text',
-            inputLabel: 'Digite o número com DDD (ex: 43996408964)',
+            inputLabel: 'Número com DDD (ex: 43996408964)',
             inputValue: localStorage.getItem('tel_fh') || '43996408964',
             showCancelButton: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                localStorage.setItem('tel_fh', result.value.replace(/\D/g, ''));
+        }).then((res) => {
+            if (res.isConfirmed) {
+                localStorage.setItem('tel_fh', res.value.replace(/\D/g, ''));
                 Swal.fire('Salvo!', '', 'success');
             }
         });
     }
 
     document.getElementById('btnFinalizar').onclick = function() {
-        if(!n.value || !v.value) return Swal.fire('Atenção', 'Preencha o nome e o valor!', 'warning');
+        const n = document.getElementById('nome').value;
+        const v = document.getElementById('valor').value;
+        if(!n || !v) return Swal.fire('Atenção', 'Preencha Nome e Valor!', 'warning');
         
         const tel = localStorage.getItem('tel_fh') || "43996408964";
+        const tipo = document.getElementById('tipo').value;
+        const desc = document.getElementById('desc').value || "Não informada";
         const dataStr = document.getElementById('data-atual').innerText;
-        const msg = `*FH Construções*\n*Recibo de Vale*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n.value}\n*Valor:* R$ ${v.value}`;
+
+        const msg = `*FH Construções*\n*Recibo de Vale e Produtos*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n}\n*Tipo:* ${tipo}\n*Valor:* R$ ${v}\n*Descrição:* ${desc}`;
         
         window.location.href = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
     };
