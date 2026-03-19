@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Vales Digital">
@@ -68,9 +67,10 @@
 
         <label style="margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">Assinatura do Funcionário:</label>
         <canvas id="signature-pad"></canvas>
-        <div style="text-align: right;">
-            <button class="btn-limpar" id="limparBtn">Limpar</button>
-        </div>
+    </div>
+
+    <div style="text-align: right;">
+        <button class="btn-limpar" id="limparBtn">Limpar Assinatura</button>
     </div>
 
     <button class="btn-enviar" id="btnFinalizar">SALVAR E ENVIAR WHATSAPP</button>
@@ -121,8 +121,10 @@
     canvas.addEventListener('mousedown', start);
     canvas.addEventListener('mousemove', move);
     window.addEventListener('mouseup', stop);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); });
+    
+    // Adicionado { passive: false } para garantir o funcionamento correto no celular
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
     canvas.addEventListener('touchend', stop);
 
     document.getElementById('limparBtn').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -135,6 +137,9 @@
         document.getElementById('data-hora').innerText = new Date().toLocaleString('pt-BR');
     };
     document.querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', atualizar));
+    
+    // Força a data/hora a aparecerem assim que a página é aberta
+    atualizar();
 
     // Salvar e Enviar
     document.getElementById('btnFinalizar').onclick = async () => {
@@ -149,7 +154,8 @@
         btn.disabled = true;
 
         try {
-            const canvasImg = await html2canvas(document.getElementById('area-recibo'));
+            // Fundo branco fixado para evitar imagens transparentes/pretas
+            const canvasImg = await html2canvas(document.getElementById('area-recibo'), { backgroundColor: "#ffffff" });
             const imagemBase64 = canvasImg.toDataURL("image/png");
 
             await addDoc(collection(db, "vales_assinados"), {
@@ -164,13 +170,14 @@
             const msg = `*NOVO VALE GERADO*\n\nFuncionario: ${nome}\nValor: R$ ${valor}\nO recibo foi salvo no sistema.`;
             
             Swal.fire('Sucesso!', 'Vale registrado!', 'success').then(() => {
-                window.open(`https://api.whatsapp.com/send?phone=${numPatrao}&text=${encodeURIComponent(msg)}`);
-                location.reload();
+                // Previne o bloqueio de popups em iPhones/Android
+                window.location.href = `https://api.whatsapp.com/send?phone=${numPatrao}&text=${encodeURIComponent(msg)}`;
             });
         } catch (e) {
             console.error(e);
             Swal.fire('Erro', 'Falha ao salvar.', 'error');
             btn.disabled = false;
+            btn.innerText = "SALVAR E ENVIAR WHATSAPP";
         }
     };
 </script>
