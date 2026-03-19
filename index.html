@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Vales Digital">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1052/1052858.png">
-
     <title>Recibo de Vales Digital</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -24,6 +20,10 @@
         #signature-pad { border: 2px dashed #999; border-radius: 5px; background: #fafafa; cursor: crosshair; touch-action: none; width: 100%; height: 180px; }
         .btn-enviar { background: #25D366; color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; }
         .btn-limpar { background: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 12px; margin-top: 8px; cursor: pointer; }
+        
+        /* Estilo para a engrenagem de configuração */
+        .config-section { margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc; font-size: 12px; color: #666; }
+        .config-input { padding: 5px; font-size: 12px; width: auto; display: inline-block; }
     </style>
 </head>
 <body>
@@ -74,13 +74,21 @@
     </div>
 
     <button class="btn-enviar" id="btnFinalizar">SALVAR E ENVIAR WHATSAPP</button>
+
+    <div class="config-section">
+        <details>
+            <summary>⚙️ Configurar número do WhatsApp</summary>
+            <p>Digite o número (com DDD) para onde os vales serão enviados:</p>
+            <input type="text" id="inputNumPatrao" class="config-input" placeholder="Ex: 43996408964">
+            <button onclick="salvarNumero()" style="padding: 5px 10px; cursor: pointer;">Salvar</button>
+        </details>
+    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Suas chaves configuradas
     const firebaseConfig = {
         apiKey: "AIzaSyBKlQXW4JRrPxv_NcoG8Jq2-7KZZALrTuU",
         authDomain: "fhconstrucoes-f36d0.firebaseapp.com",
@@ -93,7 +101,29 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Lógica da Assinatura
+    // --- Lógica do LocalStorage ---
+    const inputConfig = document.getElementById('inputNumPatrao');
+    
+    // Carregar número salvo ao abrir a página
+    window.addEventListener('load', () => {
+        const salvo = localStorage.getItem('numero_whatsapp');
+        if (salvo) {
+            inputConfig.value = salvo;
+        } else {
+            // Valor padrão caso nunca tenha sido salvo
+            inputConfig.value = "43996408964";
+        }
+        resizeCanvas();
+    });
+
+    // Função global para salvar (chamada pelo botão)
+    window.salvarNumero = () => {
+        const num = inputConfig.value.replace(/\D/g, ''); // Remove parênteses e traços
+        localStorage.setItem('numero_whatsapp', num);
+        Swal.fire('Salvo!', 'O número destino foi atualizado.', 'success');
+    };
+
+    // --- Restante da Lógica (Assinatura e Envio) ---
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -105,7 +135,6 @@
         ctx.lineCap = "round";
         ctx.strokeStyle = "#000";
     }
-    window.onload = resizeCanvas;
 
     const getPos = (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -121,15 +150,12 @@
     canvas.addEventListener('mousedown', start);
     canvas.addEventListener('mousemove', move);
     window.addEventListener('mouseup', stop);
-    
-    // Adicionado { passive: false } para garantir o funcionamento correto no celular
     canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, { passive: false });
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
     canvas.addEventListener('touchend', stop);
 
     document.getElementById('limparBtn').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Atualização do texto
     const atualizar = () => {
         document.getElementById('resumo-nome').innerText = document.getElementById('nome').value || '...';
         document.getElementById('resumo-valor').innerText = document.getElementById('valor').value || '0,00';
@@ -137,15 +163,15 @@
         document.getElementById('data-hora').innerText = new Date().toLocaleString('pt-BR');
     };
     document.querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', atualizar));
-    
-    // Força a data/hora a aparecerem assim que a página é aberta
     atualizar();
 
-    // Salvar e Enviar
     document.getElementById('btnFinalizar').onclick = async () => {
         const nome = document.getElementById('nome').value;
         const valor = document.getElementById('valor').value;
-        const numPatrao = "5542999999999"; // COLOQUE O NÚMERO DO PATRÃO AQUI
+        
+        // Pega o número que está salvo no LocalStorage
+        let numDestino = localStorage.getItem('numero_whatsapp') || "43996408964";
+        if (!numDestino.startsWith('55')) numDestino = '55' + numDestino;
 
         if(!nome || !valor) return Swal.fire('Erro', 'Preencha o nome e o valor!', 'error');
 
@@ -154,7 +180,6 @@
         btn.disabled = true;
 
         try {
-            // Fundo branco fixado para evitar imagens transparentes/pretas
             const canvasImg = await html2canvas(document.getElementById('area-recibo'), { backgroundColor: "#ffffff" });
             const imagemBase64 = canvasImg.toDataURL("image/png");
 
@@ -167,11 +192,10 @@
                 data: serverTimestamp()
             });
 
-            const msg = `*NOVO VALE GERADO*\n\nFuncionario: ${nome}\nValor: R$ ${valor}\nO recibo foi salvo no sistema.`;
+            const msg = `*NOVO VALE GERADO*\n\n*Funcionario:* ${nome}\n*Valor:* R$ ${valor}\n\nO recibo foi salvo no sistema.`;
             
             Swal.fire('Sucesso!', 'Vale registrado!', 'success').then(() => {
-                // Previne o bloqueio de popups em iPhones/Android
-                window.location.href = `https://api.whatsapp.com/send?phone=${numPatrao}&text=${encodeURIComponent(msg)}`;
+                window.location.href = `https://api.whatsapp.com/send?phone=${numDestino}&text=${encodeURIComponent(msg)}`;
             });
         } catch (e) {
             console.error(e);
