@@ -4,18 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FH Construções - Vales</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        :root { --azul: #1a3a5a; --fundo: #f4f7f9; }
-        body { font-family: sans-serif; background: var(--fundo); margin: 0; padding: 10px; }
-        .card { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: auto; border-top: 6px solid var(--azul); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .logo-container { text-align: center; margin-bottom: 15px; }
-        .logo-img { max-width: 180px; height: auto; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        #area-recibo { border: 1px solid #ddd; padding: 15px; border-radius: 10px; background: #fff; }
-        canvas { border: 1px solid #eee; background: #fafafa; width: 100%; height: 150px; border-radius: 5px; }
-        .btn-enviar { background: var(--azul); color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        :root { --azul-fh: #1a3a5a; --cinza-fundo: #f4f7f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--cinza-fundo); margin: 0; padding: 15px; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 450px; margin: auto; border-top: 8px solid var(--azul-fh); }
+        
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-img { max-width: 180px; height: auto; margin-bottom: 10px; }
+        .title-top { color: var(--azul-fh); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; color: #555; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+
+        #area-recibo { border: 1px solid #eee; padding: 20px; border-radius: 12px; margin-top: 25px; background: #fff; }
+        .recibo-header { text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: #000; }
+        
+        canvas { border: 1px solid #f0f0f0; background: #fafafa; width: 100%; height: 150px; border-radius: 8px; touch-action: none; margin-top: 10px; }
+        .btn-limpar { background: none; border: none; color: #d9534f; font-size: 11px; cursor: pointer; margin-top: 5px; display: block; width: 100%; text-align: center; }
+
+        .btn-enviar { background: var(--azul-fh); color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
+        
+        .config-btn { text-align: center; margin-top: 20px; font-size: 11px; color: #ccc; cursor: pointer; text-decoration: none; display: block; }
     </style>
 </head>
 <body>
@@ -23,7 +36,7 @@
 <div class="card">
     <div class="logo-container">
         <img src="logo.jpg" alt="FH Construções" class="logo-img">
-        <div style="font-weight: bold; color: var(--azul); margin-top: 5px;">RECIBO DIGITAL DE VALES</div>
+        <div class="title-top">RECIBO DIGITAL DE VALES</div>
     </div>
 
     <label>Nome do Funcionário</label>
@@ -33,62 +46,83 @@
     <input type="number" id="valor" placeholder="0,00">
 
     <div id="area-recibo">
-        <p style="text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px;">RECIBO</p>
-        <p style="font-size: 14px;">Eu, <span id="res-nome">...</span>, recebi da <b>FH Construções</b> o valor de <b>R$ <span id="res-valor">0,00</span></b>.</p>
-        <p style="font-size: 12px; color: #666; text-align: center;">Assinatura:</p>
+        <div class="recibo-header">RECIBO</div>
+        <div style="font-size: 15px; line-height: 1.6;">
+            Eu, <b id="res-nome">__________</b>, recebi da empresa <b>FH Construções</b> o valor de <b>R$ <span id="res-valor">0,00</span></b>.
+        </div>
+        
+        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 25px; margin-bottom: 5px;">Assinatura:</p>
         <canvas id="signature-pad"></canvas>
-        <button onclick="limpar()" style="font-size: 10px; background: none; border: none; color: red; cursor: pointer;">Limpar Assinatura</button>
+        <button class="btn-limpar" onclick="limpar()">Limpar Assinatura</button>
     </div>
 
-    <button class="btn-enviar" id="btnFinalizar" style="margin-top: 20px;">ENVIAR PARA WHATSAPP</button>
+    <button class="btn-enviar" id="btnFinalizar">ENVIAR PARA WHATSAPP</button>
     
-    <div style="margin-top: 20px; font-size: 10px; color: #ccc; text-align: center;">
-        <details>
-            <summary>Configurações</summary>
-            <input type="text" id="numPatrao" value="43996408964">
-            <button onclick="localStorage.setItem('tel', document.getElementById('numPatrao').value)">Salvar Tel</button>
-        </details>
-    </div>
+    <a class="config-btn" onclick="configurar()">⚙️ Configurações de Telefone</a>
 </div>
 
 <script>
-    // Lógica simples de preenchimento
     const n = document.getElementById('nome');
     const v = document.getElementById('valor');
-    n.oninput = () => document.getElementById('res-nome').innerText = n.value;
-    v.oninput = () => document.getElementById('res-valor').innerText = v.value;
+    n.oninput = () => document.getElementById('res-nome').innerText = n.value || '__________';
+    v.oninput = () => document.getElementById('res-valor').innerText = v.value || '0,00';
 
-    // Assinatura
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
-    let desenhando = false;
+    let drawing = false;
 
-    canvas.addEventListener('mousedown', () => desenhando = true);
-    window.addEventListener('mouseup', () => desenhando = false);
-    canvas.addEventListener('mousemove', (e) => {
-        if (!desenhando) return;
-        const rect = canvas.getBoundingClientRect();
+    // Ajuste de resolução do canvas
+    function resize() {
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
         ctx.lineWidth = 2;
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-        ctx.stroke();
-    });
-    
-    // Toque no celular
-    canvas.addEventListener('touchstart', (e) => { desenhando = true; ctx.beginPath(); });
-    canvas.addEventListener('touchmove', (e) => {
-        if (!desenhando) return;
-        e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-        ctx.stroke();
-    });
+        ctx.strokeStyle = "#1a3a5a";
+    }
+    window.onload = resize;
 
-    function limpar() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.beginPath(); }
+    const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    };
+
+    const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+    const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const stop = () => drawing = false;
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', stop);
+    canvas.addEventListener('touchstart', start, {passive: false});
+    canvas.addEventListener('touchmove', move, {passive: false});
+    window.addEventListener('touchend', stop);
+
+    function limpar() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function configurar() {
+        Swal.fire({
+            title: 'Número do WhatsApp',
+            input: 'text',
+            inputLabel: 'Digite o número com DDD (ex: 43996408964)',
+            inputValue: localStorage.getItem('tel_fh') || '43996408964',
+            showCancelButton: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.setItem('tel_fh', result.value.replace(/\D/g, ''));
+                Swal.fire('Salvo!', '', 'success');
+            }
+        });
+    }
 
     document.getElementById('btnFinalizar').onclick = function() {
-        const tel = localStorage.getItem('tel') || "43996408964";
-        const msg = `*FH Construções*\nNovo Vale: ${n.value}\nValor: R$ ${v.value}`;
+        if(!n.value || !v.value) return Swal.fire('Atenção', 'Preencha o nome e o valor!', 'warning');
+        
+        const tel = localStorage.getItem('tel_fh') || "43996408964";
+        const msg = `*FH Construções*\n*Recibo de Vale*\n\n*Funcionário:* ${n.value}\n*Valor:* R$ ${v.value}`;
+        
         window.location.href = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
     };
 </script>
