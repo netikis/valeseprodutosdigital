@@ -4,83 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Recibo de Vales Digital</title>
+    <title>FH Construções - Vales</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        .logo { font-weight: bold; color: #1565c0; font-size: 22px; margin-bottom: 20px; text-align: center; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        #area-recibo { background: white; padding: 15px; border: 1px solid #eee; margin-top: 20px; border-radius: 8px; }
-        .header-recibo { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        #signature-pad { border: 2px dashed #999; border-radius: 5px; background: #fafafa; cursor: crosshair; touch-action: none; width: 100%; height: 180px; }
-        .btn-enviar { background: #25D366; color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; }
-        .btn-limpar { background: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 12px; margin-top: 8px; cursor: pointer; }
+        :root {
+            --azul-fh: #1a3a5a;
+            --dourado-fh: #e1b12c;
+            --cinza-fundo: #f4f7f9;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: var(--cinza-fundo); 
+            margin: 0; padding: 10px; color: #333;
+        }
+
+        .card { 
+            background: white; padding: 25px; border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(26, 58, 90, 0.15); 
+            max-width: 480px; margin: auto; border-top: 8px solid var(--azul-fh);
+        }
+
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-img { max-width: 150px; height: auto; margin-bottom: 5px; }
+        .sub-logo { font-size: 11px; text-transform: uppercase; color: #666; display: block; font-weight: bold; }
+
+        label { display: block; margin-top: 15px; font-weight: 700; font-size: 13px; color: var(--azul-fh); text-transform: uppercase; }
         
-        /* Estilo para a engrenagem de configuração */
-        .config-section { margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc; font-size: 12px; color: #666; }
-        .config-input { padding: 5px; font-size: 12px; width: auto; display: inline-block; }
+        input, select, textarea { 
+            width: 100%; padding: 12px; margin-top: 5px; 
+            border: 2px solid #e0e6ed; border-radius: 10px; 
+            box-sizing: border-box; font-size: 16px;
+        }
+
+        #area-recibo { 
+            background: #fff; padding: 20px; border: 1px solid #d1d9e0; 
+            margin-top: 25px; border-radius: 12px; position: relative;
+        }
+
+        .header-recibo { text-align: center; border-bottom: 2px solid var(--azul-fh); padding-bottom: 10px; margin-bottom: 15px; }
+        
+        #signature-pad { 
+            border: 1px solid #eee; border-radius: 8px; background: #fafafa; 
+            touch-action: none; width: 100%; height: 160px; margin-top: 10px;
+        }
+
+        .btn-enviar { 
+            background: var(--azul-fh); color: white; border: none; 
+            padding: 18px; width: 100%; border-radius: 12px; 
+            font-weight: 800; font-size: 16px; margin-top: 20px; cursor: pointer;
+        }
+
+        .btn-limpar { background: #f8d7da; color: #721c24; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        
+        .config-section { margin-top: 30px; padding: 10px; background: #f0f0f0; border-radius: 10px; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div class="logo">SISTEMA DE VALES</div>
+    <div class="logo-container">
+        <img src="logo.jpg" alt="FH Construções" class="logo-img" onerror="this.style.display='none'">
+        <div style="font-size: 20px; font-weight: 800; color: var(--azul-fh);">FH CONSTRUÇÕES</div>
+        <span class="sub-logo">Recibo Digital de Vales</span>
+    </div>
     
     <div id="form-dados">
-        <label>Nome do Funcionário:</label>
-        <input type="text" id="nome" placeholder="Nome completo">
+        <label>Nome do Funcionário</label>
+        <input type="text" id="nome" placeholder="Nome Completo">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
-                <label>Valor (R$):</label>
+                <label>Valor (R$)</label>
                 <input type="number" id="valor" placeholder="0,00">
             </div>
             <div style="flex: 1;">
-                <label>Tipo:</label>
+                <label>Tipo</label>
                 <select id="tipo">
-                    <option value="VALE EM DINHEIRO">Vale Dinheiro</option>
-                    <option value="PRODUTO">Produto</option>
+                    <option value="VALE EM DINHEIRO">💰 Dinheiro</option>
+                    <option value="PRODUTO">📦 Produto</option>
                 </select>
             </div>
         </div>
 
         <label>Descrição:</label>
-        <textarea id="desc" rows="2" placeholder="Ex: Adiantamento quinzena"></textarea>
+        <textarea id="desc" rows="2" placeholder="Ex: Referente a adiantamento"></textarea>
     </div>
 
     <div id="area-recibo">
         <div class="header-recibo">
-            <h3 style="margin:0">RECIBO DE VALE</h3>
-            <span id="data-hora" style="font-size: 12px; color: #666;"></span>
+            <h3 style="margin:0; color: var(--azul-fh);">RECIBO DE VALE</h3>
+            <span id="data-hora" style="font-size: 11px; color: #888;"></span>
         </div>
         
-        <div style="font-size: 15px; line-height: 1.5; text-align: justify;">
-            Eu, <b id="resumo-nome">...</b>, declaro ter recebido a importância de 
-            <b>R$ <span id="resumo-valor">0,00</span></b> referente a 
-            <span id="resumo-desc">...</span>.
+        <div style="font-size: 14px; line-height: 1.6;">
+            Eu, <b id="resumo-nome">__________</b>, recebi da empresa <b>FH Construções</b> a quantia de <b>R$ <span id="resumo-valor">0,00</span></b> referente a <span id="resumo-desc">...</span>.
         </div>
 
-        <label style="margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">Assinatura do Funcionário:</label>
-        <canvas id="signature-pad"></canvas>
+        <div style="margin-top: 15px; text-align: center;">
+            <span style="font-size: 10px; color: var(--azul-fh); font-weight: bold;">ASSINATURA DO FUNCIONÁRIO:</span>
+            <canvas id="signature-pad"></canvas>
+            <button class="btn-limpar" id="limparBtn">Limpar Assinatura</button>
+        </div>
     </div>
 
-    <div style="text-align: right;">
-        <button class="btn-limpar" id="limparBtn">Limpar Assinatura</button>
-    </div>
-
-    <button class="btn-enviar" id="btnFinalizar">SALVAR E ENVIAR WHATSAPP</button>
+    <button class="btn-enviar" id="btnFinalizar">✅ SALVAR E ENVIAR WHATSAPP</button>
 
     <div class="config-section">
         <details>
-            <summary>⚙️ Configurar número do WhatsApp</summary>
-            <p>Digite o número (com DDD) para onde os vales serão enviados:</p>
-            <input type="text" id="inputNumPatrao" class="config-input" placeholder="Ex: 43996408964">
-            <button onclick="salvarNumero()" style="padding: 5px 10px; cursor: pointer;">Salvar</button>
+            <summary>⚙️ Configurar Destinatário</summary>
+            <input type="text" id="inputNumPatrao" style="padding: 5px; margin-top:5px;" placeholder="Ex: 43996408964">
+            <button onclick="salvarNumero()" style="padding: 5px; width: 100%; margin-top:5px;">Salvar Número</button>
         </details>
     </div>
 </div>
@@ -101,29 +138,17 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- Lógica do LocalStorage ---
     const inputConfig = document.getElementById('inputNumPatrao');
-    
-    // Carregar número salvo ao abrir a página
     window.addEventListener('load', () => {
-        const salvo = localStorage.getItem('numero_whatsapp');
-        if (salvo) {
-            inputConfig.value = salvo;
-        } else {
-            // Valor padrão caso nunca tenha sido salvo
-            inputConfig.value = "43996408964";
-        }
+        inputConfig.value = localStorage.getItem('numero_whatsapp') || "43996408964";
         resizeCanvas();
     });
 
-    // Função global para salvar (chamada pelo botão)
     window.salvarNumero = () => {
-        const num = inputConfig.value.replace(/\D/g, ''); // Remove parênteses e traços
-        localStorage.setItem('numero_whatsapp', num);
-        Swal.fire('Salvo!', 'O número destino foi atualizado.', 'success');
+        localStorage.setItem('numero_whatsapp', inputConfig.value.replace(/\D/g, ''));
+        Swal.fire('Salvo!', 'Número atualizado.', 'success');
     };
 
-    // --- Restante da Lógica (Assinatura e Envio) ---
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -131,9 +156,7 @@
     function resizeCanvas() {
         canvas.width = canvas.offsetWidth;
         canvas.height = canvas.offsetHeight;
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.strokeStyle = "#1a3a5a";
     }
 
     const getPos = (e) => {
@@ -143,21 +166,19 @@
         return { x: clientX - rect.left, y: clientY - rect.top };
     };
 
-    const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-    const move = (e) => { if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-    const stop = () => drawing = false;
-
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', stop);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
-    canvas.addEventListener('touchend', stop);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, {passive: false});
+    window.addEventListener('touchend', () => drawing = false);
+    
+    // Mouse events para PC
+    canvas.addEventListener('mousedown', (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener('mousemove', (e) => { if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    window.addEventListener('mouseup', () => drawing = false);
 
     document.getElementById('limparBtn').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const atualizar = () => {
-        document.getElementById('resumo-nome').innerText = document.getElementById('nome').value || '...';
+        document.getElementById('resumo-nome').innerText = document.getElementById('nome').value || '__________';
         document.getElementById('resumo-valor').innerText = document.getElementById('valor').value || '0,00';
         document.getElementById('resumo-desc').innerText = document.getElementById('desc').value || '...';
         document.getElementById('data-hora').innerText = new Date().toLocaleString('pt-BR');
@@ -168,15 +189,13 @@
     document.getElementById('btnFinalizar').onclick = async () => {
         const nome = document.getElementById('nome').value;
         const valor = document.getElementById('valor').value;
-        
-        // Pega o número que está salvo no LocalStorage
         let numDestino = localStorage.getItem('numero_whatsapp') || "43996408964";
         if (!numDestino.startsWith('55')) numDestino = '55' + numDestino;
 
-        if(!nome || !valor) return Swal.fire('Erro', 'Preencha o nome e o valor!', 'error');
+        if(!nome || !valor) return Swal.fire('Atenção', 'Preencha os campos!', 'warning');
 
         const btn = document.getElementById('btnFinalizar');
-        btn.innerText = "Processando...";
+        btn.innerText = "⏳ PROCESSANDO...";
         btn.disabled = true;
 
         try {
@@ -184,24 +203,20 @@
             const imagemBase64 = canvasImg.toDataURL("image/png");
 
             await addDoc(collection(db, "vales_assinados"), {
-                funcionario: nome,
-                valor: valor,
+                funcionario: nome, valor: valor,
                 tipo: document.getElementById('tipo').value,
-                descricao: document.getElementById('desc').value,
-                assinatura: imagemBase64,
-                data: serverTimestamp()
+                assinatura: imagemBase64, data: serverTimestamp()
             });
 
-            const msg = `*NOVO VALE GERADO*\n\n*Funcionario:* ${nome}\n*Valor:* R$ ${valor}\n\nO recibo foi salvo no sistema.`;
+            const msg = `*FH CONSTRUÇÕES - NOVO VALE*\n\n👷 *Funcionário:* ${nome}\n💰 *Valor:* R$ ${valor}\n\n_Recibo salvo no sistema._`;
             
-            Swal.fire('Sucesso!', 'Vale registrado!', 'success').then(() => {
+            Swal.fire('Sucesso!', 'Vale enviado!', 'success').then(() => {
                 window.location.href = `https://api.whatsapp.com/send?phone=${numDestino}&text=${encodeURIComponent(msg)}`;
             });
         } catch (e) {
-            console.error(e);
             Swal.fire('Erro', 'Falha ao salvar.', 'error');
             btn.disabled = false;
-            btn.innerText = "SALVAR E ENVIAR WHATSAPP";
+            btn.innerText = "✅ SALVAR E ENVIAR WHATSAPP";
         }
     };
 </script>
