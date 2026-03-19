@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Gestão - FH Construções</title>
+    
+    <script>
+        const _params = new URLSearchParams(window.location.search);
+        let _appName = "Gestão RH"; 
+        if (_params.get('ponto')) _appName = "FH Ponto"; 
+        if (_params.get('id')) _appName = "Assinar Vale"; 
+        document.write('<title>' + _appName + '</title>');
+        document.write('<meta name="apple-mobile-web-app-title" content="' + _appName + '">');
+    </script>
+    
+    <link rel="icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,193 +27,77 @@
         :root { --dark-navy: #1a2a43; --gold: #d4a017; --light-bg: #f4f7f6; --white: #ffffff; --text-color: #333333; }
         body { font-family: 'Poppins', sans-serif; background: var(--light-bg); margin: 0; padding: 15px; color: var(--text-color); }
         .main-card { background: var(--white); padding: 30px 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); max-width: 480px; margin: auto; border-top: 6px solid var(--dark-navy); }
-        
         .header-logo { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .logo-img { max-width: 160px; height: auto; margin-bottom: 5px; }
+        .logo-img { max-width: 160px; height: auto; margin-bottom: 5px; border-radius: 10px; }
         .title-top { color: var(--dark-navy); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
-
         label { display: block; margin-top: 15px; font-weight: 600; font-size: 13px; color: var(--dark-navy); text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #e0e6ed; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; transition: 0.3s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--gold); outline: none; }
-
-        .btn-enviar { background: var(--dark-navy); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 25px; cursor: pointer; transition: 0.3s; }
-        .btn-enviar:hover { background: #121e30; }
-        
-        .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s; }
-        .btn-gold:hover { background: #b88a12; }
-
-        /* Botões de Ponto e Login */
-        .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .btn-logout { background: #eee; color: #555; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 13px; margin-top: 25px; cursor: pointer; }
-
-        .btn-limpar { background: #f8d7da; color: #721c24; border: none; font-weight: 600; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 10px; width: 100%; }
-
-        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 12px; flex-wrap: wrap; }
-        .tab { flex: 1; text-align: center; padding: 10px 2px; cursor: pointer; font-weight: 600; color: #aaa; transition: 0.3s; min-width: 20%;}
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #e0e6ed; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; }
+        .btn-enviar { background: var(--dark-navy); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 25px; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; }
+        .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; }
+        .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; }
+        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 11px; }
+        .tab { flex: 1; text-align: center; padding: 10px 2px; cursor: pointer; font-weight: 600; color: #aaa; }
         .tab.active { color: var(--dark-navy); border-bottom: 3px solid var(--gold); }
         .view-section { display: none; }
         .view-section.active { display: block; }
-
-        .func-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fafcff; border-radius: 8px; margin-bottom: 8px;}
-        .btn-excluir { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;}
-
-        #area-recibo { border: 1px solid #e0e6ed; padding: 25px; border-radius: 15px; margin-top: 20px; background: #fafcff; position: relative; }
-        .recibo-header { text-align: center; font-weight: 700; border-bottom: 2px solid var(--dark-navy); padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: var(--dark-navy); }
-        .data-recibo { text-align: center; font-size: 12px; color: #666; margin-bottom: 15px; font-weight: 600;}
-        #texto-recibo-dinamico { font-size: 14px; line-height: 1.7; text-align: justify; color: #444; }
-
-        canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 160px; border-radius: 10px; touch-action: none; margin-top: 15px; }
-        
         .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 10px; margin-top: 10px; background: #fff; border-left: 4px solid var(--gold); }
-        .btn-pdf { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: 600; font-size: 13px;}
-        .btn-maps { background: #4285F4; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; font-size: 12px;}
+        .btn-maps { background: #4285F4; color: white; border: none; padding: 8px; border-radius: 5px; width: 100%; margin-top: 10px; font-weight: bold; }
+        .func-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 160px; border-radius: 10px; touch-action: none; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="main-card" id="tela-patrao" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Painel de Gestão - RH</div>
-    </div>
-
+    <div class="header-logo"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo-img"><div class="title-top">Gestão FH</div></div>
     <div class="tabs">
-        <div class="tab active" onclick="mudarAba('cadastrar')">1. Equipe</div>
-        <div class="tab" onclick="mudarAba('criar')">2. Vales</div>
-        <div class="tab" onclick="mudarAba('buscar')">3. Arquivo</div>
-        <div class="tab" onclick="mudarAba('ponto')">4. Ponto GPS</div>
+        <div class="tab active" onclick="mudarAba('cadastrar')">EQUIPE</div>
+        <div class="tab" onclick="mudarAba('criar')">VALES</div>
+        <div class="tab" onclick="mudarAba('ponto')">PONTO GPS</div>
     </div>
-
     <div id="aba-cadastrar" class="view-section active">
-        <label>Nome Completo</label>
-        <input type="text" id="c-nome" placeholder="Ex: João da Silva">
-        <label>CPF (Apenas Números - Login)</label>
-        <input type="number" id="c-cpf" placeholder="Ex: 12345678900">
-        <label>WhatsApp (com DDD)</label>
-        <input type="number" id="c-tel" placeholder="Ex: 43999999999">
-        
-        <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
-        <label>Equipe Cadastrada:</label>
-        <div id="lista-funcionarios-gerencial" style="margin-top: 15px;">
-            <p style="text-align: center; color: #888; font-size: 13px;">Carregando...</p>
-        </div>
+        <label>Nome</label><input type="text" id="c-nome">
+        <label>CPF (Apenas números)</label><input type="number" id="c-cpf">
+        <label>WhatsApp</label><input type="number" id="c-tel">
+        <button class="btn-gold" id="btnCadastrarFunc">SALVAR</button>
+        <div id="lista-equipe" style="margin-top:20px;">Carregando...</div>
     </div>
-
     <div id="aba-criar" class="view-section">
-        <label>Selecione o Funcionário</label>
-        <select id="p-func-select" class="lista-funcs"><option value="">Carregando...</option></select>
-
-        <div style="display: flex; gap: 10px; margin-top: 5px;">
-            <div style="flex: 1.2;"><label>Valor (R$)</label><input type="number" id="p-valor" placeholder="0,00"></div>
-            <div style="flex: 1;"><label>Tipo</label><select id="p-tipo"><option value="Dinheiro">💰 Dinheiro</option><option value="Produto">📦 Produto</option></select></div>
-        </div>
-
-        <label>Descrição / Referente a:</label>
-        <textarea id="p-desc" rows="2" placeholder="Ex: Adiantamento"></textarea>
-        <button class="btn-enviar" id="btnGerarLink">GERAR VALE E ENVIAR LINK</button>
+        <label>Funcionário</label><select id="p-select" class="lista-funcs"></select>
+        <label>Valor R$</label><input type="number" id="p-valor">
+        <label>Descrição</label><textarea id="p-desc"></textarea>
+        <button class="btn-enviar" id="btnGerarVale">ENVIAR VALE</button>
     </div>
-
-    <div id="aba-buscar" class="view-section">
-        <label>Histórico do Funcionário (Vales):</label>
-        <div style="display: flex; gap: 10px;">
-            <select id="b-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
-            <button onclick="buscarVales()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
-        </div>
-        <div id="lista-resultados" style="margin-top: 20px;">
-            <p style="text-align: center; color: #888; font-size: 13px;">Selecione para ver os recibos.</p>
-        </div>
-    </div>
-
     <div id="aba-ponto" class="view-section">
-        <div style="background: #eef2f5; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto do celular deles:</p>
-            <button class="btn-gold" id="btnLinkPonto" style="margin: 0; padding: 10px; font-size: 13px;">Copiar Link do Relógio de Ponto</button>
-        </div>
-
-        <label>Consultar Ponto do Funcionário:</label>
-        <div style="display: flex; gap: 10px;">
-            <select id="pt-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
-            <button onclick="buscarPonto()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
-        </div>
-        <div id="lista-ponto-resultados" style="margin-top: 20px;">
-            <p style="text-align: center; color: #888; font-size: 13px;">Aqui aparecerão os horários e locais.</p>
-        </div>
+        <button class="btn-gold" id="btnCopiaLink">COPIAR LINK DO PONTO</button>
+        <label>Histórico de:</label>
+        <select id="pt-select" class="lista-funcs"></select>
+        <button onclick="buscarPonto()" class="btn-enviar">VER REGISTROS</button>
+        <div id="lista-ponto"></div>
     </div>
 </div>
 
 <div class="main-card" id="tela-login" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Login do Funcionário</div>
-    </div>
-
-    <p style="text-align: center; font-size: 13px; color: #555;">Digite seu CPF para acessar o sistema de ponto da empresa.</p>
-
-    <label>Seu CPF (Somente números)</label>
-    <input type="number" id="login-cpf" placeholder="Ex: 12345678900">
-
-    <label>Sua Senha</label>
-    <input type="password" id="login-senha" placeholder="Digite sua senha">
-    <p style="font-size: 11px; color: #888; margin-top: 5px;"><i>Se for seu primeiro acesso, digite a senha que deseja criar para o seu usuário.</i></p>
-
-    <button class="btn-enviar" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
+    <div class="header-logo"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo-img"></div>
+    <label>Seu CPF</label><input type="number" id="l-cpf">
+    <label>Sua Senha</label><input type="password" id="l-senha" placeholder="Crie uma agora">
+    <button class="btn-enviar" id="btnLogin">ENTRAR</button>
 </div>
 
 <div class="main-card" id="tela-relogio" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Relógio de Ponto Digital</div>
-    </div>
-
-    <h3 style="text-align: center; color: var(--dark-navy); margin-bottom: 5px;">Olá, <span id="nome-logado"></span></h3>
-    
-    <label style="margin-top: 20px;">Em qual local/obra você está agora?</label>
-    <input type="text" id="obra-atual" placeholder="Ex: Obra Centro, Condomínio, Escritório...">
-
-    <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
-        ⚠️ O sistema aguardará o sinal do satélite para salvar a localização exata. Permaneça em local aberto.
-    </div>
-
-    <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTRAR ENTRADA</button>
-    <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTRAR SAÍDA</button>
-
-    <button class="btn-logout" onclick="fazerLogout()">Sair da Conta (Logout)</button>
+    <div class="header-logo"><div class="title-top">Olá, <span id="n-logado"></span></div></div>
+    <label>Em qual obra você está?</label><input type="text" id="obra" placeholder="Ex: Obra Centro">
+    <button class="btn-entrada" onclick="registrarPonto('Entrada')">🟢 ENTRADA</button>
+    <button class="btn-saida" onclick="registrarPonto('Saída')">🔴 SAÍDA</button>
+    <button onclick="localStorage.clear(); location.reload();" style="width:100%; border:none; background:none; color:#999; margin-top:20px; font-size:11px;">Sair da conta</button>
 </div>
 
-<div class="main-card" id="tela-funcionario" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Recibo Digital Oficial</div>
-    </div>
-
-    <div id="area-recibo">
-        <div class="recibo-header">RECIBO DE ASSINATURA</div>
-        <div class="data-recibo" id="f-data">--/--/----</div>
-        <div id="f-texto">Carregando dados...</div>
-        <label style="text-align: center; margin-top: 30px;">ASSINATURA DIGITAL AQUI:</label>
-        <canvas id="signature-pad"></canvas>
-        <button class="btn-limpar" onclick="limpar()">Corrigir Assinatura</button>
-    </div>
-
-    <button class="btn-gold" id="btnAssinar" style="margin-top: 25px;">CONFIRMAR E ASSINAR</button>
-</div>
-
-<div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
-    <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" style="max-height: 80px; margin-bottom: 10px;">
-        <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
-        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
-    </div>
-    <p style="text-align: right; font-size: 14px; color: #666; font-weight: 600;" id="pdf-data"></p>
-    <div id="pdf-texto" style="font-size: 18px; line-height: 1.8; text-align: justify; margin: 50px 0; color: #333;"></div>
-    <div style="margin-top: 80px; text-align: center;">
-        <img id="pdf-assinatura" src="" style="max-height: 140px; margin-bottom: 5px;">
-        <div style="border-top: 1px solid #1a2a43; width: 60%; margin: 0 auto; padding-top: 8px; font-size: 16px; font-weight: bold; color: #1a2a43;" id="pdf-nome-ass"></div>
-        <div style="font-size: 13px; color: #666; margin-top: 5px;">Assinatura Digital do Funcionário</div>
-    </div>
+<div class="main-card" id="tela-vale" style="display: none;">
+    <div class="header-logo"><div class="title-top">Assinatura Digital</div></div>
+    <div id="v-texto" style="font-size:14px; margin-bottom:15px;">Carregando...</div>
+    <canvas id="signature-pad"></canvas>
+    <button class="btn-gold" id="btnAssinar">CONFIRMAR</button>
 </div>
 
 <script type="module">
@@ -218,337 +115,144 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const params = new URLSearchParams(window.location.search);
+    const vId = params.get('id');
+    const isPonto = params.get('ponto');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const valeId = urlParams.get('id');
-    const isPonto = urlParams.get('ponto');
+    // INICIALIZAÇÃO
+    if(vId) { document.getElementById('tela-vale').style.display = 'block'; carregarVale(vId); }
+    else if(isPonto) {
+        if(localStorage.getItem('fId')) { 
+            document.getElementById('tela-relogio').style.display = 'block'; 
+            document.getElementById('n-logado').innerText = localStorage.getItem('fNome');
+        } else { document.getElementById('tela-login').style.display = 'block'; }
+    } else { document.getElementById('tela-patrao').style.display = 'block'; carregarEquipe(); }
 
-    window.listaFuncionarios = {};
+    // LOGIN BLINDADO (REVISADO)
+    document.getElementById('btnLogin').onclick = async function() {
+        const cpf = document.getElementById('l-cpf').value.trim();
+        const senha = document.getElementById('l-senha').value.trim();
+        if(!cpf || !senha) return Swal.fire('Erro', 'Preencha tudo', 'error');
 
-    // --- ROTEAMENTO INTELIGENTE ---
-    if (valeId) {
-        document.getElementById('tela-funcionario').style.display = 'block';
-        carregarValeParaAssinatura(valeId);
-    } else if (isPonto) {
-        // Verifica se o funcionário já está logado no celular dele
-        const idLogado = localStorage.getItem('funcLogadoId');
-        if (idLogado) {
-            document.getElementById('tela-relogio').style.display = 'block';
-            document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
-        } else {
-            document.getElementById('tela-login').style.display = 'block';
-        }
-    } else {
-        document.getElementById('tela-patrao').style.display = 'block';
-        carregarListaDeFuncionarios();
-    }
-
-    // --- FUNÇÕES DE LOGIN ---
-    window.fazerLogin = async function() {
-        const cpf = document.getElementById('login-cpf').value;
-        const senha = document.getElementById('login-senha').value;
-
-        if(!cpf || !senha) return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
-
-        Swal.fire({title: 'Autenticando...', allowOutsideClick: false});
-        Swal.showLoading();
+        Swal.fire({title: 'Entrando...', allowOutsideClick: false}); Swal.showLoading();
 
         try {
             const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf));
-            const querySnapshot = await getDocs(q);
+            const snap = await getDocs(q);
 
-            if (querySnapshot.empty) {
-                Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão te cadastrar.', 'error');
-                return;
-            }
+            if(snap.empty) return Swal.fire('Erro', 'CPF não cadastrado.', 'error');
 
-            const funcDoc = querySnapshot.docs[0];
-            const funcData = funcDoc.data();
-
-            if (!funcData.senha) {
-                await updateDoc(doc(db, "funcionarios", funcDoc.id), { senha: senha });
-                localStorage.setItem('funcLogadoId', funcDoc.id);
-                localStorage.setItem('funcLogadoNome', funcData.nome);
-                Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
-            } else {
-                if (funcData.senha !== senha) {
-                    Swal.fire('Erro', 'Senha incorreta!', 'error');
+            // Usando forEach para evitar erro de undefined no docs
+            snap.forEach(async (d) => {
+                const dados = d.data();
+                if(!dados.senha) {
+                    await updateDoc(doc(db, "funcionarios", d.id), {senha: senha});
+                    logar(d.id, dados.nome);
+                } else if(dados.senha === senha) {
+                    logar(d.id, dados.nome);
                 } else {
-                    localStorage.setItem('funcLogadoId', funcDoc.id);
-                    localStorage.setItem('funcLogadoNome', funcData.nome);
-                    location.reload(); 
+                    Swal.fire('Erro', 'Senha incorreta', 'error');
                 }
-            }
-        } catch(e) { console.error(e); Swal.fire('Erro', 'Falha na conexão.', 'error'); }
+            });
+        } catch(e) { Swal.fire('Erro', 'Falha na conexão com banco.', 'error'); }
     };
 
-    window.fazerLogout = function() {
-        localStorage.removeItem('funcLogadoId');
-        localStorage.removeItem('funcLogadoNome');
+    function logar(id, nome) {
+        localStorage.setItem('fId', id); localStorage.setItem('fNome', nome);
         location.reload();
-    };
-
-    // --- FUNÇÕES GERAIS PATRÃO ---
-    window.mudarAba = function(aba) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-        event.target.classList.add('active');
-        document.getElementById(`aba-${aba}`).classList.add('active');
-    };
-
-    async function carregarListaDeFuncionarios() {
-        try {
-            const q = query(collection(db, "funcionarios"), orderBy("nome"));
-            const querySnapshot = await getDocs(q);
-            
-            let opcoesHTML = '<option value="">Selecione o funcionário...</option>';
-            let gerenciaHTML = '';
-            window.listaFuncionarios = {};
-
-            if (querySnapshot.empty) {
-                gerenciaHTML = '<p style="text-align: center; color: #888; font-size: 13px;">Nenhum funcionário cadastrado ainda.</p>';
-            }
-
-            querySnapshot.forEach((docSnap) => {
-                const func = docSnap.data();
-                window.listaFuncionarios[docSnap.id] = func;
-                opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
-                
-                gerenciaHTML += `
-                    <div class="func-item">
-                        <div>
-                            <b style="color:var(--dark-navy);">${func.nome}</b><br>
-                            <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span>
-                        </div>
-                        <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
-                    </div>
-                `;
-            });
-
-            document.querySelectorAll('.lista-funcs').forEach(select => select.innerHTML = opcoesHTML);
-            if(document.getElementById('lista-funcionarios-gerencial')) document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
-        } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO (GPS CORRIGIDO) ---
-    document.getElementById('btnLinkPonto').onclick = function() {
-        const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
-        navigator.clipboard.writeText(linkPonto);
-        Swal.fire('Link Copiado!', 'Envie este link para a equipe acessar o Ponto Digital.', 'success');
-    };
+    // PONTO GPS
+    window.registrarPonto = function(tipo) {
+        const o = document.getElementById('obra').value;
+        if(!o) return Swal.fire('Atenção', 'Diga a obra!', 'warning');
+        Swal.fire({title: 'Pegando GPS...', allowOutsideClick: false}); Swal.showLoading();
 
-    window.baterPonto = function(tipo) {
-        const obra = document.getElementById('obra-atual').value;
-        if(!obra) return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
-
-        Swal.fire({title: 'Procurando satélite GPS...', text: 'Isso leva alguns segundos. Fique em local aberto.', allowOutsideClick: false});
-        Swal.showLoading();
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    const funcId = localStorage.getItem('funcLogadoId');
-                    const funcNome = localStorage.getItem('funcLogadoNome');
-                    const dataAtual = new Date();
-                    
-                    try {
-                        await addDoc(collection(db, "ponto_registros"), {
-                            funcionario_id: funcId,
-                            nome: funcNome,
-                            tipo: tipo,
-                            obra: obra,
-                            data: dataAtual.toLocaleDateString('pt-BR'),
-                            hora: dataAtual.toLocaleTimeString('pt-BR'),
-                            latitude: lat,
-                            longitude: lng,
-                            timestamp: dataAtual.getTime()
-                        });
-                        Swal.fire('Sucesso!', `${tipo} em "${obra}" registrada às ${dataAtual.toLocaleTimeString('pt-BR')}`, 'success');
-                        document.getElementById('obra-atual').value = '';
-                    } catch(e) {
-                        Swal.fire('Erro', 'Problema ao salvar no sistema.', 'error');
-                    }
-                },
-                (error) => {
-                    Swal.fire('Erro de GPS', 'Você precisa clicar em "Permitir" quando o celular pedir sua localização, senão o ponto não funciona!', 'error');
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Tempo aumentado para o GPS cravar exato
-            );
-        } else {
-            Swal.fire('Erro', 'Seu navegador não suporta GPS.', 'error');
-        }
-    };
-
-    window.buscarPonto = async function() {
-        const funcId = document.getElementById('pt-func-select').value;
-        if(!funcId) return Swal.fire('Atenção', 'Selecione um funcionário.', 'warning');
-        
-        const divLista = document.getElementById('lista-ponto-resultados');
-        divLista.innerHTML = "Buscando...";
-
-        try {
-            const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
-            const querySnapshot = await getDocs(q);
-            
-            if (querySnapshot.empty) {
-                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registro de ponto encontrado.</p>`;
-                return;
-            }
-
-            let registros = [];
-            querySnapshot.forEach((doc) => registros.push(doc.data()));
-            registros.sort((a, b) => b.timestamp - a.timestamp); // Mais recentes primeiro
-
-            divLista.innerHTML = "";
-            registros.forEach((dados) => {
-                const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                // LINK OFICIAL DO MAPS CORRIGIDO AQUI:
-                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
-                
-                divLista.innerHTML += `
-                    <div class="resultado-item" style="border-left-color: ${cor}">
-                        <b style="color: ${cor}">${dados.tipo}</b> - ${dados.data} às ${dados.hora} <br>
-                        <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
-                        <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA (GPS EXATO)</button>
-                    </div>
-                `;
+        navigator.geolocation.getCurrentPosition(async (p) => {
+            await addDoc(collection(db, "ponto_registros"), {
+                fId: localStorage.getItem('fId'), nome: localStorage.getItem('fNome'),
+                tipo: tipo, obra: o, lat: p.coords.latitude, lng: p.coords.longitude,
+                data: new Date().toLocaleDateString('pt-BR'), hora: new Date().toLocaleTimeString('pt-BR'),
+                ts: Date.now()
             });
-        } catch(e) { divLista.innerHTML = "Erro ao buscar."; }
+            Swal.fire('OK!', 'Ponto batido.', 'success');
+        }, () => Swal.fire('Erro', 'Ligue o GPS.', 'error'), {enableHighAccuracy: true});
     };
 
-    // --- CADASTROS E VALES (PATRÃO) ---
-    window.excluirFuncionario = async function(id, nome) {
-        Swal.fire({
-            title: 'Excluir?', text: `Deseja excluir ${nome}?`, icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#1a2a43', confirmButtonText: 'Sim'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await deleteDoc(doc(db, "funcionarios", id));
-                    Swal.fire('Excluído!', 'Removido.', 'success'); carregarListaDeFuncionarios();
-                } catch (e) { Swal.fire('Erro', 'Não foi possível.', 'error'); }
-            }
+    // FUNÇÕES PATRÃO
+    window.mudarAba = (aba) => {
+        document.querySelectorAll('.tab, .view-section').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active'); document.getElementById('aba-'+aba).classList.add('active');
+    };
+
+    async function carregarEquipe() {
+        const snap = await getDocs(query(collection(db, "funcionarios"), orderBy("nome")));
+        let h = ''; let opts = '<option value="">Selecione...</option>';
+        window.equipe = {};
+        snap.forEach(d => {
+            const f = d.data(); window.equipe[d.id] = f;
+            opts += `<option value="${d.id}">${f.nome}</option>`;
+            h += `<div class="func-item"><span>${f.nome} (CPF: ${f.cpf})</span><button onclick="apagarF('${d.id}')" style="background:red; color:white; border:none; padding:5px; border-radius:5px;">X</button></div>`;
         });
-    };
-
-    document.getElementById('btnCadastrarFunc').onclick = async function() {
-        const nome = document.getElementById('c-nome').value;
-        const cpf = document.getElementById('c-cpf').value;
-        const tel = document.getElementById('c-tel').value;
-
-        if(!nome || !tel || !cpf) return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
-        
-        const btn = document.getElementById('btnCadastrarFunc'); btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
-        
-        try {
-            await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
-            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha dele acessando o link do ponto.', 'success');
-            document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = ''; document.getElementById('c-tel').value = '';
-            carregarListaDeFuncionarios();
-        } catch(e) { Swal.fire('Erro', 'Falha.', 'error'); } finally { btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false; }
-    };
-
-    document.getElementById('btnGerarLink').onclick = async function() {
-        const funcId = document.getElementById('p-func-select').value;
-        const valor = document.getElementById('p-valor').value;
-        const tipo = document.getElementById('p-tipo').value;
-        const desc = document.getElementById('p-desc').value || 'Não informada';
-        if(!funcId || !valor) return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
-        const btn = document.getElementById('btnGerarLink'); btn.innerText = "⏳ GERANDO..."; btn.disabled = true;
-        
-        const funcionario = window.listaFuncionarios[funcId]; const dataAtual = new Date().toLocaleDateString('pt-BR');
-        let textoCompleto = tipo === 'Dinheiro' ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.` : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
-
-        try {
-            const docRef = await addDoc(collection(db, "vales_sistema"), { funcionario_id: funcId, nome: funcionario.nome, tel: funcionario.tel, valor: valor, tipo: tipo, descricao: desc, texto: textoCompleto, data_criacao: dataAtual, status: "pendente", assinatura: null });
-            const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
-
-            Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => {
-                window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`;
-                btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false;
-            });
-        } catch(e) { Swal.fire('Erro', 'Falha.', 'error'); btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false; }
-    };
-
-    window.buscarVales = async function() {
-        const funcId = document.getElementById('b-func-select').value;
-        if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
-        const divLista = document.getElementById('lista-resultados'); divLista.innerHTML = "Buscando...";
-        try {
-            const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center; font-weight:bold;">Nenhum recibo.</p>`; return; }
-            divLista.innerHTML = ""; window.valesEncontrados = {}; 
-            querySnapshot.forEach((docSnap) => {
-                const dados = docSnap.data(); window.valesEncontrados[docSnap.id] = dados;
-                divLista.innerHTML += `<div class="resultado-item"><b style="color:var(--dark-navy);">Data:</b> ${dados.data_criacao} <br><b style="color:var(--dark-navy);">Valor:</b> R$ ${dados.valor} <br><button class="btn-pdf" onclick="gerarEnviarPDF('${docSnap.id}')">📄 BAIXAR PDF OFICIAL</button></div>`;
-            });
-        } catch(e) { divLista.innerHTML = "Erro."; }
-    };
-
-    window.gerarEnviarPDF = async function(id) {
-        const dados = window.valesEncontrados[id]; Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); Swal.showLoading();
-        document.getElementById('pdf-data').innerText = "Data: " + dados.data_criacao; document.getElementById('pdf-texto').innerHTML = dados.texto; document.getElementById('pdf-assinatura').src = dados.assinatura; document.getElementById('pdf-nome-ass').innerText = dados.nome;
-
-        try {
-            await new Promise(r => setTimeout(r, 800)); 
-            const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4'); const element = document.getElementById('area-pdf-escondida');
-            const canvasImg = await html2canvas(element, { scale: 2, useCORS: true }); const imgData = canvasImg.toDataURL('image/jpeg');
-            const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-            const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`;
-            const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
-            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo sua via do recibo de ${dados.data_criacao}.`;
-
-            let sucessoCompartilhamento = false;
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try { await navigator.share({ files: [file], title: 'Recibo', text: msg }); sucessoCompartilhamento = true; Swal.close(); } 
-                catch(e) { if (e.name !== 'AbortError') console.error("Bloqueado", e); else { Swal.close(); return; } }
-            }
-            if (!sucessoCompartilhamento) {
-                pdf.save(nomeDoArquivo);
-                Swal.fire('PDF Baixado!', 'Salvo nos Downloads.', 'success').then(()=>{ window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`; });
-            }
-        } catch(e) { console.error(e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
-    };
-
-    // --- ASSINATURA ---
-    async function carregarValeParaAssinatura(id) {
-        try {
-            const docRef = doc(db, "vales_sistema", id); const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const dados = docSnap.data();
-                if(dados.status === 'assinado') { document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; return; }
-                document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; document.getElementById('f-texto').innerHTML = dados.texto; resizeCanvas();
-            } else { document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; }
-        } catch(e) { console.error(e); }
+        document.getElementById('lista-equipe').innerHTML = h;
+        document.querySelectorAll('.lista-funcs').forEach(s => s.innerHTML = opts);
     }
 
-    const canvas = document.getElementById('signature-pad'); const ctx = canvas.getContext('2d'); let drawing = false;
-    function resizeCanvas() { if(!canvas) return; const ratio = window.devicePixelRatio || 1; canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio; ctx.scale(ratio, ratio); ctx.lineWidth = 2.5; ctx.strokeStyle = "#1a2a43"; }
-    const getPos = (e) => { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
+    document.getElementById('btnCadastrarFunc').onclick = async () => {
+        const n = document.getElementById('c-nome').value;
+        const c = document.getElementById('c-cpf').value;
+        const t = document.getElementById('c-tel').value;
+        await addDoc(collection(db, "funcionarios"), {nome: n, cpf: c, tel: t, senha: ""});
+        Swal.fire('Salvo!', '', 'success'); carregarEquipe();
+    };
+
+    document.getElementById('btnGerarVale').onclick = async () => {
+        const id = document.getElementById('p-select').value;
+        const v = document.getElementById('p-valor').value;
+        const d = await addDoc(collection(db, "vales_sistema"), {fId: id, nome: window.equipe[id].nome, valor: v, texto: `Eu, ${window.equipe[id].nome}, recebi R$ ${v} da FH Construções.`, status: "pendente"});
+        const link = window.location.origin + window.location.pathname + "?id=" + d.id;
+        window.open(`https://api.whatsapp.com/send?phone=55${window.equipe[id].tel}&text=Assine seu Vale: ${link}`);
+    };
+
+    document.getElementById('btnCopiaLink').onclick = () => {
+        navigator.clipboard.writeText(window.location.origin + window.location.pathname + "?ponto=true");
+        Swal.fire('Copiado!', 'Mande para os funcionários.', 'success');
+    };
+
+    window.buscarPonto = async () => {
+        const id = document.getElementById('pt-select').value;
+        const snap = await getDocs(query(collection(db, "ponto_registros"), where("fId", "==", id)));
+        let h = '';
+        snap.forEach(d => {
+            const p = d.data();
+            h += `<div class="resultado-item"><b>${p.tipo}</b> - ${p.data} às ${p.hora}<br>Local: ${p.obra}<br><button class="btn-maps" onclick="window.open('https://www.google.com/maps?q=${p.lat},${p.lng}')">📍 MAPA</button></div>`;
+        });
+        document.getElementById('lista-ponto').innerHTML = h || 'Sem registros.';
+    };
+
+    // ASSINATURA
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas?.getContext('2d');
+    let dsn = false;
     if(canvas) {
-        const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }; const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; const stop = () => drawing = false;
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-        canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', stop);
-        window.limpar = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+        const getP = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.touches ? e.touches.clientX : e.clientX) - r.left, y: (e.touches ? e.touches.clientY : e.clientY) - r.top }};
+        canvas.onmousedown = canvas.ontouchstart = (e) => { dsn = true; ctx.beginPath(); const p = getP(e); ctx.moveTo(p.x, p.y); };
+        canvas.onmousemove = canvas.ontouchmove = (e) => { if(!dsn) return; const p = getP(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+        window.onmouseup = window.ontouchend = () => dsn = false;
     }
 
-    document.getElementById('btnAssinar').onclick = async function() {
-        const btn = document.getElementById('btnAssinar'); btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
-        try {
-            const assinaturaImg = canvas.toDataURL('image/png');
-            await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: assinaturaImg, status: "assinado" });
-            Swal.fire({ title: 'Assinado!', text: 'Registrado com sucesso.', icon: 'success', allowOutsideClick: false, confirmButtonColor: '#1a2a43' }).then(() => {
-                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3></div>`;
-            });
-        } catch(e) { Swal.fire('Erro', 'Tente assinar novamente.', 'error'); btn.innerText = "CONFIRMAR E ASSINAR"; btn.disabled = false; }
+    async function carregarVale(id) {
+        const d = await getDoc(doc(db, "vales_sistema", id));
+        if(d.exists()) document.getElementById('v-texto').innerText = d.data().texto;
+    }
+
+    document.getElementById('btnAssinar').onclick = async () => {
+        await updateDoc(doc(db, "vales_sistema", vId), {assinatura: canvas.toDataURL(), status: "assinado"});
+        Swal.fire('OK', 'Assinado!', 'success').then(() => document.body.innerHTML = "<h2>Concluído!</h2>");
     };
+
+    window.apagarF = async (id) => { if(confirm('Excluir?')) { await deleteDoc(doc(db, "funcionarios", id)); carregarEquipe(); } };
 </script>
 </body>
 </html>
