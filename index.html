@@ -98,7 +98,7 @@
 
 <div class="main-card" id="tela-patrao" style="display: none;">
     <div class="header-logo">
-        <img src="logo.jpeg?v=2" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
         <div class="title-top">Painel de Gestão - RH</div>
     </div>
 
@@ -166,7 +166,7 @@
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
     <div class="header-logo">
-        <img src="logo.jpeg?v=2" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
         <div class="title-top">Recibo Digital Oficial</div>
     </div>
 
@@ -188,7 +188,7 @@
 
 <div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
     <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
-        <img src="logo.jpeg?v=2" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
+        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
         <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
         <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
     </div>
@@ -203,7 +203,6 @@
 </div>
 
 <script type="module">
-    // Adicionado "deleteDoc" para podermos excluir funcionários
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -232,8 +231,6 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DO PATRÃO ---
-
     window.mudarAba = function(aba) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -241,7 +238,6 @@
         document.getElementById(`aba-${aba}`).classList.add('active');
     };
 
-    // FUNÇÃO ATUALIZADA: Carrega a lista nas seleções E na visualização de gerência
     async function carregarListaDeFuncionarios() {
         try {
             const q = query(collection(db, "funcionarios"), orderBy("nome"));
@@ -260,7 +256,6 @@
                 window.listaFuncionarios[docSnap.id] = func;
                 opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
                 
-                // Monta a lista visual de funcionários com botão de excluir
                 gerenciaHTML += `
                     <div class="func-item">
                         <div>
@@ -280,7 +275,6 @@
         }
     }
 
-    // NOVA FUNÇÃO: Excluir funcionário
     window.excluirFuncionario = async function(id, nome) {
         Swal.fire({
             title: 'Excluir Funcionário?',
@@ -295,11 +289,10 @@
             if (result.isConfirmed) {
                 try {
                     await deleteDoc(doc(db, "funcionarios", id));
-                    Swal.fire('Excluído!', 'O funcionário foi removido da base de dados.', 'success');
-                    carregarListaDeFuncionarios(); // Atualiza tudo
+                    Swal.fire('Excluído!', 'O funcionário foi removido.', 'success');
+                    carregarListaDeFuncionarios();
                 } catch (e) {
-                    console.error(e);
-                    Swal.fire('Erro', 'Não foi possível excluir. Tente novamente.', 'error');
+                    Swal.fire('Erro', 'Não foi possível excluir.', 'error');
                 }
             }
         });
@@ -316,12 +309,12 @@
 
         try {
             await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel });
-            Swal.fire('Sucesso!', 'Funcionário cadastrado na base de dados.', 'success');
+            Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
             document.getElementById('c-nome').value = '';
             document.getElementById('c-tel').value = '';
             carregarListaDeFuncionarios();
         } catch(e) {
-            Swal.fire('Erro', 'Falha ao cadastrar. Verifique sua conexão.', 'error');
+            Swal.fire('Erro', 'Falha ao cadastrar.', 'error');
         } finally {
             btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false;
         }
@@ -367,7 +360,7 @@
             });
 
         } catch(e) {
-            console.error(e); Swal.fire('Erro', 'Falha ao criar documento.', 'error');
+            Swal.fire('Erro', 'Falha ao criar documento.', 'error');
             btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false;
         }
     };
@@ -404,7 +397,7 @@
                     </div>
                 `;
             });
-        } catch(e) { console.error(e); divLista.innerHTML = "Erro ao buscar."; }
+        } catch(e) { divLista.innerHTML = "Erro ao buscar."; }
     };
 
     window.gerarEnviarPDF = async function(id) {
@@ -418,7 +411,7 @@
         document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
         try {
-            await new Promise(r => setTimeout(r, 300)); 
+            await new Promise(r => setTimeout(r, 500)); 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const element = document.getElementById('area-pdf-escondida');
@@ -444,10 +437,10 @@
                     window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`;
                 });
             }
-        } catch(e) { console.error(e); Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error'); }
+        } catch(e) { Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error'); }
     };
 
-    // --- FUNÇÕES DO FUNCIONÁRIO (Assinatura) ---
+    // --- FUNÇÕES DO FUNCIONÁRIO ---
     async function carregarValeParaAssinatura(id) {
         try {
             const docRef = doc(db, "vales_sistema", id);
@@ -456,7 +449,7 @@
             if (docSnap.exists()) {
                 const dados = docSnap.data();
                 if(dados.status === 'assinado') {
-                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg?v=2" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
+                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
                     return;
                 }
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao;
@@ -518,11 +511,11 @@
                 allowOutsideClick: false,
                 confirmButtonColor: '#1a2a43'
             }).then(() => {
-                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg?v=2" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
+                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
             });
 
         } catch(e) {
-            console.error(e); Swal.fire('Erro', 'Tente assinar novamente.', 'error');
+            Swal.fire('Erro', 'Tente assinar novamente.', 'error');
             btn.innerText = "CONFIRMAR E ASSINAR"; btn.disabled = false;
         }
     };
