@@ -98,7 +98,7 @@
 
 <div class="main-card" id="tela-patrao" style="display: none;">
     <div class="header-logo">
-        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
         <div class="title-top">Painel de Gestão - RH</div>
     </div>
 
@@ -166,7 +166,7 @@
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
     <div class="header-logo">
-        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
         <div class="title-top">Recibo Digital Oficial</div>
     </div>
 
@@ -188,7 +188,7 @@
 
 <div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
     <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
-        <img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" style="max-height: 80px; margin-bottom: 10px;">
         <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
         <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
     </div>
@@ -449,7 +449,7 @@
             if (docSnap.exists()) {
                 const dados = docSnap.data();
                 if(dados.status === 'assinado') {
-                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
+                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
                     return;
                 }
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao;
@@ -511,7 +511,7 @@
                 allowOutsideClick: false,
                 confirmButtonColor: '#1a2a43'
             }).then(() => {
-                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://raw.githubusercontent.com/netikis/valeseprodutosdigital/main/logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
+                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
             });
 
         } catch(e) {
