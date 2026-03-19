@@ -29,9 +29,10 @@
         .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s; }
         .btn-gold:hover { background: #b88a12; }
 
-        /* Botões de Ponto */
+        /* Botões de Ponto e Login */
         .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
         .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        .btn-logout { background: #eee; color: #555; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 13px; margin-top: 25px; cursor: pointer; }
 
         .btn-limpar { background: #f8d7da; color: #721c24; border: none; font-weight: 600; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 10px; width: 100%; }
 
@@ -72,10 +73,13 @@
     </div>
 
     <div id="aba-cadastrar" class="view-section active">
-        <label>Novo Funcionário (Nome Completo)</label>
+        <label>Nome Completo</label>
         <input type="text" id="c-nome" placeholder="Ex: João da Silva">
+        <label>CPF (Apenas Números - Login)</label>
+        <input type="number" id="c-cpf" placeholder="Ex: 12345678900">
         <label>WhatsApp (com DDD)</label>
         <input type="number" id="c-tel" placeholder="Ex: 43999999999">
+        
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
@@ -127,21 +131,43 @@
     </div>
 </div>
 
+<div class="main-card" id="tela-login" style="display: none;">
+    <div class="header-logo">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
+        <div class="title-top">Login do Funcionário</div>
+    </div>
+
+    <p style="text-align: center; font-size: 13px; color: #555;">Digite seu CPF para acessar o sistema de ponto da empresa.</p>
+
+    <label>Seu CPF (Somente números)</label>
+    <input type="number" id="login-cpf" placeholder="Ex: 12345678900">
+
+    <label>Sua Senha</label>
+    <input type="password" id="login-senha" placeholder="Digite sua senha">
+    <p style="font-size: 11px; color: #888; margin-top: 5px;"><i>Se for seu primeiro acesso, digite a senha que deseja criar para o seu usuário.</i></p>
+
+    <button class="btn-enviar" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
+</div>
+
 <div class="main-card" id="tela-relogio" style="display: none;">
     <div class="header-logo">
         <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
         <div class="title-top">Relógio de Ponto Digital</div>
     </div>
 
-    <label style="text-align: center; margin-bottom: 5px;">Quem é você?</label>
-    <select id="relogio-func-select" class="lista-funcs" style="margin-bottom: 20px;"><option value="">Carregando...</option></select>
+    <h3 style="text-align: center; color: var(--dark-navy); margin-bottom: 5px;">Olá, <span id="nome-logado"></span></h3>
+    
+    <label style="margin-top: 20px;">Em qual local/obra você está agora?</label>
+    <input type="text" id="obra-atual" placeholder="Ex: Obra Centro, Condomínio, Escritório...">
 
-    <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #666;">
-        ⚠️ Seu aparelho pedirá permissão de Localização (GPS). Você <b>precisa permitir</b> para bater o ponto.
+    <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
+        ⚠️ O sistema verificará sua localização via satélite (GPS) para validar o ponto.
     </div>
 
     <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTRAR ENTRADA</button>
     <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTRAR SAÍDA</button>
+
+    <button class="btn-logout" onclick="fazerLogout()">Sair da Conta (Logout)</button>
 </div>
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
@@ -199,19 +225,72 @@
 
     window.listaFuncionarios = {};
 
-    // ROTEAMENTO: O que mostrar na tela?
+    // --- ROTEAMENTO INTELIGENTE ---
     if (valeId) {
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
-        document.getElementById('tela-relogio').style.display = 'block';
-        carregarListaDeFuncionarios();
+        // Verifica se o funcionário já está logado no celular dele
+        const idLogado = localStorage.getItem('funcLogadoId');
+        if (idLogado) {
+            document.getElementById('tela-relogio').style.display = 'block';
+            document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
+        } else {
+            document.getElementById('tela-login').style.display = 'block';
+        }
     } else {
         document.getElementById('tela-patrao').style.display = 'block';
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES GERAIS ---
+    // --- FUNÇÕES DE LOGIN (SISTEMA DE USUÁRIOS) ---
+    window.fazerLogin = async function() {
+        const cpf = document.getElementById('login-cpf').value;
+        const senha = document.getElementById('login-senha').value;
+
+        if(!cpf || !senha) return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
+
+        Swal.fire({title: 'Autenticando...', allowOutsideClick: false});
+        Swal.showLoading();
+
+        try {
+            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão te cadastrar.', 'error');
+                return;
+            }
+
+            const funcDoc = querySnapshot.docs[0];
+            const funcData = funcDoc.data();
+
+            if (!funcData.senha) {
+                // PRIMEIRO ACESSO: CRIA A SENHA AUTOMATICAMENTE
+                await updateDoc(doc(db, "funcionarios", funcDoc.id), { senha: senha });
+                localStorage.setItem('funcLogadoId', funcDoc.id);
+                localStorage.setItem('funcLogadoNome', funcData.nome);
+                Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
+            } else {
+                // ACESSOS SEGUINTES: VERIFICA A SENHA
+                if (funcData.senha !== senha) {
+                    Swal.fire('Erro', 'Senha incorreta!', 'error');
+                } else {
+                    localStorage.setItem('funcLogadoId', funcDoc.id);
+                    localStorage.setItem('funcLogadoNome', funcData.nome);
+                    location.reload(); // Recarrega para abrir a tela do relógio
+                }
+            }
+        } catch(e) { console.error(e); Swal.fire('Erro', 'Falha na conexão.', 'error'); }
+    };
+
+    window.fazerLogout = function() {
+        localStorage.removeItem('funcLogadoId');
+        localStorage.removeItem('funcLogadoNome');
+        location.reload();
+    };
+
+    // --- FUNÇÕES GERAIS PATRÃO ---
     window.mudarAba = function(aba) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -224,7 +303,7 @@
             const q = query(collection(db, "funcionarios"), orderBy("nome"));
             const querySnapshot = await getDocs(q);
             
-            let opcoesHTML = '<option value="">Selecione seu nome...</option>';
+            let opcoesHTML = '<option value="">Selecione o funcionário...</option>';
             let gerenciaHTML = '';
             window.listaFuncionarios = {};
 
@@ -241,31 +320,30 @@
                     <div class="func-item">
                         <div>
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
-                            <span style="font-size: 12px; color: #666;">📱 ${func.tel}</span>
+                            <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span>
                         </div>
                         <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
                     </div>
                 `;
             });
 
-            // Atualiza todos os selects da tela
             document.querySelectorAll('.lista-funcs').forEach(select => select.innerHTML = opcoesHTML);
             if(document.getElementById('lista-funcionarios-gerencial')) document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
-        } catch(e) { console.error("Erro ao carregar funcionários:", e); }
+        } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO (GPS) ---
+    // --- FUNÇÕES DE PONTO (GPS E OBRA) ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
-        Swal.fire('Link Copiado!', 'Envie este link no WhatsApp do seu funcionário para ele bater o ponto.', 'success');
+        Swal.fire('Link Copiado!', 'Envie este link para a equipe acessar o Ponto Digital.', 'success');
     };
 
     window.baterPonto = function(tipo) {
-        const funcId = document.getElementById('relogio-func-select').value;
-        if(!funcId) return Swal.fire('Atenção', 'Selecione o seu nome na lista!', 'warning');
+        const obra = document.getElementById('obra-atual').value;
+        if(!obra) return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
 
-        Swal.fire({title: 'Buscando sua localização...', text: 'Aguarde um momento', allowOutsideClick: false});
+        Swal.fire({title: 'Buscando sua localização...', text: 'Isso é obrigatório para bater o ponto.', allowOutsideClick: false});
         Swal.showLoading();
 
         if (navigator.geolocation) {
@@ -273,28 +351,31 @@
                 async (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    const funcionario = window.listaFuncionarios[funcId];
+                    
+                    const funcId = localStorage.getItem('funcLogadoId');
+                    const funcNome = localStorage.getItem('funcLogadoNome');
                     const dataAtual = new Date();
                     
                     try {
                         await addDoc(collection(db, "ponto_registros"), {
                             funcionario_id: funcId,
-                            nome: funcionario.nome,
+                            nome: funcNome,
                             tipo: tipo,
+                            obra: obra,
                             data: dataAtual.toLocaleDateString('pt-BR'),
                             hora: dataAtual.toLocaleTimeString('pt-BR'),
                             latitude: lat,
                             longitude: lng,
                             timestamp: dataAtual.getTime()
                         });
-                        Swal.fire('Sucesso!', `${tipo} registrada às ${dataAtual.toLocaleTimeString('pt-BR')}`, 'success');
-                        document.getElementById('relogio-func-select').value = '';
+                        Swal.fire('Sucesso!', `${tipo} em "${obra}" registrada às ${dataAtual.toLocaleTimeString('pt-BR')}`, 'success');
+                        document.getElementById('obra-atual').value = '';
                     } catch(e) {
                         Swal.fire('Erro', 'Problema ao salvar no sistema.', 'error');
                     }
                 },
                 (error) => {
-                    Swal.fire('Erro de GPS', 'Você precisa permitir o acesso à sua localização para bater o ponto.', 'error');
+                    Swal.fire('Erro de GPS', 'Você precisa clicar em "Permitir" quando o celular pedir sua localização, senão o ponto não funciona!', 'error');
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
@@ -319,30 +400,30 @@
                 return;
             }
 
-            // Ordenar por data (mais recente)
             let registros = [];
             querySnapshot.forEach((doc) => registros.push(doc.data()));
-            registros.sort((a, b) => b.timestamp - a.timestamp);
+            registros.sort((a, b) => b.timestamp - a.timestamp); // Mais recentes primeiro
 
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
+                const linkMaps = `https://www.google.com/maps/search/?api=1&query=$?q=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
                     <div class="resultado-item" style="border-left-color: ${cor}">
                         <b style="color: ${cor}">${dados.tipo}</b> - ${dados.data} às ${dados.hora} <br>
-                        <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                        <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
+                        <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA (GPS EXATO)</button>
                     </div>
                 `;
             });
         } catch(e) { divLista.innerHTML = "Erro ao buscar."; }
     };
 
-    // --- RESTANTE DO CÓDIGO (Vales e Cadastros) ---
+    // --- CADASTROS E VALES (PATRÃO) ---
     window.excluirFuncionario = async function(id, nome) {
         Swal.fire({
-            title: 'Excluir Funcionário?', text: `Deseja excluir ${nome}?`, icon: 'warning',
+            title: 'Excluir?', text: `Deseja excluir ${nome}?`, icon: 'warning',
             showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#1a2a43', confirmButtonText: 'Sim'
         }).then(async (result) => {
             if (result.isConfirmed) {
@@ -356,13 +437,17 @@
 
     document.getElementById('btnCadastrarFunc').onclick = async function() {
         const nome = document.getElementById('c-nome').value;
+        const cpf = document.getElementById('c-cpf').value;
         const tel = document.getElementById('c-tel').value;
-        if(!nome || !tel) return Swal.fire('Atenção', 'Preencha Nome e WhatsApp', 'warning');
+
+        if(!nome || !tel || !cpf) return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
+        
         const btn = document.getElementById('btnCadastrarFunc'); btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
+        
         try {
-            await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel });
-            Swal.fire('Sucesso!', 'Cadastrado.', 'success');
-            document.getElementById('c-nome').value = ''; document.getElementById('c-tel').value = '';
+            await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
+            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha dele acessando o link do ponto.', 'success');
+            document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = ''; document.getElementById('c-tel').value = '';
             carregarListaDeFuncionarios();
         } catch(e) { Swal.fire('Erro', 'Falha.', 'error'); } finally { btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false; }
     };
