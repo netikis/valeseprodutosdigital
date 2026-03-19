@@ -3,122 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FH Construções - Vales e Produtos</title>
+    <title>Sistema de Vales - FH Construções</title>
     
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --azul-fh: #1a3a5a; --cinza-fundo: #f4f7f9; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--cinza-fundo); margin: 0; padding: 15px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 450px; margin: auto; border-top: 8px solid var(--azul-fh); }
+        /* Paleta de Cores Premium FH Construções */
+        :root { 
+            --dark-navy: #1a2a43; 
+            --gold: #d4a017; 
+            --light-bg: #f4f7f6; 
+            --white: #ffffff;
+            --text-color: #333333;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--light-bg); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-color); 
+        }
+
+        .main-card { 
+            background: var(--white); 
+            padding: 30px 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); 
+            max-width: 480px; 
+            margin: auto; 
+            border-top: 6px solid var(--dark-navy); 
+        }
         
-        .logo-container { text-align: center; margin-bottom: 20px; }
-        .logo-img { max-width: 180px; height: auto; margin-bottom: 10px; }
-        .title-top { color: var(--azul-fh); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-logo { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .logo-img { max-width: 160px; height: auto; margin-bottom: 5px; }
+        .title-top { color: var(--dark-navy); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
-        label { display: block; margin-top: 12px; font-weight: bold; font-size: 12px; color: #555; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; font-family: inherit; }
+        label { display: block; margin-top: 15px; font-weight: 600; font-size: 13px; color: var(--dark-navy); text-transform: uppercase; }
+        input, select, textarea { 
+            width: 100%; padding: 12px; margin-top: 8px; 
+            border: 2px solid #e0e6ed; border-radius: 10px; 
+            box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif;
+            transition: 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--gold); outline: none; }
 
-        #area-recibo { border: 1px solid #eee; padding: 20px; border-radius: 12px; margin-top: 25px; background: #fff; }
-        .recibo-header { text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: #000; }
-        .data-recibo { text-align: center; font-size: 11px; color: #888; margin-bottom: 15px; }
+        /* Botões */
+        .btn-enviar { 
+            background: var(--dark-navy); color: var(--white); border: none; 
+            padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; 
+            font-size: 15px; margin-top: 25px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-enviar:hover { background: #121e30; }
         
-        #texto-recibo-dinamico { font-size: 14px; line-height: 1.6; text-align: justify; }
+        .btn-gold { 
+            background: var(--gold); color: var(--dark-navy); border: none; 
+            padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; 
+            font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-gold:hover { background: #b88a12; }
 
-        canvas { border: 1px solid #f0f0f0; background: #fafafa; width: 100%; height: 140px; border-radius: 8px; touch-action: none; margin-top: 10px; }
-        .btn-limpar { background: none; border: none; color: #d9534f; font-size: 10px; cursor: pointer; margin-top: 5px; display: block; width: 100%; text-align: center; }
+        .btn-limpar { background: #f8d7da; color: #721c24; border: none; font-weight: 600; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 10px; width: 100%; }
 
-        .btn-enviar { background: var(--azul-fh); color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
-        .config-btn { text-align: center; margin-top: 20px; font-size: 11px; color: #ccc; cursor: pointer; text-decoration: none; display: block; }
+        /* Sistema de Abas */
+        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 13px; }
+        .tab { flex: 1; text-align: center; padding: 10px 5px; cursor: pointer; font-weight: 600; color: #aaa; transition: 0.3s; }
+        .tab.active { color: var(--dark-navy); border-bottom: 3px solid var(--gold); }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* Recibo e Assinatura */
+        #area-recibo { border: 1px solid #e0e6ed; padding: 25px; border-radius: 15px; margin-top: 20px; background: #fafcff; position: relative; }
+        .recibo-header { text-align: center; font-weight: 700; border-bottom: 2px solid var(--dark-navy); padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: var(--dark-navy); }
+        .data-recibo { text-align: center; font-size: 12px; color: #666; margin-bottom: 15px; font-weight: 600;}
+        #texto-recibo-dinamico { font-size: 14px; line-height: 1.7; text-align: justify; color: #444; }
+
+        canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 160px; border-radius: 10px; touch-action: none; margin-top: 15px; }
+        
+        /* Lista de Buscas */
+        .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 10px; margin-top: 10px; background: #fff; border-left: 4px solid var(--gold); }
+        .btn-pdf { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: 600; font-size: 13px;}
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="logo-container">
-        <img src="logo.jpg" alt="FH Construções" class="logo-img">
-        <div class="title-top">Recibo Digital de Vales e Produtos</div>
+<div class="main-card" id="tela-patrao" style="display: none;">
+    <div class="header-logo">
+        <img src="logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <div class="title-top">Painel de Gestão - RH</div>
     </div>
 
-    <label>Nome do Funcionário</label>
-    <input type="text" id="nome" placeholder="Nome completo">
+    <div class="tabs">
+        <div class="tab active" onclick="mudarAba('cadastrar')">1. Funcionários</div>
+        <div class="tab" onclick="mudarAba('criar')">2. Criar Vale</div>
+        <div class="tab" onclick="mudarAba('buscar')">3. Arquivo</div>
+    </div>
 
-    <div style="display: flex; gap: 10px;">
-        <div style="flex: 1;">
-            <label>Valor (R$)</label>
-            <input type="number" id="valor" placeholder="0,00">
+    <div id="aba-cadastrar" class="view-section active">
+        <label>Novo Funcionário (Nome Completo)</label>
+        <input type="text" id="c-nome" placeholder="Ex: João da Silva">
+
+        <label>WhatsApp (com DDD)</label>
+        <input type="number" id="c-tel" placeholder="Ex: 43999999999">
+
+        <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
+    </div>
+
+    <div id="aba-criar" class="view-section">
+        <label>Selecione o Funcionário</label>
+        <select id="p-func-select">
+            <option value="">Carregando funcionários...</option>
+        </select>
+
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <div style="flex: 1.2;">
+                <label>Valor (R$)</label>
+                <input type="number" id="p-valor" placeholder="0,00">
+            </div>
+            <div style="flex: 1;">
+                <label>Tipo</label>
+                <select id="p-tipo">
+                    <option value="Dinheiro">💰 Dinheiro</option>
+                    <option value="Produto">📦 Produto</option>
+                </select>
+            </div>
         </div>
-        <div style="flex: 1;">
-            <label>Tipo</label>
-            <select id="tipo">
-                <option value="Dinheiro">💰 Vale Dinheiro</option>
-                <option value="Produto">📦 Produto</option>
+
+        <label>Descrição / Referente a:</label>
+        <textarea id="p-desc" rows="2" placeholder="Ex: Adiantamento da quinzena / EPIs"></textarea>
+
+        <button class="btn-enviar" id="btnGerarLink">GERAR VALE E ENVIAR LINK</button>
+    </div>
+
+    <div id="aba-buscar" class="view-section">
+        <label>Histórico do Funcionário:</label>
+        <div style="display: flex; gap: 10px;">
+            <select id="b-func-select" style="margin: 0; flex: 2;">
+                <option value="">Carregando funcionários...</option>
             </select>
+            <button onclick="buscarVales()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
+        </div>
+        <div id="lista-resultados" style="margin-top: 20px;">
+            <p style="text-align: center; color: #888; font-size: 13px;">Selecione um funcionário para ver os recibos assinados.</p>
         </div>
     </div>
-
-    <label>Descrição</label>
-    <textarea id="desc" rows="2" placeholder="Ex: Adiantamento da semana / Bota de segurança"></textarea>
-
-    <div id="area-recibo">
-        <div id="logo-pdf" style="display: none; text-align: center; margin-bottom: 20px;">
-            <img src="logo.jpg" style="max-width: 150px;">
-            <div style="font-weight: bold; color: #1a3a5a; font-size: 16px; margin-top: 5px;">FH CONSTRUÇÕES</div>
-        </div>
-
-        <div class="recibo-header">RECIBO OFICIAL</div>
-        <div class="data-recibo" id="data-atual">--/--/----</div>
-        
-        <div id="texto-recibo-dinamico">
-            Eu, <b>__________</b>, recebi da empresa <b>FH Construções</b> a quantia de <b>R$ 0,00</b>, referente a <b>__________</b>.
-        </div>
-        
-        <p style="font-size: 11px; color: #888; text-align: center; margin-top: 25px; margin-bottom: 5px;">Assinatura do Funcionário:</p>
-        <canvas id="signature-pad"></canvas>
-        <button class="btn-limpar" id="btnLimparAssinatura" onclick="limpar()">Limpar Assinatura</button>
-    </div>
-
-    <button class="btn-enviar" id="btnFinalizar">GERAR PDF E ENVIAR WHATSAPP</button>
-    
-    <a class="config-btn" onclick="configurar()">⚙️ Configurações</a>
 </div>
 
-<script>
-    const dt = new Date();
-    document.getElementById('data-atual').innerText = dt.toLocaleDateString('pt-BR');
 
-    function atualizarRecibo() {
-        const nome = document.getElementById('nome').value || '__________';
-        const valor = document.getElementById('valor').value || '0,00';
-        const tipo = document.getElementById('tipo').value;
-        const desc = document.getElementById('desc').value || '__________';
-        const areaTexto = document.getElementById('texto-recibo-dinamico');
+<div class="main-card" id="tela-funcionario" style="display: none;">
+    <div class="header-logo">
+        <img src="logo.jpeg" alt="FH Construções" class="logo-img" onerror="this.src='https://via.placeholder.com/160x60?text=FH+Construcoes'">
+        <div class="title-top">Recibo Digital Oficial</div>
+    </div>
 
-        if (tipo === 'Dinheiro') {
-            areaTexto.innerHTML = `Eu, <b>${nome}</b>, recebi da empresa <b>FH Construções</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.`;
-        } else {
-            areaTexto.innerHTML = `Eu, <b>${nome}</b>, adquiri da empresa <b>FH Construções</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
+    <div id="area-recibo">
+        <div class="recibo-header">RECIBO DE ASSINATURA</div>
+        <div class="data-recibo" id="f-data">--/--/----</div>
+        
+        <div id="f-texto">
+            Carregando dados do documento...
+        </div>
+        
+        <label style="text-align: center; margin-top: 30px;">ASSINATURA DIGITAL AQUI:</label>
+        <canvas id="signature-pad"></canvas>
+        <button class="btn-limpar" onclick="limpar()">Corrigir Assinatura</button>
+    </div>
+
+    <button class="btn-gold" id="btnAssinar" style="margin-top: 25px;">CONFIRMAR E ASSINAR</button>
+</div>
+
+
+<div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
+    <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
+        <img src="logo.jpeg" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none'">
+        <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
+    </div>
+    <p style="text-align: right; font-size: 14px; color: #666; font-weight: 600;" id="pdf-data"></p>
+    <div id="pdf-texto" style="font-size: 18px; line-height: 1.8; text-align: justify; margin: 50px 0; color: #333;"></div>
+    
+    <div style="margin-top: 80px; text-align: center;">
+        <img id="pdf-assinatura" src="" style="max-height: 140px; margin-bottom: 5px;">
+        <div style="border-top: 1px solid #1a2a43; width: 60%; margin: 0 auto; padding-top: 8px; font-size: 16px; font-weight: bold; color: #1a2a43;" id="pdf-nome-ass"></div>
+        <div style="font-size: 13px; color: #666; margin-top: 5px;">Assinatura Digital do Funcionário</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBKlQXW4JRrPxv_NcoG8Jq2-7KZZALrTuU",
+        authDomain: "fhconstrucoes-f36d0.firebaseapp.com",
+        projectId: "fhconstrucoes-f36d0",
+        storageBucket: "fhconstrucoes-f36d0.firebasestorage.app",
+        messagingSenderId: "621427159155",
+        appId: "1:621427159155:web:85a4975d35a24513d6ba06"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Identificar modo Patrão x Funcionário
+    const urlParams = new URLSearchParams(window.location.search);
+    const valeId = urlParams.get('id');
+
+    window.listaFuncionarios = {};
+
+    if (valeId) {
+        document.getElementById('tela-funcionario').style.display = 'block';
+        carregarValeParaAssinatura(valeId);
+    } else {
+        document.getElementById('tela-patrao').style.display = 'block';
+        carregarListaDeFuncionarios();
+    }
+
+    // --- FUNÇÕES DO PATRÃO ---
+
+    window.mudarAba = function(aba) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById(`aba-${aba}`).classList.add('active');
+    };
+
+    async function carregarListaDeFuncionarios() {
+        try {
+            const q = query(collection(db, "funcionarios"), orderBy("nome"));
+            const querySnapshot = await getDocs(q);
+            
+            let opcoesHTML = '<option value="">Selecione um funcionário...</option>';
+            window.listaFuncionarios = {};
+
+            querySnapshot.forEach((docSnap) => {
+                const func = docSnap.data();
+                window.listaFuncionarios[docSnap.id] = func;
+                opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
+            });
+
+            document.getElementById('p-func-select').innerHTML = opcoesHTML;
+            document.getElementById('b-func-select').innerHTML = opcoesHTML;
+        } catch(e) {
+            console.error("Erro ao carregar funcionários:", e);
         }
     }
 
-    const campos = ['nome', 'valor', 'tipo', 'desc'];
-    campos.forEach(id => document.getElementById(id).addEventListener('input', atualizarRecibo));
+    document.getElementById('btnCadastrarFunc').onclick = async function() {
+        const nome = document.getElementById('c-nome').value;
+        const tel = document.getElementById('c-tel').value;
+
+        if(!nome || !tel) return Swal.fire('Atenção', 'Preencha o Nome e o WhatsApp', 'warning');
+
+        const btn = document.getElementById('btnCadastrarFunc');
+        btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel });
+            Swal.fire('Sucesso!', 'Funcionário cadastrado na base de dados.', 'success');
+            document.getElementById('c-nome').value = '';
+            document.getElementById('c-tel').value = '';
+            carregarListaDeFuncionarios();
+        } catch(e) {
+            Swal.fire('Erro', 'Falha ao cadastrar. Verifique sua conexão.', 'error');
+        } finally {
+            btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false;
+        }
+    };
+
+    document.getElementById('btnGerarLink').onclick = async function() {
+        const funcId = document.getElementById('p-func-select').value;
+        const valor = document.getElementById('p-valor').value;
+        const tipo = document.getElementById('p-tipo').value;
+        const desc = document.getElementById('p-desc').value || 'Não informada';
+
+        if(!funcId || !valor) return Swal.fire('Atenção', 'Selecione o funcionário e digite o valor!', 'warning');
+
+        const btn = document.getElementById('btnGerarLink');
+        btn.innerText = "⏳ GERANDO..."; btn.disabled = true;
+
+        const funcionario = window.listaFuncionarios[funcId];
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        
+        let textoCompleto = "";
+        if (tipo === 'Dinheiro') {
+            textoCompleto = `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.`;
+        } else {
+            textoCompleto = `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
+        }
+
+        try {
+            const docRef = await addDoc(collection(db, "vales_sistema"), {
+                funcionario_id: funcId, nome: funcionario.nome, tel: funcionario.tel,
+                valor: valor, tipo: tipo, descricao: desc, texto: textoCompleto,
+                data_criacao: dataAtual, status: "pendente", assinatura: null
+            });
+
+            const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
+            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nPor favor, clique no link abaixo para assinar digitalmente:\n${linkUnico}`;
+
+            Swal.fire('Link Gerado!', 'O WhatsApp será aberto para você enviar ao funcionário.', 'success').then(() => {
+                window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`;
+                document.getElementById('p-func-select').value = '';
+                document.getElementById('p-valor').value = '';
+                document.getElementById('p-desc').value = '';
+                btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false;
+            });
+
+        } catch(e) {
+            console.error(e); Swal.fire('Erro', 'Falha ao criar documento.', 'error');
+            btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false;
+        }
+    };
+
+    window.buscarVales = async function() {
+        const funcId = document.getElementById('b-func-select').value;
+        if(!funcId) return Swal.fire('Atenção', 'Selecione um funcionário na lista.', 'warning');
+        
+        const divLista = document.getElementById('lista-resultados');
+        divLista.innerHTML = "Buscando documentos...";
+
+        try {
+            const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                divLista.innerHTML = `<p style="color:#d9534f; text-align:center; font-weight:bold;">Nenhum recibo assinado encontrado.</p>`;
+                return;
+            }
+
+            divLista.innerHTML = "";
+            window.valesEncontrados = {}; 
+
+            querySnapshot.forEach((docSnap) => {
+                const dados = docSnap.data();
+                window.valesEncontrados[docSnap.id] = dados;
+                
+                divLista.innerHTML += `
+                    <div class="resultado-item">
+                        <b style="color:var(--dark-navy);">Data:</b> ${dados.data_criacao} <br>
+                        <b style="color:var(--dark-navy);">Tipo:</b> ${dados.tipo} <br>
+                        <b style="color:var(--dark-navy);">Valor:</b> R$ ${dados.valor} <br>
+                        <button class="btn-pdf" onclick="gerarEnviarPDF('${docSnap.id}')">📄 BAIXAR PDF OFICIAL</button>
+                    </div>
+                `;
+            });
+        } catch(e) { console.error(e); divLista.innerHTML = "Erro ao buscar."; }
+    };
+
+    window.gerarEnviarPDF = async function(id) {
+        const dados = window.valesEncontrados[id];
+        Swal.fire({title: 'Gerando Documento...', allowOutsideClick: false});
+        Swal.showLoading();
+
+        document.getElementById('pdf-data').innerText = "Data da Assinatura: " + dados.data_criacao;
+        document.getElementById('pdf-texto').innerHTML = dados.texto;
+        document.getElementById('pdf-assinatura').src = dados.assinatura;
+        document.getElementById('pdf-nome-ass').innerText = dados.nome;
+
+        try {
+            await new Promise(r => setTimeout(r, 300)); 
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const element = document.getElementById('area-pdf-escondida');
+            
+            const canvasImg = await html2canvas(element, { scale: 2, useCORS: true });
+            const imgData = canvasImg.toDataURL('image/jpeg');
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+            const file = new File([pdf.output('blob')], `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`, { type: "application/pdf" });
+            const msg = `*FH Construções*\n\nOlá ${dados.nome}, segue em anexo a sua via do recibo digital assinado em ${dados.data_criacao}.`;
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: 'Recibo', text: msg });
+                    Swal.close();
+                } catch(e) { Swal.close(); }
+            } else {
+                pdf.save(`Recibo_${dados.nome}.pdf`);
+                Swal.fire('PDF Baixado!', 'Envie o arquivo que foi salvo no seu dispositivo.', 'success').then(()=>{
+                    window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`;
+                });
+            }
+        } catch(e) { console.error(e); Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error'); }
+    };
+
+    // --- FUNÇÕES DO FUNCIONÁRIO (Assinatura) ---
+    async function carregarValeParaAssinatura(id) {
+        try {
+            const docRef = doc(db, "vales_sistema", id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const dados = docSnap.data();
+                if(dados.status === 'assinado') {
+                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento já assinado!</h3><p style="color:#666;">Agradecemos a confirmação.</p></div>`;
+                    return;
+                }
+                document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao;
+                document.getElementById('f-texto').innerHTML = dados.texto;
+                resizeCanvas();
+            } else {
+                document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido ou expirado.</h3>`;
+            }
+        } catch(e) { console.error(e); }
+    }
 
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
 
-    function resize() {
+    function resizeCanvas() {
+        if(!canvas) return;
         const ratio = window.devicePixelRatio || 1;
         canvas.width = canvas.offsetWidth * ratio;
         canvas.height = canvas.offsetHeight * ratio;
         ctx.scale(ratio, ratio);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#1a3a5a";
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#1a2a43"; /* Tinta da caneta em azul marinho */
     }
-    window.onload = resize;
 
     const getPos = (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -127,113 +437,41 @@
         return { x: clientX - rect.left, y: clientY - rect.top };
     };
 
-    const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-    const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-    const stop = () => drawing = false;
+    if(canvas) {
+        const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+        const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+        const stop = () => drawing = false;
 
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', stop);
-    canvas.addEventListener('touchstart', start, {passive: false});
-    canvas.addEventListener('touchmove', move, {passive: false});
-    window.addEventListener('touchend', stop);
-
-    function limpar() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-    function configurar() {
-        Swal.fire({
-            title: 'Configurar WhatsApp',
-            input: 'text',
-            inputLabel: 'Número com DDD (ex: 43996408964)',
-            inputValue: localStorage.getItem('tel_fh') || '43996408964',
-            showCancelButton: true
-        }).then((res) => {
-            if (res.isConfirmed) {
-                localStorage.setItem('tel_fh', res.value.replace(/\D/g, ''));
-                Swal.fire('Salvo!', '', 'success');
-            }
-        });
+        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+        canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', stop);
+        window.limpar = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
     }
 
-    document.getElementById('btnFinalizar').onclick = async function() {
-        const n = document.getElementById('nome').value;
-        const v = document.getElementById('valor').value;
-        if(!n || !v) return Swal.fire('Atenção', 'Preencha Nome e Valor antes de assinar!', 'warning');
-        
-        const btn = document.getElementById('btnFinalizar');
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ GERANDO PDF...";
-        btn.disabled = true;
-
-        // Mostra a logo e esconde o botão de limpar para a "foto"
-        document.getElementById('logo-pdf').style.display = 'block';
-        document.getElementById('btnLimparAssinatura').style.display = 'none';
+    document.getElementById('btnAssinar').onclick = async function() {
+        const btn = document.getElementById('btnAssinar');
+        btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
 
         try {
-            // Aguarda 300ms para o navegador renderizar a imagem antes de tirar a foto (evita erros comuns)
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const assinaturaImg = canvas.toDataURL('image/png');
 
-            const reciboArea = document.getElementById('area-recibo');
-            
-            // Tira print (useCORS garante que a logo não dê erro de segurança)
-            const canvasImg = await html2canvas(reciboArea, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-            const imgData = canvasImg.toDataURL('image/jpeg', 0.95);
+            await updateDoc(doc(db, "vales_sistema", valeId), {
+                assinatura: assinaturaImg,
+                status: "assinado"
+            });
 
-            // Gera PDF
-            const jsPDF = window.jspdf.jsPDF;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            
-            const nomeArquivo = `Recibo_${n.replace(/\s+/g, '_')}.pdf`;
-            const pdfBlob = pdf.output('blob');
-            const file = new File([pdfBlob], nomeArquivo, { type: "application/pdf" });
+            Swal.fire({
+                title: 'Assinado!', 
+                text: 'Documento registrado no sistema da empresa.', 
+                icon: 'success',
+                allowOutsideClick: false,
+                confirmButtonColor: '#1a2a43'
+            }).then(() => {
+                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="logo.jpeg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3><p style="color:#666;">Você já pode fechar esta página.</p></div>`;
+            });
 
-            const tel = localStorage.getItem('tel_fh') || "43996408964";
-            const tipo = document.getElementById('tipo').value;
-            const dataStr = document.getElementById('data-atual').innerText;
-            const msg = `*FH Construções*\n*Recibo de ${tipo}*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n}\n*Valor:* R$ ${v}`;
-
-            let compartilhouComSucesso = false;
-
-            // Tenta abrir a aba de compartilhamento nativa do celular
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Recibo FH Construções',
-                        text: msg
-                    });
-                    compartilhouComSucesso = true;
-                } catch (shareError) {
-                    // Se o usuário cancelou, ignoramos o erro
-                    if (shareError.name === 'AbortError') {
-                        compartilhouComSucesso = true; 
-                    } else {
-                        console.error("Falha ao compartilhar:", shareError);
-                    }
-                }
-            }
-
-            // Se o celular não suportar ou der erro no compartilhamento (Fallback seguro)
-            if (!compartilhouComSucesso) {
-                pdf.save(nomeArquivo);
-                await Swal.fire('Tudo Certo!', 'O PDF foi baixado no seu celular. Agora o WhatsApp será aberto para você enviar a mensagem e anexar o documento.', 'success');
-                window.location.href = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
-            }
-
-        } catch (erro) {
-            console.error(erro);
-            // Agora, se houver erro, ele avisa exatamente o que quebrou.
-            Swal.fire('Erro ao Gerar PDF', 'Detalhe: ' + erro.message, 'error');
-        } finally {
-            // Retorna o botão e a tela ao estado normal
-            document.getElementById('logo-pdf').style.display = 'none';
-            document.getElementById('btnLimparAssinatura').style.display = 'block';
-            btn.innerText = originalText;
-            btn.disabled = false;
+        } catch(e) {
+            console.error(e); Swal.fire('Erro', 'Tente assinar novamente.', 'error');
+            btn.innerText = "CONFIRMAR E ASSINAR"; btn.disabled = false;
         }
     };
 </script>
