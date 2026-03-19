@@ -86,17 +86,14 @@
 </div>
 
 <script>
-    // Data Automática
     const dt = new Date();
     document.getElementById('data-atual').innerText = dt.toLocaleDateString('pt-BR');
 
-    // Função que muda a frase
     function atualizarRecibo() {
         const nome = document.getElementById('nome').value || '__________';
         const valor = document.getElementById('valor').value || '0,00';
         const tipo = document.getElementById('tipo').value;
         const desc = document.getElementById('desc').value || '__________';
-        
         const areaTexto = document.getElementById('texto-recibo-dinamico');
 
         if (tipo === 'Dinheiro') {
@@ -107,11 +104,8 @@
     }
 
     const campos = ['nome', 'valor', 'tipo', 'desc'];
-    campos.forEach(id => {
-        document.getElementById(id).addEventListener('input', atualizarRecibo);
-    });
+    campos.forEach(id => document.getElementById(id).addEventListener('input', atualizarRecibo));
 
-    // Assinatura
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -161,7 +155,6 @@
         });
     }
 
-    // --- LÓGICA DE GERAÇÃO E COMPARTILHAMENTO DO PDF ---
     document.getElementById('btnFinalizar').onclick = async function() {
         const n = document.getElementById('nome').value;
         const v = document.getElementById('valor').value;
@@ -169,30 +162,33 @@
         
         const btn = document.getElementById('btnFinalizar');
         const originalText = btn.innerText;
-        btn.innerText = "⏳ GERANDO PDF OFICIAL...";
+        btn.innerText = "⏳ GERANDO PDF...";
         btn.disabled = true;
 
-        // Prepara a área para tirar a "foto" limpa
-        document.getElementById('logo-pdf').style.display = 'block'; // Mostra logo no PDF
-        document.getElementById('btnLimparAssinatura').style.display = 'none'; // Esconde o botão de limpar
+        // Mostra a logo e esconde o botão de limpar para a "foto"
+        document.getElementById('logo-pdf').style.display = 'block';
+        document.getElementById('btnLimparAssinatura').style.display = 'none';
 
         try {
-            // 1. Tira o Print da área do Recibo
-            const reciboArea = document.getElementById('area-recibo');
-            const canvasImg = await html2canvas(reciboArea, { scale: 2, backgroundColor: "#ffffff" });
-            const imgData = canvasImg.toDataURL('image/png');
+            // Aguarda 300ms para o navegador renderizar a imagem antes de tirar a foto (evita erros comuns)
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-            // 2. Constrói o PDF
-            const { jsPDF } = window.jspdf;
+            const reciboArea = document.getElementById('area-recibo');
+            
+            // Tira print (useCORS garante que a logo não dê erro de segurança)
+            const canvasImg = await html2canvas(reciboArea, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+            const imgData = canvasImg.toDataURL('image/jpeg', 0.95);
+
+            // Gera PDF
+            const jsPDF = window.jspdf.jsPDF;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
             
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
-            // 3. Converte PDF para arquivo para ser compartilhado
-            const pdfBlob = pdf.output('blob');
             const nomeArquivo = `Recibo_${n.replace(/\s+/g, '_')}.pdf`;
+            const pdfBlob = pdf.output('blob');
             const file = new File([pdfBlob], nomeArquivo, { type: "application/pdf" });
 
             const tel = localStorage.getItem('tel_fh') || "43996408964";
@@ -200,25 +196,40 @@
             const dataStr = document.getElementById('data-atual').innerText;
             const msg = `*FH Construções*\n*Recibo de ${tipo}*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n}\n*Valor:* R$ ${v}`;
 
-            // 4. Compartilha direto (se estiver no celular)
+            let compartilhouComSucesso = false;
+
+            // Tenta abrir a aba de compartilhamento nativa do celular
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Recibo FH Construções',
-                    text: msg
-                });
-            } else {
-                // Se estiver no Computador (Faz o download e abre o WhatsApp)
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Recibo FH Construções',
+                        text: msg
+                    });
+                    compartilhouComSucesso = true;
+                } catch (shareError) {
+                    // Se o usuário cancelou, ignoramos o erro
+                    if (shareError.name === 'AbortError') {
+                        compartilhouComSucesso = true; 
+                    } else {
+                        console.error("Falha ao compartilhar:", shareError);
+                    }
+                }
+            }
+
+            // Se o celular não suportar ou der erro no compartilhamento (Fallback seguro)
+            if (!compartilhouComSucesso) {
                 pdf.save(nomeArquivo);
-                await Swal.fire('PDF Gerado!', 'O PDF foi baixado no seu dispositivo. O WhatsApp será aberto agora, basta anexar o documento na conversa.', 'info');
+                await Swal.fire('Tudo Certo!', 'O PDF foi baixado no seu celular. Agora o WhatsApp será aberto para você enviar a mensagem e anexar o documento.', 'success');
                 window.location.href = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
             }
 
         } catch (erro) {
             console.error(erro);
-            Swal.fire('Erro', 'Houve um problema ao gerar o PDF.', 'error');
+            // Agora, se houver erro, ele avisa exatamente o que quebrou.
+            Swal.fire('Erro ao Gerar PDF', 'Detalhe: ' + erro.message, 'error');
         } finally {
-            // Volta a tela ao normal
+            // Retorna o botão e a tela ao estado normal
             document.getElementById('logo-pdf').style.display = 'none';
             document.getElementById('btnLimparAssinatura').style.display = 'block';
             btn.innerText = originalText;
