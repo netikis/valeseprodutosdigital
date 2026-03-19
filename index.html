@@ -22,8 +22,11 @@
 
         #area-recibo { border: 1px solid #eee; padding: 20px; border-radius: 12px; margin-top: 25px; background: #fff; }
         .recibo-header { text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: #000; }
-        .data-recibo { text-align: center; font-size: 11px; color: #888; margin-bottom: 10px; }
+        .data-recibo { text-align: center; font-size: 11px; color: #888; margin-bottom: 15px; }
         
+        /* Ajuste no texto do recibo para ficar justificado e bem alinhado */
+        #texto-recibo-dinamico { font-size: 14px; line-height: 1.6; text-align: justify; }
+
         canvas { border: 1px solid #f0f0f0; background: #fafafa; width: 100%; height: 140px; border-radius: 8px; touch-action: none; margin-top: 10px; }
         .btn-limpar { background: none; border: none; color: #d9534f; font-size: 10px; cursor: pointer; margin-top: 5px; display: block; width: 100%; text-align: center; }
 
@@ -50,26 +53,24 @@
         <div style="flex: 1;">
             <label>Tipo</label>
             <select id="tipo">
-                <option value="Dinheiro">💰 Dinheiro</option>
+                <option value="Dinheiro">💰 Vale Dinheiro</option>
                 <option value="Produto">📦 Produto</option>
             </select>
         </div>
     </div>
 
     <label>Descrição</label>
-    <textarea id="desc" rows="2" placeholder="Ex: Adiantamento de semana"></textarea>
+    <textarea id="desc" rows="2" placeholder="Ex: Adiantamento da semana / Bota de segurança"></textarea>
 
     <div id="area-recibo">
         <div class="recibo-header">RECIBO</div>
         <div class="data-recibo" id="data-atual">--/--/----</div>
         
-        <div style="font-size: 14px; line-height: 1.5;">
-            Eu, <b id="res-nome">__________</b>, recebi da empresa <b>FH Construções</b> o valor/produto referente a <b><span id="res-tipo">Dinheiro</span></b> no total de <b>R$ <span id="res-valor">0,00</span></b>.
-            <br><br>
-            <b>Descrição:</b> <span id="res-desc">...</span>
+        <div id="texto-recibo-dinamico">
+            Eu, <b>__________</b>, recebi da empresa <b>FH Construções</b> a quantia de <b>R$ 0,00</b>, referente a <b>__________</b>.
         </div>
         
-        <p style="font-size: 11px; color: #888; text-align: center; margin-top: 20px; margin-bottom: 5px;">Assinatura do Funcionário:</p>
+        <p style="font-size: 11px; color: #888; text-align: center; margin-top: 25px; margin-bottom: 5px;">Assinatura do Funcionário:</p>
         <canvas id="signature-pad"></canvas>
         <button class="btn-limpar" onclick="limpar()">Limpar Assinatura</button>
     </div>
@@ -84,15 +85,26 @@
     const dt = new Date();
     document.getElementById('data-atual').innerText = dt.toLocaleDateString('pt-BR');
 
-    // Atualização em Tempo Real
+    // Função que muda a frase dependendo da escolha
+    function atualizarRecibo() {
+        const nome = document.getElementById('nome').value || '__________';
+        const valor = document.getElementById('valor').value || '0,00';
+        const tipo = document.getElementById('tipo').value;
+        const desc = document.getElementById('desc').value || '__________';
+        
+        const areaTexto = document.getElementById('texto-recibo-dinamico');
+
+        if (tipo === 'Dinheiro') {
+            areaTexto.innerHTML = `Eu, <b>${nome}</b>, recebi da empresa <b>FH Construções</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.`;
+        } else {
+            areaTexto.innerHTML = `Eu, <b>${nome}</b>, adquiri da empresa <b>FH Construções</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
+        }
+    }
+
+    // Aciona a atualização em tempo real sempre que alguém digita ou muda o tipo
     const campos = ['nome', 'valor', 'tipo', 'desc'];
     campos.forEach(id => {
-        document.getElementById(id).oninput = () => {
-            document.getElementById('res-nome').innerText = document.getElementById('nome').value || '__________';
-            document.getElementById('res-valor').innerText = document.getElementById('valor').value || '0,00';
-            document.getElementById('res-tipo').innerText = document.getElementById('tipo').value;
-            document.getElementById('res-desc').innerText = document.getElementById('desc').value || '...';
-        };
+        document.getElementById(id).addEventListener('input', atualizarRecibo);
     });
 
     // Assinatura
@@ -155,7 +167,7 @@
         const desc = document.getElementById('desc').value || "Não informada";
         const dataStr = document.getElementById('data-atual').innerText;
 
-        const msg = `*FH Construções*\n*Recibo de Vale e Produtos*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n}\n*Tipo:* ${tipo}\n*Valor:* R$ ${v}\n*Descrição:* ${desc}`;
+        const msg = `*FH Construções*\n*Recibo de Vale/Produto*\n\n*Data:* ${dataStr}\n*Funcionário:* ${n}\n*Tipo:* ${tipo}\n*Valor:* R$ ${v}\n*Descrição:* ${desc}`;
         
         window.location.href = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
     };
