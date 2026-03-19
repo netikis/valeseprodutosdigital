@@ -111,24 +111,20 @@
     <div id="aba-cadastrar" class="view-section active">
         <label>Novo Funcionário (Nome Completo)</label>
         <input type="text" id="c-nome" placeholder="Ex: João da Silva">
-
         <label>WhatsApp (com DDD)</label>
         <input type="number" id="c-tel" placeholder="Ex: 43999999999">
-
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
         <label>Equipe Cadastrada:</label>
         <div id="lista-funcionarios-gerencial" style="margin-top: 15px;">
-            <p style="text-align: center; color: #888; font-size: 13px;">Carregando funcionários...</p>
+            <p style="text-align: center; color: #888; font-size: 13px;">Carregando...</p>
         </div>
     </div>
 
     <div id="aba-criar" class="view-section">
         <label>Selecione o Funcionário</label>
-        <select id="p-func-select">
-            <option value="">Carregando funcionários...</option>
-        </select>
+        <select id="p-func-select"><option value="">Carregando...</option></select>
 
         <div style="display: flex; gap: 10px; margin-top: 5px;">
             <div style="flex: 1.2;">
@@ -153,9 +149,7 @@
     <div id="aba-buscar" class="view-section">
         <label>Histórico do Funcionário:</label>
         <div style="display: flex; gap: 10px;">
-            <select id="b-func-select" style="margin: 0; flex: 2;">
-                <option value="">Carregando funcionários...</option>
-            </select>
+            <select id="b-func-select" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
             <button onclick="buscarVales()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
         </div>
         <div id="lista-resultados" style="margin-top: 20px;">
@@ -173,11 +167,7 @@
     <div id="area-recibo">
         <div class="recibo-header">RECIBO DE ASSINATURA</div>
         <div class="data-recibo" id="f-data">--/--/----</div>
-        
-        <div id="f-texto">
-            Carregando dados do documento...
-        </div>
-        
+        <div id="f-texto">Carregando dados...</div>
         <label style="text-align: center; margin-top: 30px;">ASSINATURA DIGITAL AQUI:</label>
         <canvas id="signature-pad"></canvas>
         <button class="btn-limpar" onclick="limpar()">Corrigir Assinatura</button>
@@ -278,12 +268,12 @@
     window.excluirFuncionario = async function(id, nome) {
         Swal.fire({
             title: 'Excluir Funcionário?',
-            text: `Você tem certeza que deseja excluir ${nome} da equipe?`,
+            text: `Deseja excluir ${nome}?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#1a2a43',
-            confirmButtonText: 'Sim, excluir!',
+            confirmButtonText: 'Sim',
             cancelButtonText: 'Cancelar'
         }).then(async (result) => {
             if (result.isConfirmed) {
@@ -351,7 +341,7 @@
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nPor favor, clique no link abaixo para assinar digitalmente:\n${linkUnico}`;
 
-            Swal.fire('Link Gerado!', 'O WhatsApp será aberto para você enviar ao funcionário.', 'success').then(() => {
+            Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => {
                 window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`;
                 document.getElementById('p-func-select').value = '';
                 document.getElementById('p-valor').value = '';
@@ -400,9 +390,10 @@
         } catch(e) { divLista.innerHTML = "Erro ao buscar."; }
     };
 
+    // FUNÇÃO DO PDF TOTALMENTE CORRIGIDA
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id];
-        Swal.fire({title: 'Gerando Documento...', allowOutsideClick: false});
+        Swal.fire({title: 'Gerando Documento...', text: 'Isso pode levar alguns segundos', allowOutsideClick: false});
         Swal.showLoading();
 
         document.getElementById('pdf-data').innerText = "Data da Assinatura: " + dados.data_criacao;
@@ -411,7 +402,7 @@
         document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
         try {
-            await new Promise(r => setTimeout(r, 500)); 
+            await new Promise(r => setTimeout(r, 800)); // Tempo para imagem carregar bem
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const element = document.getElementById('area-pdf-escondida');
@@ -423,21 +414,40 @@
             const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
-            const file = new File([pdf.output('blob')], `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`, { type: "application/pdf" });
+            const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`;
+            const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
             const msg = `*FH Construções*\n\nOlá ${dados.nome}, segue em anexo a sua via do recibo digital assinado em ${dados.data_criacao}.`;
 
+            let sucessoCompartilhamento = false;
+
+            // Tenta abrir a gaveta de compartilhar do celular
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({ files: [file], title: 'Recibo', text: msg });
+                    sucessoCompartilhamento = true;
                     Swal.close();
-                } catch(e) { Swal.close(); }
-            } else {
-                pdf.save(`Recibo_${dados.nome}.pdf`);
-                Swal.fire('PDF Baixado!', 'Envie o arquivo que foi salvo no seu dispositivo.', 'success').then(()=>{
+                } catch(e) {
+                    if (e.name !== 'AbortError') {
+                        console.error("Compartilhamento bloqueado pelo celular", e);
+                    } else {
+                        Swal.close();
+                        return; // Usuário cancelou
+                    }
+                }
+            }
+
+            // Se o celular bloqueou o compartilhamento (Fallback)
+            if (!sucessoCompartilhamento) {
+                pdf.save(nomeDoArquivo);
+                Swal.fire('PDF Baixado!', 'O arquivo foi salvo na sua pasta de Downloads. Envie para o WhatsApp do funcionário.', 'success').then(()=>{
                     window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`;
                 });
             }
-        } catch(e) { Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error'); }
+
+        } catch(e) { 
+            console.error(e); 
+            Swal.fire('Erro', 'Falha ao processar a imagem do PDF: ' + e.message, 'error'); 
+        }
     };
 
     // --- FUNÇÕES DO FUNCIONÁRIO ---
