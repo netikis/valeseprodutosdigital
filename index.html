@@ -10,13 +10,13 @@
         if (_params.get('ponto')) _appName = "FH Ponto"; 
         if (_params.get('id')) _appName = "Assinar Vale"; 
         document.write('<title>' + _appName + '</title>');
-        document.write('<meta name="apple-mobile-web-app-title" content="' + _appName + '">');
     </script>
     
     <link rel="icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Gestão RH">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -24,156 +24,140 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --dark-navy: #1a2a43; --gold: #d4a017; --light-bg: #f4f7f6; --white: #ffffff; --text-color: #333333; }
-        body { font-family: 'Poppins', sans-serif; background: var(--light-bg); margin: 0; padding: 15px; color: var(--text-color); }
+        :root { --navy: #1a2a43; --gold: #d4a017; --bg: #f4f7f6; --white: #ffffff; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
         
-        .main-card { background: var(--white); padding: 30px 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); max-width: 480px; margin: auto; border-top: 6px solid var(--dark-navy); position: relative;}
+        .main-card { background: var(--white); padding: 30px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; margin: auto; border-top: 6px solid var(--navy); }
         
-        .header-logo { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .logo-img { max-width: 150px; height: auto; border-radius: 10px; }
-        .title-top { color: var(--dark-navy); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .logo { max-width: 140px; height: auto; border-radius: 10px; }
+        .title { color: var(--navy); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
 
-        /* Tabs Sistema Original */
-        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 11px; }
-        .tab { flex: 1; text-align: center; padding: 12px 2px; cursor: pointer; font-weight: 600; color: #aaa; transition: 0.3s; }
-        .tab.active { color: var(--dark-navy); border-bottom: 3px solid var(--gold); }
+        /* TABS ORIGINAIS */
+        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; overflow-x: auto; }
+        .tab { flex: 1; text-align: center; padding: 12px 5px; cursor: pointer; font-weight: 600; color: #aaa; font-size: 11px; white-space: nowrap; transition: 0.3s; }
+        .tab.active { color: var(--navy); border-bottom: 3px solid var(--gold); }
         
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+        .section { display: none; }
+        .section.active { display: block; }
 
-        label { display: block; margin-top: 15px; font-weight: 600; font-size: 13px; color: var(--dark-navy); text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #e0e6ed; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; transition: 0.3s; }
+        label { display: block; margin-top: 15px; font-weight: 600; font-size: 12px; color: var(--navy); text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 13px; margin-top: 8px; border: 2px solid #e0e6ed; border-radius: 12px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; }
         input:focus { border-color: var(--gold); outline: none; }
 
-        /* Botões */
-        .btn-enviar { background: var(--dark-navy); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 25px; cursor: pointer; }
-        .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 15px; cursor: pointer; }
-        .btn-pdf-ponto { background: #cf9a0e; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: 700; cursor: pointer; margin-bottom: 15px; display: none; }
+        /* BOTÕES */
+        .btn-primary { background: var(--navy); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: var(--navy); border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; font-size: 15px; margin-top: 15px; cursor: pointer; }
+        .btn-success { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 700; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        .btn-danger { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 700; font-size: 16px; margin-top: 10px; cursor: pointer; }
         
-        .btn-entrada { background: #28a745; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: bold; font-size: 18px; margin-top: 15px; cursor: pointer; }
-        .btn-saida { background: #d9534f; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: bold; font-size: 18px; margin-top: 10px; cursor: pointer; }
-
-        /* Itens de Lista */
-        .func-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fafcff; border-radius: 8px; margin-bottom: 8px; font-size: 13px;}
-        .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 12px; margin-top: 10px; background: #fff; border-left: 5px solid var(--gold); font-size: 14px;}
-        .btn-maps { background: #4285F4; color: white; border: none; padding: 8px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; font-size: 12px; cursor: pointer;}
-        .btn-pdf-individual { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 10px; font-weight: bold; cursor: pointer;}
-
-        canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 180px; border-radius: 15px; touch-action: none; margin-top: 15px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fafcff; border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
+        .card-info { border: 1px solid #e0e6ed; padding: 15px; border-radius: 12px; margin-top: 10px; background: #fff; border-left: 5px solid var(--gold); }
+        
+        canvas { border: 2px solid #e0e6ed; background: #fff; width: 100%; height: 180px; border-radius: 15px; margin-top: 15px; touch-action: none; }
+        
+        /* Estilo do Relatório PDF */
+        #pdf-render { background: white; width: 800px; padding: 40px; color: black; position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
 
 <div class="main-card" id="tela-patrao" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo-img">
-        <div class="title-top">Painel de Gestão FH</div>
+    <div class="header">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo">
+        <div class="title">Gestão RH - FH Construções</div>
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="mudarAba('cadastrar', event)">1. EQUIPE</div>
-        <div class="tab" onclick="mudarAba('criar', event)">2. VALES</div>
-        <div class="tab" onclick="mudarAba('arquivo', event)">3. ARQUIVO</div>
-        <div class="tab" onclick="mudarAba('ponto', event)">4. PONTO GPS</div>
+        <div class="tab active" id="tab1" onclick="mudarParaAba('aba-equipe')">1. EQUIPE</div>
+        <div class="tab" id="tab2" onclick="mudarParaAba('aba-vales')">2. CRIAR VALE</div>
+        <div class="tab" id="tab3" onclick="mudarParaAba('aba-arquivo')">3. ARQUIVO</div>
+        <div class="tab" id="tab4" onclick="mudarParaAba('aba-ponto')">4. PONTO GPS</div>
     </div>
 
-    <div id="aba-cadastrar" class="view-section active">
-        <label>Nome Completo</label>
-        <input type="text" id="c-nome" placeholder="Nome do Funcionário">
-        <label>CPF (Login do Funcionário)</label>
-        <input type="number" id="c-cpf" placeholder="Apenas números">
-        <label>WhatsApp</label>
-        <input type="number" id="c-tel" placeholder="43999999999">
-        <button class="btn-gold" id="btnSalvarFunc">CADASTRAR FUNCIONÁRIO</button>
-        <div id="lista-equipe-gerencial" style="margin-top:25px;"></div>
+    <div id="aba-equipe" class="section active">
+        <label>Nome do Funcionário</label>
+        <input type="text" id="cad-nome" placeholder="Nome Completo">
+        <label>CPF (Apenas Números)</label>
+        <input type="number" id="cad-cpf" placeholder="CPF para login">
+        <label>WhatsApp (com DDD)</label>
+        <input type="number" id="cad-tel" placeholder="Ex: 43999999999">
+        <button class="btn-gold" id="btnSalvarEquipe">CADASTRAR NO SISTEMA</button>
+        <div id="render-equipe" style="margin-top:20px;"></div>
     </div>
 
-    <div id="aba-criar" class="view-section">
+    <div id="aba-vales" class="section">
         <label>Selecione o Funcionário</label>
-        <select id="v-select-func" class="lista-funcs"></select>
-        <label>Valor do Vale (R$)</label>
-        <input type="number" id="v-valor" placeholder="0,00">
+        <select id="vale-func-select" class="select-funcs"></select>
+        <label>Valor (R$)</label>
+        <input type="number" id="vale-valor" placeholder="0.00">
         <label>Referente a:</label>
-        <textarea id="v-desc" rows="2" placeholder="Ex: Adiantamento Quinzena"></textarea>
-        <button class="btn-enviar" id="btnEnviarVale">GERAR E ENVIAR WHATSAPP</button>
+        <textarea id="vale-desc" rows="2" placeholder="Ex: Adiantamento"></textarea>
+        <button class="btn-primary" id="btnGerarZap">ENVIAR LINK PELO WHATSAPP</button>
     </div>
 
-    <div id="aba-arquivo" class="view-section">
-        <label>Ver Recibos de:</label>
-        <select id="arq-select-func" class="lista-funcs"></select>
-        <button class="btn-enviar" id="btnBuscarVales">BUSCAR RECIBOS</button>
-        <div id="lista-vales-assinados" style="margin-top:20px;"></div>
+    <div id="aba-arquivo" class="section">
+        <label>Filtrar por Funcionário</label>
+        <select id="arq-func-select" class="select-funcs"></select>
+        <button class="btn-primary" id="btnBuscarArquivo">BUSCAR RECIBOS ASSINADOS</button>
+        <div id="render-arquivo" style="margin-top:20px;"></div>
     </div>
 
-    <div id="aba-ponto" class="view-section">
-        <button class="btn-gold" id="btnCopiarLinkPonto" style="margin-bottom:20px;">COPIAR LINK DO PONTO</button>
-        <label>Histórico de Ponto:</label>
-        <select id="pt-select-func" class="lista-funcs"></select>
-        <button class="btn-enviar" id="btnBuscarPonto">BUSCAR REGISTROS</button>
+    <div id="aba-ponto" class="section">
+        <button class="btn-gold" id="btnCopiaLinkRelogio" style="margin-bottom:20px;">COPIAR LINK DO PONTO</button>
+        <label>Consultar Histórico de:</label>
+        <select id="ponto-func-select" class="select-funcs"></select>
+        <button class="btn-primary" id="btnBuscarPontoGps">VER REGISTROS DE PONTO</button>
         <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-        
-        <button id="btnGerarRelatorioPonto" class="btn-pdf-ponto">📄 GERAR RELATÓRIO PDF DO MÊS</button>
-        <div id="lista-ponto-gps"></div>
+        <button id="btnGerarPdfPontoMes" class="btn-gold" style="display:none; background:#cf9a0e; color:white;">📄 GERAR RELATÓRIO PDF MENSAL</button>
+        <div id="render-ponto" style="margin-top:15px;"></div>
     </div>
 </div>
 
 <div class="main-card" id="tela-login" style="display: none;">
-    <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo-img">
-        <div class="title-top">Acesso ao Ponto</div>
+    <div class="header">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" class="logo">
+        <div class="title">Acesso ao Relógio de Ponto</div>
     </div>
     <label>Digite seu CPF</label>
-    <input type="number" id="l-cpf" placeholder="Somente números">
+    <input type="number" id="login-cpf" placeholder="Apenas os números">
     <label>Sua Senha</label>
-    <input type="password" id="l-senha" placeholder="Senha de acesso">
-    <p style="font-size:11px; color:#888; margin-top:5px;">No primeiro acesso, a senha que você digitar será gravada como sua oficial.</p>
-    <button class="btn-enviar" id="btnFazerLogin">ENTRAR NO SISTEMA</button>
+    <input type="password" id="login-senha" placeholder="Sua senha">
+    <p style="font-size:11px; color:#888; margin-top:5px; text-align:center;">Se for seu primeiro acesso, a senha digitada agora será a sua definitiva.</p>
+    <button class="btn-primary" id="btnExecutarLogin">ENTRAR AGORA</button>
 </div>
 
 <div class="main-card" id="tela-relogio" style="display: none;">
-    <div class="header-logo">
-        <div class="title-top">Olá, <span id="n-logado"></span></div>
-    </div>
+    <div class="header"><div class="title">Olá, <span id="span-nome-logado"></span></div></div>
     <label>Em qual Obra / Local você está?</label>
-    <input type="text" id="obra-nome" placeholder="Ex: Obra Centro">
-    
-    <button class="btn-entrada" id="btnEntrada">🟢 REGISTRAR ENTRADA</button>
-    <button class="btn-saida" id="btnSaida">🔴 REGISTRAR SAÍDA</button>
-    
-    <button onclick="localStorage.clear(); location.reload();" style="width:100%; border:none; background:none; color:#999; margin-top:40px; font-size:12px; cursor:pointer;">Sair da Conta</button>
+    <input type="text" id="ponto-obra" placeholder="Ex: Obra Centro">
+    <button class="btn-success" id="btnEntradaPonto">🟢 REGISTRAR ENTRADA</button>
+    <button class="btn-danger" id="btnSaidaPonto">🔴 REGISTRAR SAÍDA</button>
+    <button onclick="localStorage.clear(); location.reload();" style="width:100%; border:none; background:none; color:#999; margin-top:40px; font-size:11px; cursor:pointer;">Sair da Conta</button>
 </div>
 
-<div class="main-card" id="tela-vale" style="display: none;">
-    <div class="header-logo"><div class="title-top">Assinar Recibo Digital</div></div>
-    <div id="v-texto-exibir" style="font-size:14px; line-height:1.6; text-align:justify; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:10px;"></div>
-    <label style="text-align:center;">Assine dentro do quadro:</label>
-    <canvas id="signature-pad"></canvas>
-    <button class="btn-gold" id="btnConfirmarAssinatura">CONFIRMAR E ASSINAR</button>
+<div class="main-card" id="tela-assinatura-vale" style="display: none;">
+    <div class="header"><div class="title">Assinar Recibo Digital</div></div>
+    <div id="texto-vale-corpo" style="font-size:14px; line-height:1.6; text-align:justify; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:10px; border-left:4px solid var(--navy);"></div>
+    <label style="text-align:center;">Assine seu nome abaixo:</label>
+    <canvas id="canvas-assinatura"></canvas>
+    <button class="btn-gold" id="btnFinalizarAssinatura">CONFIRMAR E ENVIAR</button>
 </div>
 
-<div id="pdf-vales-template" style="position:absolute; left:-9999px; top:0; background:white; width:750px; padding:50px; color:#000;">
-    <div style="text-align:center; border-bottom:3px solid #1a2a43; padding-bottom:20px; margin-bottom:30px;">
+<div id="pdf-render">
+    <div style="text-align:center; border-bottom:4px solid #1a2a43; padding-bottom:20px; margin-bottom:30px;">
         <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-height:80px;">
-        <h1 style="margin:10px 0 0 0;">FH CONSTRUÇÕES CIVIS LTDA</h1>
+        <h1 style="color:#1a2a43; margin:10px 0 0 0; font-size:28px;">FH CONSTRUÇÕES CIVIS LTDA</h1>
+        <p id="pdf-titulo-doc" style="font-size:16px; font-weight:bold;"></p>
     </div>
-    <div id="pdf-vale-conteudo" style="font-size:20px; line-height:2; margin:40px 0; text-align:justify;"></div>
-    <div style="margin-top:100px; text-align:center;">
-        <img id="pdf-vale-assinatura" src="" style="max-height:120px; border-bottom:1px solid #000; margin-bottom:10px;"><br>
-        <b id="pdf-vale-nome"></b><br>Assinatura Digital do Funcionário
+    <div id="pdf-corpo-conteudo" style="font-size:18px; line-height:1.8; margin-bottom:40px;"></div>
+    <div id="pdf-assinatura-bloco" style="margin-top:80px; text-align:center; display:none;">
+        <img id="pdf-img-assinatura" src="" style="max-height:130px; border-bottom:1px solid #000; margin-bottom:10px;"><br>
+        <b id="pdf-nome-funcionario"></b>
     </div>
-</div>
-
-<div id="pdf-ponto-template" style="position:absolute; left:-9999px; top:0; background:white; width:800px; padding:50px; color:#000;">
-    <div style="text-align:center; border-bottom:3px solid #1a2a43; padding-bottom:20px; margin-bottom:30px;">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-height:70px;">
-        <h2 style="margin:5px 0;">FH CONSTRUÇÕES - RELATÓRIO DE PONTO</h2>
-    </div>
-    <div style="margin-bottom:20px;">
-        <b>FUNCIONÁRIO:</b> <span id="pdf-pt-nome"></span> | <b>CPF:</b> <span id="pdf-pt-cpf"></span>
-    </div>
-    <table style="width:100%; border-collapse:collapse; font-size:14px;">
-        <thead><tr style="background:#1a2a43; color:white;"><th style="padding:8px; border:1px solid #ccc;">DATA</th><th style="padding:8px; border:1px solid #ccc;">HORA</th><th style="padding:8px; border:1px solid #ccc;">TIPO</th><th style="padding:8px; border:1px solid #ccc;">OBRA</th></tr></thead>
-        <tbody id="pdf-pt-tabela"></tbody>
+    <table id="pdf-tabela-ponto" style="width:100%; border-collapse:collapse; margin-top:20px; display:none;">
+        <thead><tr style="background:#1a2a43; color:white;"><th style="padding:10px; border:1px solid #ddd;">DATA</th><th style="padding:10px; border:1px solid #ddd;">HORA</th><th style="padding:10px; border:1px solid #ddd;">TIPO</th><th style="padding:10px; border:1px solid #ddd;">LOCAL</th></tr></thead>
+        <tbody id="pdf-tbody-ponto"></tbody>
     </table>
 </div>
 
@@ -193,213 +177,266 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const urlParams = new URLSearchParams(window.location.search);
-    const valeId = urlParams.get('id');
-    const isPonto = urlParams.get('ponto');
+    const v_id = urlParams.get('id');
+    const is_ponto = urlParams.get('ponto');
 
-    window.listaFuncionariosGlobal = {};
+    window.cacheEquipe = {};
 
-    // INICIALIZAÇÃO DE TELAS
-    if (valeId) {
-        document.getElementById('tela-vale').style.display = 'block';
-        carregarValeParaAssinar(valeId);
-    } else if (isPonto) {
-        if (localStorage.getItem('fId')) {
-            document.getElementById('tela-relogio').style.display = 'block';
-            document.getElementById('n-logado').innerText = localStorage.getItem('fNome');
+    // --- INICIALIZADOR DE TELAS ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        if(v_id) {
+            document.getElementById('tela-assinatura-vale').style.display = 'block';
+            carregarVale(v_id);
+        } else if(is_ponto) {
+            if(localStorage.getItem('f_id')) {
+                document.getElementById('tela-relogio').style.display = 'block';
+                document.getElementById('span-nome-logado').innerText = localStorage.getItem('f_nome');
+            } else {
+                document.getElementById('tela-login').style.display = 'block';
+            }
         } else {
-            document.getElementById('tela-login').style.display = 'block';
+            document.getElementById('tela-patrao').style.display = 'block';
+            await atualizarDadosPatrao();
         }
-    } else {
-        document.getElementById('tela-patrao').style.display = 'block';
-        carregarEquipe();
-    }
+        atribuirEventos();
+    });
 
-    // --- FUNÇÕES DO PATRÃO ---
-    window.mudarAba = function(aba, event) {
+    // --- LOGICA DE TABS ---
+    window.mudarParaAba = function(idAba) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        document.getElementById('aba-' + aba).classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        
+        // Encontra qual tab disparou baseada na aba de destino
+        const tabMap = {'aba-equipe':'tab1', 'aba-vales':'tab2', 'aba-arquivo':'tab3', 'aba-ponto':'tab4'};
+        document.getElementById(tabMap[idAba]).classList.add('active');
+        document.getElementById(idAba).classList.add('active');
     };
 
-    async function carregarEquipe() {
-        try {
-            const snap = await getDocs(query(collection(db, "funcionarios"), orderBy("nome")));
-            let html = ''; let opts = '<option value="">Selecione o Funcionário...</option>';
-            window.listaFuncionariosGlobal = {};
+    // --- EVENTOS DE CLIQUE (FORÇADOS) ---
+    function atribuirEventos() {
+        // Aba Equipe
+        const b1 = document.getElementById('btnSalvarEquipe');
+        if(b1) b1.onclick = cadastrarFuncionario;
 
-            snap.forEach(d => {
-                const f = d.data();
-                window.listaFuncionariosGlobal[d.id] = f;
-                opts += `<option value="${d.id}">${f.nome}</option>`;
-                html += `
-                    <div class="func-item">
-                        <span><b>${f.nome}</b><br><small>CPF: ${f.cpf}</small></span>
-                        <button onclick="apagarFuncionario('${d.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">EXCLUIR</button>
-                    </div>
-                `;
-            });
-            document.getElementById('lista-equipe-gerencial').innerHTML = html;
-            document.querySelectorAll('.lista-funcs').forEach(s => s.innerHTML = opts);
-        } catch(e) { console.error(e); }
+        // Aba Vales
+        const b2 = document.getElementById('btnGerarZap');
+        if(b2) b2.onclick = enviarValeZap;
+
+        // Aba Arquivo
+        const b3 = document.getElementById('btnBuscarArquivo');
+        if(b3) b3.onclick = listarValesAssinados;
+
+        // Aba Ponto
+        const b4 = document.getElementById('btnCopiaLinkRelogio');
+        if(b4) b4.onclick = () => {
+            navigator.clipboard.writeText(window.location.origin + window.location.pathname + "?ponto=true");
+            Swal.fire('Link Copiado!', 'Mande no grupo de WhatsApp da equipe.', 'success');
+        };
+        const b5 = document.getElementById('btnBuscarPontoGps');
+        if(b5) b5.onclick = buscarHistoricoPonto;
+
+        const b6 = document.getElementById('btnGerarPdfPontoMes');
+        if(b6) b6.onclick = baixarRelatorioPontoPdf;
+
+        // Login
+        const b7 = document.getElementById('btnExecutarLogin');
+        if(b7) b7.onclick = loginFuncionario;
+
+        // Bater Ponto
+        const b8 = document.getElementById('btnEntradaPonto');
+        if(b8) b8.onclick = () => gravarPonto('Entrada');
+        const b9 = document.getElementById('btnSaidaPonto');
+        if(b9) b9.onclick = () => gravarPonto('Saída');
+
+        // Assinatura
+        const b10 = document.getElementById('btnFinalizarAssinatura');
+        if(b10) b10.onclick = salvarAssinatura;
     }
 
-    document.getElementById('btnSalvarFunc').onclick = async () => {
-        const n = document.getElementById('c-nome').value;
-        const c = document.getElementById('c-cpf').value;
-        const t = document.getElementById('c-tel').value;
-        if(!n || !c) return Swal.fire('Erro', 'Nome e CPF são obrigatórios!', 'error');
+    // --- FUNÇÕES DE NEGÓCIO ---
+
+    async function atualizarDadosPatrao() {
+        const snap = await getDocs(query(collection(db, "funcionarios"), orderBy("nome")));
+        let htmlEquipe = ''; 
+        let options = '<option value="">Selecione o Funcionário...</option>';
+        window.cacheEquipe = {};
+
+        snap.forEach(d => {
+            const f = d.data();
+            window.cacheEquipe[d.id] = f;
+            options += `<option value="${d.id}">${f.nome}</option>`;
+            htmlEquipe += `
+                <div class="list-item">
+                    <span><b>${f.nome}</b><br><small>CPF: ${f.cpf}</small></span>
+                    <button onclick="deletarF('${d.id}')" style="background:red; color:white; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;">X</button>
+                </div>
+            `;
+        });
+        document.getElementById('render-equipe').innerHTML = htmlEquipe;
+        document.querySelectorAll('.select-funcs').forEach(s => s.innerHTML = options);
+    }
+
+    async function cadastrarFuncionario() {
+        const n = document.getElementById('cad-nome').value;
+        const c = document.getElementById('cad-cpf').value;
+        const t = document.getElementById('cad-tel').value;
+        if(!n || !c) return Swal.fire('Erro', 'Nome e CPF são obrigatórios.', 'error');
         
         await addDoc(collection(db, "funcionarios"), { nome: n, cpf: c, tel: t, senha: "" });
-        Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
-        document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = '';
-        carregarEquipe();
-    };
+        Swal.fire('Cadastrado!', '', 'success');
+        document.getElementById('cad-nome').value = ''; document.getElementById('cad-cpf').value = '';
+        atualizarDadosPatrao();
+    }
 
-    document.getElementById('btnEnviarVale').onclick = async () => {
-        const id = document.getElementById('v-select-func').value;
-        const v = document.getElementById('v-valor').value;
-        const d = document.getElementById('v-desc').value;
-        if(!id || !v) return Swal.fire('Erro', 'Selecione e digite o valor.', 'error');
+    async function enviarValeZap() {
+        const id = document.getElementById('vale-func-select').value;
+        const val = document.getElementById('vale-valor').value;
+        const desc = document.getElementById('vale-desc').value || "pagamento";
+        if(!id || !val) return Swal.fire('Erro', 'Selecione e digite o valor.', 'error');
 
-        const func = window.listaFuncionariosGlobal[id];
-        const texto = `Eu, ${func.nome}, portador do CPF ${func.cpf}, confirmo que recebi da FH Construções Civis LTDA o valor de R$ ${v}, referente a ${d || 'pagamento'}.`;
+        const f = window.cacheEquipe[id];
+        const txt = `Eu, ${f.nome}, CPF ${f.cpf}, confirmo o recebimento de R$ ${val} da FH Construções Civis LTDA ref. a ${desc}.`;
         
         const docRef = await addDoc(collection(db, "vales_sistema"), { 
-            fId: id, nome: func.nome, texto: texto, valor: v, status: "pendente", tel: func.tel 
+            f_id: id, nome: f.nome, texto: txt, valor: val, status: "pendente", tel: f.tel 
         });
         
         const link = window.location.origin + window.location.pathname + "?id=" + docRef.id;
-        window.open(`https://api.whatsapp.com/send?phone=55${func.tel}&text=Olá ${func.nome}, assine seu recibo digital aqui: ${link}`);
-    };
+        window.open(`https://api.whatsapp.com/send?phone=55${f.tel}&text=Olá ${f.nome}, assine seu recibo digital aqui: ${link}`);
+    }
 
-    document.getElementById('btnBuscarVales').onclick = async () => {
-        const id = document.getElementById('arq-select-func').value;
-        const snap = await getDocs(query(collection(db, "vales_sistema"), where("fId", "==", id), where("status", "==", "assinado")));
-        let h = ''; window.valesCache = {};
+    async function listarValesAssinados() {
+        const id = document.getElementById('arq-func-select').value;
+        const snap = await getDocs(query(collection(db, "vales_sistema"), where("f_id", "==", id), where("status", "==", "assinado")));
+        let h = ''; 
+        window.cacheRecibos = {};
         snap.forEach(d => {
-            const v = d.data(); window.valesCache[d.id] = v;
-            h += `<div class="resultado-item">Vale de R$ ${v.valor}<br><button class="btn-pdf-individual" onclick="gerarPdfVale('${d.id}')">BAIXAR RECIBO ASSINADO</button></div>`;
+            const v = d.data(); window.cacheRecibos[d.id] = v;
+            h += `
+                <div class="card-info">
+                    <b>Vale R$ ${v.valor}</b><br>
+                    <button class="btn-primary" style="padding:8px; margin-top:10px;" onclick="baixarPdfVale('${d.id}')">BAIXAR PDF ASSINADO</button>
+                </div>`;
         });
-        document.getElementById('lista-vales-assinados').innerHTML = h || 'Nenhum recibo assinado.';
-    };
+        document.getElementById('render-arquivo').innerHTML = h || 'Sem recibos assinados.';
+    }
 
-    window.gerarPdfVale = async (id) => {
-        const v = window.valesCache[id];
-        document.getElementById('pdf-vale-conteudo').innerText = v.texto;
-        document.getElementById('pdf-vale-assinatura').src = v.assinatura;
-        document.getElementById('pdf-vale-nome').innerText = v.nome;
-        
+    window.baixarPdfVale = async (id) => {
+        const v = window.cacheRecibos[id];
+        document.getElementById('pdf-titulo-doc').innerText = "RECIBO DE PAGAMENTO";
+        document.getElementById('pdf-corpo-conteudo').innerText = v.texto;
+        document.getElementById('pdf-img-assinatura').src = v.assinatura;
+        document.getElementById('pdf-nome-funcionario').innerText = v.nome;
+        document.getElementById('pdf-assinatura-bloco').style.display = 'block';
+        document.getElementById('pdf-tabela-ponto').style.display = 'none';
+
         Swal.fire({title: 'Gerando PDF...', allowOutsideClick: false}); Swal.showLoading();
-        const element = document.getElementById('pdf-vales-template');
-        const canvasPdf = await html2canvas(element, { scale: 2 });
+        const element = document.getElementById('pdf-render');
+        const canvas = await html2canvas(element, { scale: 2 });
         const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-        pdf.addImage(canvasPdf.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, (canvasPdf.height * 210) / canvasPdf.width);
+        pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, (canvas.height * 210) / canvas.width);
         pdf.save(`Recibo_${v.nome}.pdf`);
-        Swal.fire('OK!', 'PDF baixado.', 'success');
+        Swal.fire('Pronto!', 'PDF baixado.', 'success');
     };
 
-    document.getElementById('btnBuscarPonto').onclick = async () => {
-        const id = document.getElementById('pt-select-func').value;
-        const snap = await getDocs(query(collection(db, "ponto_registros"), where("fId", "==", id)));
-        let h = ''; window.pontosCache = [];
+    async function buscarHistoricoPonto() {
+        const id = document.getElementById('ponto-func-select').value;
+        const snap = await getDocs(query(collection(db, "ponto_registros"), where("f_id", "==", id)));
+        let h = ''; 
+        window.cachePontos = [];
         snap.forEach(d => {
-            const p = d.data(); window.pontosCache.push(p);
-            h += `<div class="resultado-item"><b>${p.tipo}</b> - ${p.data} às ${p.hora}<br>Obra: ${p.obra}<br><button class="btn-maps" onclick="window.open('http://googleusercontent.com/maps.google.com/5{p.lat},${p.lng}')">📍 VER LOCAL NO GOOGLE MAPS</button></div>`;
+            const p = d.data(); window.cachePontos.push(p);
+            h += `
+                <div class="card-info" style="border-left-color:${p.tipo=='Entrada'?'green':'red'}">
+                    <b>${p.tipo}</b> - ${p.data} às ${p.hora}<br>Obra: ${p.obra}<br>
+                    <button class="btn-primary" style="background:#4285F4; padding:5px; font-size:11px;" onclick="window.open('http://googleusercontent.com/maps.google.com/6{p.lat},${p.lng}')">VER GPS NO MAPA</button>
+                </div>`;
         });
-        document.getElementById('lista-ponto-gps').innerHTML = h || 'Sem registros.';
-        document.getElementById('btnGerarRelatorioPonto').style.display = snap.empty ? 'none' : 'block';
-    };
+        document.getElementById('render-ponto').innerHTML = h || 'Sem registros de ponto.';
+        document.getElementById('btnGerarPdfPontoMes').style.display = snap.empty ? 'none' : 'block';
+    }
 
-    document.getElementById('btnGerarRelatorioPonto').onclick = async () => {
-        const id = document.getElementById('pt-select-func').value;
-        const func = window.listaFuncionariosGlobal[id];
-        document.getElementById('pdf-pt-nome').innerText = func.nome;
-        document.getElementById('pdf-pt-cpf').innerText = func.cpf;
-        let tab = '';
-        window.pontosCache.sort((a,b) => b.ts - a.ts).forEach(p => {
-            tab += `<tr><td style="padding:8px; border:1px solid #ccc;">${p.data}</td><td style="padding:8px; border:1px solid #ccc;">${p.hora}</td><td style="padding:8px; border:1px solid #ccc;">${p.tipo}</td><td style="padding:8px; border:1px solid #ccc;">${p.obra}</td></tr>`;
-        });
-        document.getElementById('pdf-pt-tabela').innerHTML = tab;
+    async function baixarRelatorioPontoPdf() {
+        const id = document.getElementById('ponto-func-select').value;
+        const f = window.cacheEquipe[id];
+        document.getElementById('pdf-titulo-doc').innerText = "RELATÓRIO DE PONTO ELETRÔNICO";
+        document.getElementById('pdf-corpo-conteudo').innerHTML = `<b>FUNCIONÁRIO:</b> ${f.nome}<br><b>CPF:</b> ${f.cpf}<br><b>EMPRESA:</b> FH CONSTRUÇÕES CIVIS LTDA`;
+        document.getElementById('pdf-assinatura-bloco').style.display = 'none';
+        document.getElementById('pdf-tabela-ponto').style.display = 'table';
         
-        const element = document.getElementById('pdf-ponto-template');
-        const canvasPdf = await html2canvas(element, { scale: 2 });
+        let trs = '';
+        window.cachePontos.sort((a,b)=>b.ts - a.ts).forEach(p => {
+            trs += `<tr><td style="padding:8px; border:1px solid #ddd;">${p.data}</td><td style="padding:8px; border:1px solid #ddd;">${p.hora}</td><td style="padding:8px; border:1px solid #ddd;">${p.tipo}</td><td style="padding:8px; border:1px solid #ddd;">${p.obra}</td></tr>`;
+        });
+        document.getElementById('pdf-tbody-ponto').innerHTML = trs;
+
+        const element = document.getElementById('pdf-render');
+        const canvas = await html2canvas(element, { scale: 2 });
         const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-        pdf.addImage(canvasPdf.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, (canvasPdf.height * 210) / canvasPdf.width);
-        pdf.save(`Ponto_${func.nome}.pdf`);
-        Swal.fire('Relatório Gerado!', '', 'success');
-    };
+        pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+        pdf.save(`Ponto_${f.nome}.pdf`);
+    }
 
-    document.getElementById('btnCopiarLinkPonto').onclick = () => {
-        navigator.clipboard.writeText(window.location.origin + window.location.pathname + "?ponto=true");
-        Swal.fire('Copiado!', 'Mande para os funcionários baterem o ponto.', 'success');
-    };
+    // --- LOGICA FUNCIONÁRIO ---
 
-    // --- FUNÇÕES DO FUNCIONÁRIO ---
-    document.getElementById('btnFazerLogin').onclick = async () => {
-        const cpf = document.getElementById('l-cpf').value.trim();
-        const senha = document.getElementById('l-senha').value.trim();
-        if(!cpf || !senha) return Swal.fire('Erro', 'Preencha CPF e Senha', 'error');
-
-        const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf));
-        const snap = await getDocs(q);
+    async function loginFuncionario() {
+        const c = document.getElementById('login-cpf').value.trim();
+        const s = document.getElementById('login-senha').value.trim();
+        const snap = await getDocs(query(collection(db, "funcionarios"), where("cpf", "==", c)));
         if(snap.empty) return Swal.fire('Erro', 'CPF não encontrado.', 'error');
         
-        const d = snap.docs; const dados = d.data();
-        if(!dados.senha) {
-            await updateDoc(doc(db, "funcionarios", d.id), { senha: senha });
-            localStorage.setItem('fId', d.id); localStorage.setItem('fNome', dados.nome); location.reload();
-        } else if (dados.senha === senha) {
-            localStorage.setItem('fId', d.id); localStorage.setItem('fNome', dados.nome); location.reload();
-        } else { Swal.fire('Erro', 'Senha incorreta', 'error'); }
-    };
+        const docF = snap.docs; const fData = docF.data();
+        if(!fData.senha) {
+            await updateDoc(doc(db, "funcionarios", docF.id), {senha: s});
+            sucessoLogin(docF.id, fData.nome);
+        } else if(fData.senha === s) { sucessoLogin(docF.id, fData.nome); }
+        else { Swal.fire('Erro', 'Senha incorreta.', 'error'); }
+    }
+    function sucessoLogin(id, nome) { localStorage.setItem('f_id', id); localStorage.setItem('f_nome', nome); location.reload(); }
 
-    window.registrarPonto = function(tipo) {
-        const o = document.getElementById('obra-nome').value;
+    async function gravarPonto(tipo) {
+        const o = document.getElementById('ponto-obra').value;
         if(!o) return Swal.fire('Atenção', 'Digite o nome da obra!', 'warning');
         Swal.fire({title: 'Pegando GPS...', allowOutsideClick: false}); Swal.showLoading();
 
         navigator.geolocation.getCurrentPosition(async (p) => {
             await addDoc(collection(db, "ponto_registros"), {
-                fId: localStorage.getItem('fId'), nome: localStorage.getItem('fNome'),
+                f_id: localStorage.getItem('f_id'), nome: localStorage.getItem('f_nome'),
                 tipo: tipo, obra: o, lat: p.coords.latitude, lng: p.coords.longitude,
                 data: new Date().toLocaleDateString('pt-BR'), hora: new Date().toLocaleTimeString('pt-BR'), ts: Date.now()
             });
-            Swal.fire('Sucesso!', 'Ponto batido às ' + new Date().toLocaleTimeString(), 'success');
-            document.getElementById('obra-nome').value = '';
-        }, () => Swal.fire('Erro GPS', 'Ligue o GPS.', 'error'), {enableHighAccuracy: true});
-    };
-
-    document.getElementById('btnEntrada').onclick = () => registrarPonto('Entrada');
-    document.getElementById('btnSaida').onclick = () => registrarPonto('Saída');
-
-    // ASSINATURA VALE
-    const canvas = document.getElementById('signature-pad');
-    const ctx = canvas?.getContext('2d');
-    let desenhando = false;
-    if(canvas) {
-        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
-        const getP = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.touches ? e.touches.clientX : e.clientX) - r.left, y: (e.touches ? e.touches.clientY : e.clientY) - r.top }};
-        canvas.onmousedown = canvas.ontouchstart = (e) => { desenhando = true; ctx.beginPath(); const p = getP(e); ctx.moveTo(p.x, p.y); ctx.lineWidth=2.5; ctx.strokeStyle="#1a2a43"; };
-        canvas.onmousemove = canvas.ontouchmove = (e) => { if(!desenhando) return; const p = getP(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-        window.onmouseup = window.ontouchend = () => desenhando = false;
+            Swal.fire('Sucesso!', tipo + ' registrada.', 'success');
+            document.getElementById('ponto-obra').value = '';
+        }, () => Swal.fire('Erro', 'Ligue o GPS.', 'error'), {enableHighAccuracy: true});
     }
 
-    async function carregarValeParaAssinar(id) {
+    // --- ASSINATURA ---
+    const cv = document.getElementById('canvas-assinatura');
+    const ctx = cv?.getContext('2d');
+    let drawing = false;
+    if(cv) {
+        cv.width = cv.offsetWidth; cv.height = cv.offsetHeight;
+        const getP = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.touches ? e.touches.clientX : e.clientX) - r.left, y: (e.touches ? e.touches.clientY : e.clientY) - r.top }};
+        cv.onmousedown = cv.ontouchstart = (e) => { drawing = true; ctx.beginPath(); const p = getP(e); ctx.moveTo(p.x, p.y); ctx.lineWidth=2; };
+        cv.onmousemove = cv.ontouchmove = (e) => { if(!drawing) return; const p = getP(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+        window.onmouseup = window.ontouchend = () => drawing = false;
+    }
+
+    async function carregarVale(id) {
         const d = await getDoc(doc(db, "vales_sistema", id));
         if(d.exists()) {
-            if(d.data().status === 'assinado') { document.body.innerHTML = "<h2 style='text-align:center; margin-top:100px;'>Este vale já foi assinado.</h2>"; return; }
-            document.getElementById('v-texto-exibir').innerText = d.data().texto;
+            if(d.data().status === 'assinado') { document.body.innerHTML = "<h2 style='text-align:center;margin-top:100px;'>Recibo já assinado.</h2>"; return; }
+            document.getElementById('texto-vale-corpo').innerText = d.data().texto;
         }
     }
 
-    document.getElementById('btnConfirmarAssinatura').onclick = async () => {
-        Swal.fire({title: 'Assinando...', allowOutsideClick: false}); Swal.showLoading();
-        await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: canvas.toDataURL(), status: "assinado" });
-        Swal.fire('Sucesso!', 'Recibo assinado com sucesso.', 'success').then(() => location.href = "https://google.com");
-    };
+    async function salvarAssinatura() {
+        Swal.fire({title: 'Salvando...', allowOutsideClick: false}); Swal.showLoading();
+        await updateDoc(doc(db, "vales_sistema", v_id), { assinatura: cv.toDataURL(), status: "assinado" });
+        Swal.fire('Assinado!', 'Recibo enviado com sucesso.', 'success').then(()=>location.href="https://google.com");
+    }
 
-    window.apagarFuncionario = async (id) => { if(confirm('Excluir funcionário?')) { await deleteDoc(doc(db, "funcionarios", id)); carregarEquipe(); } };
+    window.deletarF = async (id) => { if(confirm('Excluir funcionário?')) { await deleteDoc(doc(db, "funcionarios", id)); atualizarDadosPatrao(); } };
 </script>
 </body>
 </html>
