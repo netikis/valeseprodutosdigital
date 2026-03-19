@@ -161,7 +161,7 @@
     <input type="text" id="obra-atual" placeholder="Ex: Obra Centro, Condomínio, Escritório...">
 
     <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
-        ⚠️ O sistema verificará sua localização via satélite (GPS) para validar o ponto.
+        ⚠️ O sistema aguardará o sinal do satélite para salvar a localização exata. Permaneça em local aberto.
     </div>
 
     <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTRAR ENTRADA</button>
@@ -243,7 +243,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DE LOGIN (SISTEMA DE USUÁRIOS) ---
+    // --- FUNÇÕES DE LOGIN ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
@@ -266,19 +266,17 @@
             const funcData = funcDoc.data();
 
             if (!funcData.senha) {
-                // PRIMEIRO ACESSO: CRIA A SENHA AUTOMATICAMENTE
                 await updateDoc(doc(db, "funcionarios", funcDoc.id), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcDoc.id);
                 localStorage.setItem('funcLogadoNome', funcData.nome);
                 Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
             } else {
-                // ACESSOS SEGUINTES: VERIFICA A SENHA
                 if (funcData.senha !== senha) {
                     Swal.fire('Erro', 'Senha incorreta!', 'error');
                 } else {
                     localStorage.setItem('funcLogadoId', funcDoc.id);
                     localStorage.setItem('funcLogadoNome', funcData.nome);
-                    location.reload(); // Recarrega para abrir a tela do relógio
+                    location.reload(); 
                 }
             }
         } catch(e) { console.error(e); Swal.fire('Erro', 'Falha na conexão.', 'error'); }
@@ -332,7 +330,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO (GPS E OBRA) ---
+    // --- FUNÇÕES DE PONTO (GPS CORRIGIDO) ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -343,7 +341,7 @@
         const obra = document.getElementById('obra-atual').value;
         if(!obra) return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
 
-        Swal.fire({title: 'Buscando sua localização...', text: 'Isso é obrigatório para bater o ponto.', allowOutsideClick: false});
+        Swal.fire({title: 'Procurando satélite GPS...', text: 'Isso leva alguns segundos. Fique em local aberto.', allowOutsideClick: false});
         Swal.showLoading();
 
         if (navigator.geolocation) {
@@ -377,7 +375,7 @@
                 (error) => {
                     Swal.fire('Erro de GPS', 'Você precisa clicar em "Permitir" quando o celular pedir sua localização, senão o ponto não funciona!', 'error');
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Tempo aumentado para o GPS cravar exato
             );
         } else {
             Swal.fire('Erro', 'Seu navegador não suporta GPS.', 'error');
@@ -407,7 +405,8 @@
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                const linkMaps = `https://www.google.com/maps/search/?api=1&query=$?q=${dados.latitude},${dados.longitude}`;
+                // LINK OFICIAL DO MAPS CORRIGIDO AQUI:
+                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
                     <div class="resultado-item" style="border-left-color: ${cor}">
