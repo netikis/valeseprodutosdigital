@@ -6,9 +6,9 @@
     
     <script>
         const _params = new URLSearchParams(window.location.search);
-        let _appName = "Gestão RH"; // Nome padrão se for o Patrão
-        if (_params.get('ponto')) _appName = "FH Ponto"; // Nome se for o link de Ponto
-        if (_params.get('id')) _appName = "Assinar Vale"; // Nome se for o link do Recibo
+        let _appName = "Gestão RH"; 
+        if (_params.get('ponto')) _appName = "FH Ponto"; 
+        if (_params.get('id')) _appName = "Assinar Vale"; 
         
         document.write('<title>' + _appName + '</title>');
         document.write('<meta name="apple-mobile-web-app-title" content="' + _appName + '">');
@@ -239,12 +239,10 @@
 
     window.listaFuncionarios = {};
 
-    // --- ROTEAMENTO INTELIGENTE ---
     if (valeId) {
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
-        // Verifica se o funcionário já está logado no celular dele
         const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
@@ -257,10 +255,11 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DE LOGIN ---
+    // --- FUNÇÕES DE LOGIN (CORRIGIDA) ---
     window.fazerLogin = async function() {
-        const cpf = document.getElementById('login-cpf').value;
-        const senha = document.getElementById('login-senha').value;
+        // O .trim() remove os espaços que o celular coloca sem querer
+        const cpf = document.getElementById('login-cpf').value.trim();
+        const senha = document.getElementById('login-senha').value.trim();
 
         if(!cpf || !senha) return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
 
@@ -272,7 +271,7 @@
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão te cadastrar.', 'error');
+                Swal.fire('Erro', 'CPF não encontrado. O Patrão precisa cadastrar seu CPF no painel.', 'error');
                 return;
             }
 
@@ -280,11 +279,13 @@
             const funcData = funcDoc.data();
 
             if (!funcData.senha) {
+                // Cria a senha pela primeira vez
                 await updateDoc(doc(db, "funcionarios", funcDoc.id), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcDoc.id);
                 localStorage.setItem('funcLogadoNome', funcData.nome);
                 Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
             } else {
+                // Senha já existe, apenas verifica
                 if (funcData.senha !== senha) {
                     Swal.fire('Erro', 'Senha incorreta!', 'error');
                 } else {
@@ -293,7 +294,15 @@
                     location.reload(); 
                 }
             }
-        } catch(e) { console.error(e); Swal.fire('Erro', 'Falha na conexão.', 'error'); }
+        } catch(e) { 
+            console.error(e); 
+            // Mostra o erro exato na tela para sabermos se o Firebase bloqueou
+            if (e.code === 'permission-denied') {
+                Swal.fire('Erro de Permissão', 'O Firebase bloqueou o acesso. Você precisa atualizar as Regras de Segurança!', 'error');
+            } else {
+                Swal.fire('Erro no Sistema', 'Detalhe: ' + e.message, 'error'); 
+            }
+        }
     };
 
     window.fazerLogout = function() {
@@ -344,7 +353,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO (GPS CORRIGIDO) ---
+    // --- FUNÇÕES DE PONTO ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -352,7 +361,7 @@
     };
 
     window.baterPonto = function(tipo) {
-        const obra = document.getElementById('obra-atual').value;
+        const obra = document.getElementById('obra-atual').value.trim();
         if(!obra) return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
 
         Swal.fire({title: 'Procurando satélite GPS...', text: 'Isso leva alguns segundos. Fique em local aberto.', allowOutsideClick: false});
@@ -389,7 +398,7 @@
                 (error) => {
                     Swal.fire('Erro de GPS', 'Você precisa clicar em "Permitir" quando o celular pedir sua localização, senão o ponto não funciona!', 'error');
                 },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Tempo aumentado para o GPS cravar exato
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         } else {
             Swal.fire('Erro', 'Seu navegador não suporta GPS.', 'error');
@@ -414,12 +423,11 @@
 
             let registros = [];
             querySnapshot.forEach((doc) => registros.push(doc.data()));
-            registros.sort((a, b) => b.timestamp - a.timestamp); // Mais recentes primeiro
+            registros.sort((a, b) => b.timestamp - a.timestamp); 
 
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                // LINK OFICIAL DO MAPS CORRIGIDO AQUI:
                 const linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
@@ -449,9 +457,9 @@
     };
 
     document.getElementById('btnCadastrarFunc').onclick = async function() {
-        const nome = document.getElementById('c-nome').value;
-        const cpf = document.getElementById('c-cpf').value;
-        const tel = document.getElementById('c-tel').value;
+        const nome = document.getElementById('c-nome').value.trim();
+        const cpf = document.getElementById('c-cpf').value.trim();
+        const tel = document.getElementById('c-tel').value.trim();
 
         if(!nome || !tel || !cpf) return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
         
@@ -459,7 +467,7 @@
         
         try {
             await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
-            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha dele acessando o link do ponto.', 'success');
+            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha acessando o link do ponto.', 'success');
             document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = ''; document.getElementById('c-tel').value = '';
             carregarListaDeFuncionarios();
         } catch(e) { Swal.fire('Erro', 'Falha.', 'error'); } finally { btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false; }
