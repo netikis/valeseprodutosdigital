@@ -3,7 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Gestão - FH Construções</title>
+    
+    <script>
+        const _params = new URLSearchParams(window.location.search);
+        let _appName = "Gestão RH"; // Nome padrão se for o Patrão
+        if (_params.get('ponto')) _appName = "FH Ponto"; // Nome se for o link de Ponto
+        if (_params.get('id')) _appName = "Assinar Vale"; // Nome se for o link do Recibo
+        
+        document.write('<title>' + _appName + '</title>');
+        document.write('<meta name="apple-mobile-web-app-title" content="' + _appName + '">');
+        document.write('<meta name="application-name" content="' + _appName + '">');
+    </script>
+    
+    <link rel="icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -29,7 +44,6 @@
         .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s; }
         .btn-gold:hover { background: #b88a12; }
 
-        /* Botões de Ponto e Login */
         .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
         .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
         .btn-logout { background: #eee; color: #555; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 13px; margin-top: 25px; cursor: pointer; }
@@ -262,7 +276,7 @@
                 return;
             }
 
-            const funcDoc = querySnapshot.docs[0];
+            const funcDoc = querySnapshot.docs;
             const funcData = funcDoc.data();
 
             if (!funcData.senha) {
@@ -531,7 +545,7 @@
 
     const canvas = document.getElementById('signature-pad'); const ctx = canvas.getContext('2d'); let drawing = false;
     function resizeCanvas() { if(!canvas) return; const ratio = window.devicePixelRatio || 1; canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio; ctx.scale(ratio, ratio); ctx.lineWidth = 2.5; ctx.strokeStyle = "#1a2a43"; }
-    const getPos = (e) => { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
+    const getPos = (e) => { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches.clientX : e.clientX; const clientY = e.touches ? e.touches.clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
     if(canvas) {
         const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }; const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; const stop = () => drawing = false;
         canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
