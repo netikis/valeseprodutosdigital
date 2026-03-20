@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
     <style>
         :root { --dark-navy: #1a2a43; --gold: #d4a017; --light-bg: #f4f7f6; --white: #ffffff; --text-color: #333333; }
@@ -242,7 +243,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DE LOGIN ---
+    // --- FUNÇÕES DE LOGIN CORRIGIDAS ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
@@ -337,7 +338,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E MAPAS ---
+    // --- FUNÇÕES DE PONTO E MAPAS CORRIGIDAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -377,7 +378,7 @@
                         document.getElementById('obra-atual').value = '';
                     } catch(e) {
                         console.error("Erro no ponto:", e);
-                        Swal.fire('Erro', 'Problema ao salvar no banco.', 'error');
+                        Swal.fire('Erro', 'Problema ao salvar no banco. Verifique as Regras do Firebase.', 'error');
                     }
                 },
                 (error) => {
@@ -413,6 +414,8 @@
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
+                
+                // Link Oficial do Google Maps para abrir direto na coordenada
                 const linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
@@ -458,12 +461,12 @@
         
         try {
             await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
-            Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
+            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha dele acessando o link do ponto.', 'success');
             document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = ''; document.getElementById('c-tel').value = '';
             carregarListaDeFuncionarios();
         } catch(e) { 
-            console.error("Erro Cadastro:", e); 
-            Swal.fire('Erro', 'Falha ao salvar.', 'error'); 
+            console.error("Erro Crítico no Cadastro:", e); 
+            Swal.fire('Erro de Permissão', 'Falha ao salvar. Você configurou as Regras do Firebase conforme a instrução?', 'error'); 
         } finally { 
             btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false; 
         }
@@ -491,7 +494,7 @@
             });
         } catch(e) { 
             console.error("Erro ao gerar link:", e);
-            Swal.fire('Erro', 'Falha na geração.', 'error'); 
+            Swal.fire('Erro', 'Falha na geração do vale.', 'error'); 
             btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false; 
         }
     };
@@ -539,7 +542,9 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-    // --- ASSINATURA TOTALMENTE REFEITA PARA MOBILE ---
+    // --- ASSINATURA TOTALMENTE REFEITA COM BIBLIOTECA OFICIAL ---
+    let signaturePad;
+
     async function carregarValeParaAssinatura(id) {
         try {
             const docRef = doc(db, "vales_sistema", id); 
@@ -555,9 +560,25 @@
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; 
                 document.getElementById('f-texto').innerHTML = dados.texto; 
                 
-                // Força o ajuste do quadro da assinatura 2 vezes para garantir que o celular renderizou
-                setTimeout(resizeCanvas, 100);
-                setTimeout(resizeCanvas, 500);
+                // Aguarda um pequeno instante para a tela carregar por completo e então aplica a biblioteca de assinatura
+                setTimeout(() => {
+                    const canvas = document.getElementById('signature-pad');
+                    if (canvas) {
+                        // Ajusta o tamanho nativo da tela para evitar borrões ou distorções no toque
+                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                        canvas.width = canvas.offsetWidth * ratio;
+                        canvas.height = canvas.offsetHeight * ratio;
+                        canvas.getContext("2d").scale(ratio, ratio);
+                        
+                        // Ativa a biblioteca oficial de assinaturas
+                        signaturePad = new SignaturePad(canvas, {
+                            penColor: "#1a2a43",
+                            minWidth: 2,
+                            maxWidth: 4
+                        });
+                    }
+                }, 400); 
+
             } else { 
                 document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
             }
@@ -566,87 +587,26 @@
         }
     }
 
-    const canvas = document.getElementById('signature-pad'); 
-    const ctx = canvas ? canvas.getContext('2d') : null; 
-    let drawing = false;
-
-    function resizeCanvas() { 
-        if(!canvas) return; 
-        // Usa a largura exata da tela no celular, sem conversões matemáticas que causam bug
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        ctx.lineWidth = 3; 
-        ctx.lineCap = "round"; 
-        ctx.lineJoin = "round";
-        ctx.strokeStyle = "#1a2a43"; 
-    }
-
-    const getPos = (e) => { 
-        const rect = canvas.getBoundingClientRect(); 
-        let clientX, clientY;
-        
-        // Forma blindada de pegar a posição do dedo ou do mouse
-        if (e.changedTouches && e.changedTouches.length > 0) {
-            clientX = e.changedTouches.clientX;
-            clientY = e.changedTouches.clientY;
-        } else if (e.touches && e.touches.length > 0) {
-            clientX = e.touches.clientX;
-            clientY = e.touches.clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-        
-        return { x: clientX - rect.left, y: clientY - rect.top }; 
-    };
-
-    if(canvas) {
-        const start = (e) => { 
-            e.preventDefault(); 
-            drawing = true; 
-            const p = getPos(e); 
-            ctx.beginPath(); 
-            ctx.moveTo(p.x, p.y); 
-            ctx.lineTo(p.x, p.y); // Registra um ponto mesmo se for um toque rápido
-            ctx.stroke(); 
-        }; 
-        
-        const move = (e) => { 
-            if(!drawing) return; 
-            e.preventDefault(); 
-            const p = getPos(e); 
-            ctx.lineTo(p.x, p.y); 
-            ctx.stroke(); 
-        }; 
-        
-        const stop = () => { drawing = false; };
-        
-        // Eventos para Computador
-        canvas.addEventListener('mousedown', start); 
-        canvas.addEventListener('mousemove', move); 
-        window.addEventListener('mouseup', stop);
-        canvas.addEventListener('mouseleave', stop);
-        
-        // Eventos perfeitos para Celular
-        canvas.addEventListener('touchstart', start, {passive: false}); 
-        canvas.addEventListener('touchmove', move, {passive: false}); 
-        window.addEventListener('touchend', stop);
-        canvas.addEventListener('touchcancel', stop);
-        
-        window.limpar = function() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            ctx.beginPath(); 
+    // Função para limpar o quadro caso o funcionário erre a assinatura
+    window.limpar = function() { 
+        if (signaturePad) {
+            signaturePad.clear(); 
         }
     }
 
     document.getElementById('btnAssinar').onclick = async function() {
+        // Validação: Garante que o funcionário riscou algo antes de salvar
+        if (!signaturePad || signaturePad.isEmpty()) {
+            return Swal.fire('Atenção', 'Por favor, assine no quadro em branco antes de confirmar.', 'warning');
+        }
+
         const btn = document.getElementById('btnAssinar'); 
         btn.innerText = "⏳ SALVANDO..."; 
         btn.disabled = true;
         
         try {
-            const assinaturaImg = canvas.toDataURL('image/png');
+            // Capta a assinatura em formato de imagem invisível
+            const assinaturaImg = signaturePad.toDataURL('image/png');
             await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: assinaturaImg, status: "assinado" });
             
             Swal.fire({ 
