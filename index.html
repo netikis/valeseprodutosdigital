@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistema de Gestão - FH Construções</title>
     
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a2a43">
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -226,11 +233,13 @@
 
     window.listaFuncionarios = {};
 
-    // --- ROTEAMENTO INTELIGENTE ---
+    // --- ROTEAMENTO INTELIGENTE (Mudança de nome do App) ---
     if (valeId) {
+        document.title = "FH PONTO"; // Nome para o App do Funcionário (Recibo)
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
+        document.title = "FH PONTO"; // Nome para o App do Funcionário (Ponto)
         const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
@@ -239,6 +248,7 @@
             document.getElementById('tela-login').style.display = 'block';
         }
     } else {
+        document.title = "GESTÃO RH"; // Nome para o App do Patrão
         document.getElementById('tela-patrao').style.display = 'block';
         carregarListaDeFuncionarios();
     }
@@ -492,7 +502,7 @@
             });
         } catch(e) { 
             console.error("Erro ao gerar link:", e);
-            Swal.fire('Erro', 'Falha na geração do vale.', 'error'); 
+            Swal.fire('Erro', 'Falha na geração.', 'error'); 
             btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false; 
         }
     };
@@ -543,11 +553,9 @@
     // --- ASSINATURA: FINA E COM ALINHAMENTO DINÂMICO ---
     let signaturePad;
 
-    // Função de recalibrar a tela: salva o que está escrito e arruma a malha (grid) quando o celular deita/em pé
     function resizeCanvas() {
         const canvas = document.getElementById('signature-pad');
         if (canvas) {
-            // Guarda a assinatura atual na memória para não sumir ao deitar a tela
             let data = null;
             if (signaturePad && !signaturePad.isEmpty()) {
                 data = signaturePad.toData();
@@ -558,7 +566,6 @@
             canvas.height = canvas.offsetHeight * ratio;
             canvas.getContext("2d").scale(ratio, ratio);
 
-            // Devolve a assinatura para a tela com a nova proporção
             if (signaturePad) {
                 signaturePad.clear();
                 if (data) {
@@ -568,7 +575,6 @@
         }
     }
 
-    // Fica vigiando se o funcionário gira a tela para deitado (landscape) ou em pé
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 200));
 
@@ -590,14 +596,12 @@
                 setTimeout(() => {
                     const canvas = document.getElementById('signature-pad');
                     if (canvas) {
-                        // Ativa a biblioteca oficial de assinaturas com a ESPESSURA FINA
                         signaturePad = new SignaturePad(canvas, {
                             penColor: "#1a2a43",
-                            minWidth: 0.5, // Traço bem fino
-                            maxWidth: 1.5  // Limite fino, mesmo passando o dedo rápido
+                            minWidth: 0.5, 
+                            maxWidth: 1.5  
                         });
                         
-                        // Ajusta a tela logo em seguida para não ter desalinhamento
                         resizeCanvas();
                     }
                 }, 400); 
@@ -610,7 +614,6 @@
         }
     }
 
-    // Função para corrigir a assinatura sem precisar dar recarregar na página
     window.limpar = function() { 
         if (signaturePad) {
             signaturePad.clear(); 
