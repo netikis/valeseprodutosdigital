@@ -230,7 +230,6 @@
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
-        // Verifica se o funcionário já está logado no celular dele
         const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
@@ -243,7 +242,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DE LOGIN ---
+    // --- FUNÇÕES DE LOGIN CORRIGIDAS ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
@@ -265,7 +264,7 @@
             let funcId = null;
             let funcData = null;
 
-            // Forma 100% segura de extrair os dados do Firebase
+            // Extração segura dos dados
             querySnapshot.forEach((docSnap) => {
                 funcId = docSnap.id;
                 funcData = docSnap.data();
@@ -289,6 +288,12 @@
             console.error("Erro no login:", e); 
             Swal.fire('Erro', 'Falha na extração de dados.', 'error'); 
         }
+    };
+
+    window.fazerLogout = function() {
+        localStorage.removeItem('funcLogadoId');
+        localStorage.removeItem('funcLogadoNome');
+        location.reload();
     };
 
     // --- FUNÇÕES GERAIS PATRÃO ---
@@ -333,7 +338,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO ---
+    // --- FUNÇÕES DE PONTO E MAPAS CORRIGIDAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -409,7 +414,9 @@
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                const linkMaps = `https://www.google.com/maps/search/?api=1&query=$${dados.latitude},${dados.longitude}`;
+                
+                // Link Oficial do Google Maps para abrir direto na coordenada
+                const linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
                     <div class="resultado-item" style="border-left-color: ${cor}">
@@ -419,7 +426,10 @@
                     </div>
                 `;
             });
-        } catch(e) { console.error("Erro na busca de ponto:", e); divLista.innerHTML = "Erro ao buscar."; }
+        } catch(e) { 
+            console.error("Erro na busca de ponto:", e); 
+            divLista.innerHTML = "Erro ao buscar."; 
+        }
     };
 
     // --- CADASTROS E VALES (PATRÃO) ---
