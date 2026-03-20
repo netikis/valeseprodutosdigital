@@ -542,38 +542,117 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-    // --- ASSINATURA ---
+  // --- ASSINATURA ---
     async function carregarValeParaAssinatura(id) {
         try {
-            const docRef = doc(db, "vales_sistema", id); const docSnap = await getDoc(docRef);
+            const docRef = doc(db, "vales_sistema", id); 
+            const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 const dados = docSnap.data();
-                if(dados.status === 'assinado') { document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; return; }
-                document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; document.getElementById('f-texto').innerHTML = dados.texto; resizeCanvas();
-            } else { document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; }
-        } catch(e) { console.error("Erro carrega vale:", e); }
+                if(dados.status === 'assinado') { 
+                    document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; 
+                    return; 
+                }
+                
+                document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; 
+                document.getElementById('f-texto').innerHTML = dados.texto; 
+                
+                // O atraso de 300ms garante que o ecrã está 100% aberto antes de calcular o tamanho do quadro de assinatura
+                setTimeout(() => { resizeCanvas(); }, 300);
+            } else { 
+                document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
+            }
+        } catch(e) { 
+            console.error("Erro ao carregar o vale:", e); 
+        }
     }
 
-    const canvas = document.getElementById('signature-pad'); const ctx = canvas.getContext('2d'); let drawing = false;
-    function resizeCanvas() { if(!canvas) return; const ratio = window.devicePixelRatio || 1; canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio; ctx.scale(ratio, ratio); ctx.lineWidth = 2.5; ctx.strokeStyle = "#1a2a43"; }
-    const getPos = (e) => { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches.clientX : e.clientX; const clientY = e.touches ? e.touches.clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
+    const canvas = document.getElementById('signature-pad'); 
+    const ctx = canvas.getContext('2d'); 
+    let drawing = false;
+
+    function resizeCanvas() { 
+        if(!canvas) return; 
+        const ratio = window.devicePixelRatio || 1; 
+        canvas.width = canvas.offsetWidth * ratio; 
+        canvas.height = canvas.offsetHeight * ratio; 
+        ctx.scale(ratio, ratio); 
+        ctx.lineWidth = 3; // Traço mais forte
+        ctx.lineCap = "round"; // Linhas e curvas suaves
+        ctx.strokeStyle = "#1a2a43"; 
+    }
+
+    const getPos = (e) => { 
+        const rect = canvas.getBoundingClientRect(); 
+        let clientX, clientY;
+        
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches.clientX;
+            clientY = e.touches.clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return { x: clientX - rect.left, y: clientY - rect.top }; 
+    };
+
     if(canvas) {
-        const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }; const move = (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; const stop = () => drawing = false;
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-        canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', stop);
-        window.limpar = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        const start = (e) => { 
+            e.preventDefault(); // Bloqueia o scroll do ecrã ao tocar no quadro
+            drawing = true; 
+            const p = getPos(e); 
+            ctx.beginPath(); 
+            ctx.moveTo(p.x, p.y); 
+        }; 
+        
+        const move = (e) => { 
+            if(!drawing) return; 
+            e.preventDefault(); // Continua a bloquear o scroll enquanto desenha
+            const p = getPos(e); 
+            ctx.lineTo(p.x, p.y); 
+            ctx.stroke(); 
+        }; 
+        
+        const stop = () => drawing = false;
+        
+        // Eventos para o Rato (Computador)
+        canvas.addEventListener('mousedown', start); 
+        canvas.addEventListener('mousemove', move); 
+        window.addEventListener('mouseup', stop);
+        
+        // Eventos para o Toque (Telemóvel)
+        canvas.addEventListener('touchstart', start, {passive: false}); 
+        canvas.addEventListener('touchmove', move, {passive: false}); 
+        window.addEventListener('touchend', stop);
+        
+        window.limpar = function() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        }
     }
 
     document.getElementById('btnAssinar').onclick = async function() {
-        const btn = document.getElementById('btnAssinar'); btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
+        const btn = document.getElementById('btnAssinar'); 
+        btn.innerText = "⏳ A SALVAR..."; 
+        btn.disabled = true;
+        
         try {
             const assinaturaImg = canvas.toDataURL('image/png');
             await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: assinaturaImg, status: "assinado" });
-            Swal.fire({ title: 'Assinado!', text: 'Registrado com sucesso.', icon: 'success', allowOutsideClick: false, confirmButtonColor: '#1a2a43' }).then(() => {
+            
+            Swal.fire({ 
+                title: 'Assinado!', 
+                text: 'Registado com sucesso.', 
+                icon: 'success', 
+                allowOutsideClick: false, 
+                confirmButtonColor: '#1a2a43' 
+            }).then(() => {
                 document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3></div>`;
             });
-        } catch(e) { console.error("Erro assinar:", e); Swal.fire('Erro', 'Tente assinar novamente.', 'error'); btn.innerText = "CONFIRMAR E ASSINAR"; btn.disabled = false; }
+        } catch(e) { 
+            console.error("Erro ao assinar:", e); 
+            Swal.fire('Erro', 'Tente assinar novamente.', 'error'); 
+            btn.innerText = "CONFIRMAR E ASSINAR"; 
+            btn.disabled = false; 
+        }
     };
-</script>
-</body>
-</html>
