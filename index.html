@@ -262,33 +262,33 @@
                 return;
             }
 
-            const funcDoc = querySnapshot.docs;
-            const funcData = funcDoc.data();
+            let funcId = null;
+            let funcData = null;
+
+            // Forma 100% segura de extrair os dados do Firebase
+            querySnapshot.forEach((docSnap) => {
+                funcId = docSnap.id;
+                funcData = docSnap.data();
+            });
 
             if (!funcData.senha) {
-                await updateDoc(doc(db, "funcionarios", funcDoc.id), { senha: senha });
-                localStorage.setItem('funcLogadoId', funcDoc.id);
+                await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
+                localStorage.setItem('funcLogadoId', funcId);
                 localStorage.setItem('funcLogadoNome', funcData.nome);
                 Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
             } else {
                 if (funcData.senha !== senha) {
                     Swal.fire('Erro', 'Senha incorreta!', 'error');
                 } else {
-                    localStorage.setItem('funcLogadoId', funcDoc.id);
+                    localStorage.setItem('funcLogadoId', funcId);
                     localStorage.setItem('funcLogadoNome', funcData.nome);
                     location.reload(); 
                 }
             }
         } catch(e) { 
             console.error("Erro no login:", e); 
-            Swal.fire('Erro', 'Falha na conexão.', 'error'); 
+            Swal.fire('Erro', 'Falha na extração de dados.', 'error'); 
         }
-    };
-
-    window.fazerLogout = function() {
-        localStorage.removeItem('funcLogadoId');
-        localStorage.removeItem('funcLogadoNome');
-        location.reload();
     };
 
     // --- FUNÇÕES GERAIS PATRÃO ---
