@@ -243,7 +243,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÕES DE LOGIN CORRIGIDAS ---
+    // --- FUNÇÕES DE LOGIN ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
@@ -338,7 +338,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E MAPAS CORRIGIDAS ---
+    // --- FUNÇÕES DE PONTO E MAPAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -378,7 +378,7 @@
                         document.getElementById('obra-atual').value = '';
                     } catch(e) {
                         console.error("Erro no ponto:", e);
-                        Swal.fire('Erro', 'Problema ao salvar no banco. Verifique as Regras do Firebase.', 'error');
+                        Swal.fire('Erro', 'Problema ao salvar no banco.', 'error');
                     }
                 },
                 (error) => {
@@ -414,8 +414,6 @@
             divLista.innerHTML = "";
             registros.forEach((dados) => {
                 const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                
-                // Link Oficial do Google Maps para abrir direto na coordenada
                 const linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                 
                 divLista.innerHTML += `
@@ -461,12 +459,12 @@
         
         try {
             await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
-            Swal.fire('Sucesso!', 'Funcionário cadastrado. Ele já pode criar a senha dele acessando o link do ponto.', 'success');
+            Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
             document.getElementById('c-nome').value = ''; document.getElementById('c-cpf').value = ''; document.getElementById('c-tel').value = '';
             carregarListaDeFuncionarios();
         } catch(e) { 
-            console.error("Erro Crítico no Cadastro:", e); 
-            Swal.fire('Erro de Permissão', 'Falha ao salvar. Você configurou as Regras do Firebase conforme a instrução?', 'error'); 
+            console.error("Erro Cadastro:", e); 
+            Swal.fire('Erro', 'Falha ao salvar.', 'error'); 
         } finally { 
             btn.innerText = "SALVAR FUNCIONÁRIO"; btn.disabled = false; 
         }
@@ -542,8 +540,37 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-    // --- ASSINATURA TOTALMENTE REFEITA COM BIBLIOTECA OFICIAL ---
+    // --- ASSINATURA: FINA E COM ALINHAMENTO DINÂMICO ---
     let signaturePad;
+
+    // Função de recalibrar a tela: salva o que está escrito e arruma a malha (grid) quando o celular deita/em pé
+    function resizeCanvas() {
+        const canvas = document.getElementById('signature-pad');
+        if (canvas) {
+            // Guarda a assinatura atual na memória para não sumir ao deitar a tela
+            let data = null;
+            if (signaturePad && !signaturePad.isEmpty()) {
+                data = signaturePad.toData();
+            }
+
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+
+            // Devolve a assinatura para a tela com a nova proporção
+            if (signaturePad) {
+                signaturePad.clear();
+                if (data) {
+                    signaturePad.fromData(data);
+                }
+            }
+        }
+    }
+
+    // Fica vigiando se o funcionário gira a tela para deitado (landscape) ou em pé
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 200));
 
     async function carregarValeParaAssinatura(id) {
         try {
@@ -560,22 +587,18 @@
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; 
                 document.getElementById('f-texto').innerHTML = dados.texto; 
                 
-                // Aguarda um pequeno instante para a tela carregar por completo e então aplica a biblioteca de assinatura
                 setTimeout(() => {
                     const canvas = document.getElementById('signature-pad');
                     if (canvas) {
-                        // Ajusta o tamanho nativo da tela para evitar borrões ou distorções no toque
-                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                        canvas.width = canvas.offsetWidth * ratio;
-                        canvas.height = canvas.offsetHeight * ratio;
-                        canvas.getContext("2d").scale(ratio, ratio);
-                        
-                        // Ativa a biblioteca oficial de assinaturas
+                        // Ativa a biblioteca oficial de assinaturas com a ESPESSURA FINA
                         signaturePad = new SignaturePad(canvas, {
                             penColor: "#1a2a43",
-                            minWidth: 2,
-                            maxWidth: 4
+                            minWidth: 0.5, // Traço bem fino
+                            maxWidth: 1.5  // Limite fino, mesmo passando o dedo rápido
                         });
+                        
+                        // Ajusta a tela logo em seguida para não ter desalinhamento
+                        resizeCanvas();
                     }
                 }, 400); 
 
@@ -587,7 +610,7 @@
         }
     }
 
-    // Função para limpar o quadro caso o funcionário erre a assinatura
+    // Função para corrigir a assinatura sem precisar dar recarregar na página
     window.limpar = function() { 
         if (signaturePad) {
             signaturePad.clear(); 
@@ -595,7 +618,6 @@
     }
 
     document.getElementById('btnAssinar').onclick = async function() {
-        // Validação: Garante que o funcionário riscou algo antes de salvar
         if (!signaturePad || signaturePad.isEmpty()) {
             return Swal.fire('Atenção', 'Por favor, assine no quadro em branco antes de confirmar.', 'warning');
         }
@@ -605,7 +627,6 @@
         btn.disabled = true;
         
         try {
-            // Capta a assinatura em formato de imagem invisível
             const assinaturaImg = signaturePad.toDataURL('image/png');
             await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: assinaturaImg, status: "assinado" });
             
