@@ -542,7 +542,7 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-  // --- ASSINATURA ---
+    // --- ASSINATURA ---
     async function carregarValeParaAssinatura(id) {
         try {
             const docRef = doc(db, "vales_sistema", id); 
@@ -558,7 +558,7 @@
                 document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; 
                 document.getElementById('f-texto').innerHTML = dados.texto; 
                 
-                // O atraso de 300ms garante que o ecrã está 100% aberto antes de calcular o tamanho do quadro de assinatura
+                // O atraso de 300ms garante que a tela está 100% aberta antes de calcular o tamanho da assinatura
                 setTimeout(() => { resizeCanvas(); }, 300);
             } else { 
                 document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
@@ -599,7 +599,7 @@
 
     if(canvas) {
         const start = (e) => { 
-            e.preventDefault(); // Bloqueia o scroll do ecrã ao tocar no quadro
+            e.preventDefault(); // Bloqueia o scroll da tela ao tocar no quadro
             drawing = true; 
             const p = getPos(e); 
             ctx.beginPath(); 
@@ -616,12 +616,12 @@
         
         const stop = () => drawing = false;
         
-        // Eventos para o Rato (Computador)
+        // Eventos para o Mouse (Computador)
         canvas.addEventListener('mousedown', start); 
         canvas.addEventListener('mousemove', move); 
         window.addEventListener('mouseup', stop);
         
-        // Eventos para o Toque (Telemóvel)
+        // Eventos para o Toque (Celular)
         canvas.addEventListener('touchstart', start, {passive: false}); 
         canvas.addEventListener('touchmove', move, {passive: false}); 
         window.addEventListener('touchend', stop);
@@ -633,7 +633,7 @@
 
     document.getElementById('btnAssinar').onclick = async function() {
         const btn = document.getElementById('btnAssinar'); 
-        btn.innerText = "⏳ A SALVAR..."; 
+        btn.innerText = "⏳ SALVANDO..."; 
         btn.disabled = true;
         
         try {
@@ -642,7 +642,7 @@
             
             Swal.fire({ 
                 title: 'Assinado!', 
-                text: 'Registado com sucesso.', 
+                text: 'Registrado com sucesso.', 
                 icon: 'success', 
                 allowOutsideClick: false, 
                 confirmButtonColor: '#1a2a43' 
@@ -656,3 +656,6 @@
             btn.disabled = false; 
         }
     };
+</script>
+</body>
+</html>
