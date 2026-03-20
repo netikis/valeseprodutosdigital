@@ -242,7 +242,7 @@
 
     window.listaFuncionarios = {};
 
-    // --- ROTEAMENTO INTELIGENTE (Mudança de nome do App) ---
+    // --- ROTEAMENTO INTELIGENTE ---
     if (valeId) {
         document.title = "FH PONTO"; 
         document.getElementById('tela-funcionario').style.display = 'block';
@@ -262,7 +262,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- DICIONÁRIO E FUNÇÃO PARA CONSERTAR DATAS AUTOMATICAMENTE ---
+    // --- DICIONÁRIO E FUNÇÃO PARA CONSERTAR DATAS ---
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
         "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
@@ -272,19 +272,14 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    // Extrai perfeitamente dia, mês e ano independente do celular do funcionário
     function separarDataSegura(dataString) {
         if (!dataString) return { dia: '??', mes: 'Outros', ano: 'Outros' };
-        
-        let apenasData = dataString.split(' '); // Tira as horas, se houver grudado
-        let partes = apenasData.split(/[\/\-]/); // Quebra por barra (/) ou traço (-)
-        
+        let apenasData = dataString.split(' '); 
+        let partes = apenasData.split(/[\/\-]/); 
         if (partes.length === 3) {
             if (partes.length === 4) { 
-                // Se estiver no formato YYYY-MM-DD
                 return { ano: partes, mes: partes, dia: partes };
             } else { 
-                // Se estiver no formato clássico DD/MM/YYYY
                 return { ano: partes, mes: partes, dia: partes };
             }
         }
@@ -408,7 +403,14 @@
                     
                     const funcId = localStorage.getItem('funcLogadoId');
                     const funcNome = localStorage.getItem('funcLogadoNome');
-                    const dataAtual = new Date();
+                    
+                    // Extração de data e hora perfeitos
+                    const dataObj = new Date();
+                    const diaStr = String(dataObj.getDate()).padStart(2, '0');
+                    const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
+                    const anoStr = dataObj.getFullYear();
+                    const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
+                    const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
                     
                     try {
                         await addDoc(collection(db, "ponto_registros"), {
@@ -416,13 +418,13 @@
                             nome: funcNome,
                             tipo: tipo,
                             obra: obra,
-                            data: dataAtual.toLocaleDateString('pt-BR'),
-                            hora: dataAtual.toLocaleTimeString('pt-BR'),
+                            data: dataAtual,
+                            hora: horaAtual,
                             latitude: lat,
                             longitude: lng,
-                            timestamp: dataAtual.getTime()
+                            timestamp: dataObj.getTime()
                         });
-                        Swal.fire('Sucesso!', `${tipo} em "${obra}" registrada às ${dataAtual.toLocaleTimeString('pt-BR')}`, 'success');
+                        Swal.fire('Sucesso!', `${tipo} em "${obra}" registrada às ${horaAtual}`, 'success');
                         document.getElementById('obra-atual').value = '';
                     } catch(e) {
                         console.error("Erro no ponto:", e);
@@ -458,8 +460,6 @@
             let agrupado = {};
             querySnapshot.forEach((doc) => {
                 const dados = doc.data();
-                
-                // Extrai o Ano, Mês e Dia usando nossa nova função de forma limpa
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
                 if(!agrupado[ano]) agrupado[ano] = {};
@@ -470,19 +470,17 @@
             });
 
             let htmlFinal = "";
-            // Mostra os anos (mais recentes primeiro)
             Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                // Mostra os meses (mais recentes primeiro)
                 Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    // Ordena os pontos pelo dia e hora real (timestamp) de trás pra frente
                     agrupado[ano][mes].sort((a, b) => b.timestamp - a.timestamp).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        const linkMaps = `https://maps.google.com/?q=$${dados.latitude},${dados.longitude}`;
+                        // AQUI FOI CORRIGIDO O LINK DO MAPA
+                        const linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
@@ -543,6 +541,7 @@
         }
     };
 
+    // AQUI INCLUÍMOS A HORA EXATA NA GERAÇÃO DOS VALES
     document.getElementById('btnGerarLink').onclick = async function() {
         const funcId = document.getElementById('p-func-select').value;
         const valor = document.getElementById('p-valor').value;
@@ -551,11 +550,34 @@
         if(!funcId || !valor) return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
         const btn = document.getElementById('btnGerarLink'); btn.innerText = "⏳ GERANDO..."; btn.disabled = true;
         
-        const funcionario = window.listaFuncionarios[funcId]; const dataAtual = new Date().toLocaleDateString('pt-BR');
+        const funcionario = window.listaFuncionarios[funcId]; 
+        
+        // Geração limpa da data e da HORA para os vales
+        const dataObj = new Date();
+        const diaStr = String(dataObj.getDate()).padStart(2, '0');
+        const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
+        const anoStr = dataObj.getFullYear();
+        const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
+        const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+
         let textoCompleto = tipo === 'Dinheiro' ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.` : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
 
         try {
-            const docRef = await addDoc(collection(db, "vales_sistema"), { funcionario_id: funcId, nome: funcionario.nome, tel: funcionario.tel, valor: valor, tipo: tipo, descricao: desc, texto: textoCompleto, data_criacao: dataAtual, status: "pendente", assinatura: null });
+            const docRef = await addDoc(collection(db, "vales_sistema"), { 
+                funcionario_id: funcId, 
+                nome: funcionario.nome, 
+                tel: funcionario.tel, 
+                valor: valor, 
+                tipo: tipo, 
+                descricao: desc, 
+                texto: textoCompleto, 
+                data_criacao: dataAtual, 
+                hora_criacao: horaAtual, // Salvando a hora no banco
+                timestamp: dataObj.getTime(), // Salvando momento exato para ordem da pasta
+                status: "pendente", 
+                assinatura: null 
+            });
+            
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
 
@@ -570,7 +592,7 @@
         }
     };
 
-    // --- BUSCA DE VALES ORGANIZADA POR PASTAS ---
+    // --- BUSCA DE VALES ORGANIZADA (COM HORAS) ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
@@ -592,7 +614,6 @@
                 const dados = docSnap.data(); 
                 window.valesEncontrados[docSnap.id] = dados;
                 
-                // Extrai o Ano, Mês e Dia de forma limpa
                 const { ano, mes, dia } = separarDataSegura(dados.data_criacao);
                 
                 if(!agrupado[ano]) agrupado[ano] = {};
@@ -608,11 +629,18 @@
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    // Ordena os recibos pelo dia (do mais recente ao mais antigo)
-                    agrupado[ano][mes].sort((a, b) => parseInt(b.diaFormatado) - parseInt(a.diaFormatado)).forEach(vale => {
+                    // Ordena usando o tempo exato (timestamp) ou pelo número do dia (para os antigos)
+                    agrupado[ano][mes].sort((a, b) => {
+                        if (b.timestamp && a.timestamp) return b.timestamp - a.timestamp;
+                        return parseInt(b.diaFormatado) - parseInt(a.diaFormatado);
+                    }).forEach(vale => {
+                        
+                        // Sistema inteligente: se for vale novo, ele mostra a hora. Se for antigo, deixa em branco pra não dar erro.
+                        const horaExibicao = vale.hora_criacao ? ` às ${vale.hora_criacao}` : "";
+                        
                         htmlFinal += `
                             <div class="resultado-item">
-                                <b style="color:var(--dark-navy);">Dia:</b> ${vale.diaFormatado} <br>
+                                <b style="color:var(--dark-navy);">Dia:</b> ${vale.diaFormatado}${horaExibicao} <br>
                                 <b style="color:var(--dark-navy);">Valor:</b> R$ ${vale.valor} <br>
                                 <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
                             </div>`;
@@ -629,7 +657,12 @@
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); Swal.showLoading();
-        document.getElementById('pdf-data').innerText = "Data: " + dados.data_criacao; document.getElementById('pdf-texto').innerHTML = dados.texto; document.getElementById('pdf-assinatura').src = dados.assinatura; document.getElementById('pdf-nome-ass').innerText = dados.nome;
+        
+        // Inclui a hora na via oficial do PDF (se o vale for novo e possuir a hora gravada)
+        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : "";
+        document.getElementById('pdf-data').innerText = "Data: " + dados.data_criacao + horaPDF; 
+        
+        document.getElementById('pdf-texto').innerHTML = dados.texto; document.getElementById('pdf-assinatura').src = dados.assinatura; document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
         try {
             await new Promise(r => setTimeout(r, 800)); 
