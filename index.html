@@ -37,11 +37,9 @@
         .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s; }
         .btn-gold:hover { background: #b88a12; }
 
-        /* Botões de Ponto e Login */
         .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
         .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
         .btn-logout { background: #eee; color: #555; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 13px; margin-top: 25px; cursor: pointer; }
-
         .btn-limpar { background: #f8d7da; color: #721c24; border: none; font-weight: 600; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 10px; width: 100%; }
 
         .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 12px; flex-wrap: wrap; }
@@ -60,9 +58,20 @@
 
         canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 160px; border-radius: 10px; touch-action: none; margin-top: 15px; }
         
-        .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 10px; margin-top: 10px; background: #fff; border-left: 4px solid var(--gold); }
+        .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 10px; margin-top: 8px; background: #fff; border-left: 4px solid var(--gold); }
         .btn-pdf { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: 600; font-size: 13px;}
         .btn-maps { background: #4285F4; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; font-size: 12px;}
+
+        /* ESTILO DAS PASTAS (ANOS E MESES) */
+        details { background: #fafcff; border: 1px solid #e0e6ed; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+        summary { padding: 15px; font-weight: 700; font-size: 14px; background: #eef2f5; cursor: pointer; color: var(--dark-navy); list-style: none; display: flex; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        summary::before { content: '📁'; margin-right: 8px; font-size: 18px; }
+        details[open] > summary::before { content: '📂'; }
+        .folder-content { padding: 10px; border-top: 1px solid #e0e6ed; }
+        
+        .pasta-mes { border-left: 3px solid var(--gold); margin-top: 5px; border-radius: 0 10px 10px 0; }
+        .pasta-mes summary { background: #ffffff; font-size: 13px; font-weight: 600; padding: 12px; }
     </style>
 </head>
 <body>
@@ -235,11 +244,11 @@
 
     // --- ROTEAMENTO INTELIGENTE (Mudança de nome do App) ---
     if (valeId) {
-        document.title = "FH PONTO"; // Nome para o App do Funcionário (Recibo)
+        document.title = "FH PONTO"; 
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
-        document.title = "FH PONTO"; // Nome para o App do Funcionário (Ponto)
+        document.title = "FH PONTO"; 
         const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
@@ -248,7 +257,7 @@
             document.getElementById('tela-login').style.display = 'block';
         }
     } else {
-        document.title = "GESTÃO RH"; // Nome para o App do Patrão
+        document.title = "GESTÃO RH"; 
         document.getElementById('tela-patrao').style.display = 'block';
         carregarListaDeFuncionarios();
     }
@@ -348,7 +357,10 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E MAPAS ---
+    // --- DICIONÁRIO DE MESES ---
+    const nomeMeses = { "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril", "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto", "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro" };
+
+    // --- BUSCA DE PONTO ORGANIZADA POR PASTAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -406,7 +418,7 @@
         if(!funcId) return Swal.fire('Atenção', 'Selecione um funcionário.', 'warning');
         
         const divLista = document.getElementById('lista-ponto-resultados');
-        divLista.innerHTML = "Buscando...";
+        divLista.innerHTML = "Buscando e organizando...";
 
         try {
             const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
@@ -417,23 +429,46 @@
                 return;
             }
 
-            let registros = [];
-            querySnapshot.forEach((doc) => registros.push(doc.data()));
-            registros.sort((a, b) => b.timestamp - a.timestamp); 
-
-            divLista.innerHTML = "";
-            registros.forEach((dados) => {
-                const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                const linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
+            let agrupado = {};
+            querySnapshot.forEach((doc) => {
+                const dados = doc.data();
+                const partes = dados.data.split('/'); // Ex: ["20", "03", "2026"]
+                const ano = partes.length === 3 ? partes : "Outros";
+                const mes = partes.length === 3 ? partes : "Outros";
                 
-                divLista.innerHTML += `
-                    <div class="resultado-item" style="border-left-color: ${cor}">
-                        <b style="color: ${cor}">${dados.tipo}</b> - ${dados.data} às ${dados.hora} <br>
-                        <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
-                        <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA (GPS EXATO)</button>
-                    </div>
-                `;
+                if(!agrupado[ano]) agrupado[ano] = {};
+                if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                agrupado[ano][mes].push(dados);
             });
+
+            let htmlFinal = "";
+            // Order anos de trás pra frente (mais recentes primeiro)
+            Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
+                htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
+                
+                // Ordem dos meses de trás pra frente
+                Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
+                    const nomeDoMes = nomeMeses[mes] || mes;
+                    htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
+                    
+                    // Ordena os dias (mais recentes primeiro)
+                    agrupado[ano][mes].sort((a, b) => b.timestamp - a.timestamp).forEach(dados => {
+                        const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
+                        const linkMaps = `https://maps.google.com/?q=$${dados.latitude},${dados.longitude}`;
+                        
+                        htmlFinal += `
+                            <div class="resultado-item" style="border-left-color: ${cor}">
+                                <b style="color: ${cor}">${dados.tipo}</b> - ${dados.data} às ${dados.hora} <br>
+                                <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
+                                <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                            </div>`;
+                    });
+                    htmlFinal += `</div></details>`;
+                });
+                htmlFinal += `</div></details>`;
+            });
+
+            divLista.innerHTML = htmlFinal;
         } catch(e) { 
             console.error("Erro na busca de ponto:", e); 
             divLista.innerHTML = "Erro ao buscar."; 
@@ -507,19 +542,60 @@
         }
     };
 
+    // --- BUSCA DE VALES ORGANIZADA POR PASTAS ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
-        const divLista = document.getElementById('lista-resultados'); divLista.innerHTML = "Buscando...";
+        const divLista = document.getElementById('lista-resultados'); 
+        divLista.innerHTML = "Buscando e organizando...";
+        
         try {
             const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
             const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center; font-weight:bold;">Nenhum recibo.</p>`; return; }
-            divLista.innerHTML = ""; window.valesEncontrados = {}; 
+            if (querySnapshot.empty) { 
+                divLista.innerHTML = `<p style="color:#d9534f; text-align:center; font-weight:bold;">Nenhum recibo assinado.</p>`; 
+                return; 
+            }
+            
+            window.valesEncontrados = {}; 
+            let agrupado = {};
+
             querySnapshot.forEach((docSnap) => {
-                const dados = docSnap.data(); window.valesEncontrados[docSnap.id] = dados;
-                divLista.innerHTML += `<div class="resultado-item"><b style="color:var(--dark-navy);">Data:</b> ${dados.data_criacao} <br><b style="color:var(--dark-navy);">Valor:</b> R$ ${dados.valor} <br><button class="btn-pdf" onclick="gerarEnviarPDF('${docSnap.id}')">📄 BAIXAR PDF OFICIAL</button></div>`;
+                const dados = docSnap.data(); 
+                window.valesEncontrados[docSnap.id] = dados;
+                
+                const partes = dados.data_criacao.split('/'); // Ex: ["20", "03", "2026"]
+                const ano = partes.length === 3 ? partes : "Outros";
+                const mes = partes.length === 3 ? partes : "Outros";
+                
+                if(!agrupado[ano]) agrupado[ano] = {};
+                if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                agrupado[ano][mes].push({ id: docSnap.id, ...dados });
             });
+
+            let htmlFinal = "";
+            Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
+                htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
+                
+                Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
+                    const nomeDoMes = nomeMeses[mes] || mes;
+                    htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
+                    
+                    agrupado[ano][mes].forEach(vale => {
+                        htmlFinal += `
+                            <div class="resultado-item">
+                                <b style="color:var(--dark-navy);">Data:</b> ${vale.data_criacao} <br>
+                                <b style="color:var(--dark-navy);">Valor:</b> R$ ${vale.valor} <br>
+                                <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
+                            </div>`;
+                    });
+                    
+                    htmlFinal += `</div></details>`;
+                });
+                htmlFinal += `</div></details>`;
+            });
+
+            divLista.innerHTML = htmlFinal;
         } catch(e) { console.error("Erro buscar vales:", e); divLista.innerHTML = "Erro."; }
     };
 
@@ -550,7 +626,7 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-    // --- ASSINATURA: FINA E COM ALINHAMENTO DINÂMICO ---
+    // --- ASSINATURA ---
     let signaturePad;
 
     function resizeCanvas() {
