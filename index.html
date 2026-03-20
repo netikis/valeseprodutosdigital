@@ -262,6 +262,35 @@
         carregarListaDeFuncionarios();
     }
 
+    // --- DICIONÁRIO E FUNÇÃO PARA CONSERTAR DATAS AUTOMATICAMENTE ---
+    const nomeMeses = { 
+        "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
+        "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
+        "05": "Maio", "5": "Maio", "06": "Junho", "6": "Junho", 
+        "07": "Julho", "7": "Julho", "08": "Agosto", "8": "Agosto", 
+        "09": "Setembro", "9": "Setembro", "10": "Outubro", 
+        "11": "Novembro", "12": "Dezembro" 
+    };
+
+    // Extrai perfeitamente dia, mês e ano independente do celular do funcionário
+    function separarDataSegura(dataString) {
+        if (!dataString) return { dia: '??', mes: 'Outros', ano: 'Outros' };
+        
+        let apenasData = dataString.split(' '); // Tira as horas, se houver grudado
+        let partes = apenasData.split(/[\/\-]/); // Quebra por barra (/) ou traço (-)
+        
+        if (partes.length === 3) {
+            if (partes.length === 4) { 
+                // Se estiver no formato YYYY-MM-DD
+                return { ano: partes, mes: partes, dia: partes };
+            } else { 
+                // Se estiver no formato clássico DD/MM/YYYY
+                return { ano: partes, mes: partes, dia: partes };
+            }
+        }
+        return { ano: 'Outros', mes: 'Outros', dia: dataString }; 
+    }
+
     // --- FUNÇÕES DE LOGIN ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
@@ -357,10 +386,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- DICIONÁRIO DE MESES ---
-    const nomeMeses = { "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril", "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto", "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro" };
-
-    // --- BUSCA DE PONTO ORGANIZADA POR PASTAS ---
+    // --- FUNÇÕES DE PONTO E MAPAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -432,33 +458,35 @@
             let agrupado = {};
             querySnapshot.forEach((doc) => {
                 const dados = doc.data();
-                const partes = dados.data.split('/'); // Ex: ["20", "03", "2026"]
-                const ano = partes.length === 3 ? partes : "Outros";
-                const mes = partes.length === 3 ? partes : "Outros";
+                
+                // Extrai o Ano, Mês e Dia usando nossa nova função de forma limpa
+                const { ano, mes, dia } = separarDataSegura(dados.data);
                 
                 if(!agrupado[ano]) agrupado[ano] = {};
                 if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                
+                dados.diaFormatado = dia;
                 agrupado[ano][mes].push(dados);
             });
 
             let htmlFinal = "";
-            // Order anos de trás pra frente (mais recentes primeiro)
+            // Mostra os anos (mais recentes primeiro)
             Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                // Ordem dos meses de trás pra frente
+                // Mostra os meses (mais recentes primeiro)
                 Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    // Ordena os dias (mais recentes primeiro)
+                    // Ordena os pontos pelo dia e hora real (timestamp) de trás pra frente
                     agrupado[ano][mes].sort((a, b) => b.timestamp - a.timestamp).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
                         const linkMaps = `https://maps.google.com/?q=$${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
-                                <b style="color: ${cor}">${dados.tipo}</b> - ${dados.data} às ${dados.hora} <br>
+                                <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.diaFormatado} às ${dados.hora} <br>
                                 <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
                                 <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA</button>
                             </div>`;
@@ -564,13 +592,12 @@
                 const dados = docSnap.data(); 
                 window.valesEncontrados[docSnap.id] = dados;
                 
-                const partes = dados.data_criacao.split('/'); // Ex: ["20", "03", "2026"]
-                const ano = partes.length === 3 ? partes : "Outros";
-                const mes = partes.length === 3 ? partes : "Outros";
+                // Extrai o Ano, Mês e Dia de forma limpa
+                const { ano, mes, dia } = separarDataSegura(dados.data_criacao);
                 
                 if(!agrupado[ano]) agrupado[ano] = {};
                 if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
-                agrupado[ano][mes].push({ id: docSnap.id, ...dados });
+                agrupado[ano][mes].push({ id: docSnap.id, diaFormatado: dia, ...dados });
             });
 
             let htmlFinal = "";
@@ -581,10 +608,11 @@
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    agrupado[ano][mes].forEach(vale => {
+                    // Ordena os recibos pelo dia (do mais recente ao mais antigo)
+                    agrupado[ano][mes].sort((a, b) => parseInt(b.diaFormatado) - parseInt(a.diaFormatado)).forEach(vale => {
                         htmlFinal += `
                             <div class="resultado-item">
-                                <b style="color:var(--dark-navy);">Data:</b> ${vale.data_criacao} <br>
+                                <b style="color:var(--dark-navy);">Dia:</b> ${vale.diaFormatado} <br>
                                 <b style="color:var(--dark-navy);">Valor:</b> R$ ${vale.valor} <br>
                                 <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
                             </div>`;
