@@ -270,32 +270,40 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA QUE SEPARA ANO, MÊS E DIA COM 100% DE PRECISÃO
+    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA INFALÍVEL PARA A LEITURA DA DATA
     function separarDataSegura(dataString) {
         try {
             if (!dataString) return { ano: 'Outros', mes: 'Outros', dia: '??' };
             
-            let texto = String(dataString).trim();
+            // 1. Isola a data de qualquer hora ou texto que venha depois de um espaço
+            let apenasData = String(dataString).trim().split(' ');
             
-            // Busca qualquer padrão que se pareça com uma data (ex: 20/03/2026, 20-03-2026)
-            let matchData = texto.match(/(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})/);
+            // 2. O ASPIRADOR ABSOLUTO: Remove QUALQUER caractere invisível ou letra, deixando SÓ números e barras
+            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
             
-            if (matchData) {
-                let p1 = matchData;
-                let p2 = matchData;
-                let p3 = matchData;
+            let partes = textoLimpo.split(/[\/\-]/);
+            
+            if (partes.length >= 3) {
+                let p1 = partes;
+                let p2 = partes;
+                let p3 = partes;
                 
                 let ano, mes, dia;
                 
-                if (p3.length === 4) {
-                    ano = p3;
+                // Se o ano estiver no fim (ex: 20/03/2026)
+                if (p3.length >= 4) {
+                    ano = p3.substring(0, 4);
                     mes = p2;
                     dia = p1;
-                } else if (p1.length === 4) {
-                    ano = p1;
+                } 
+                // Se o ano estiver no começo (ex: 2026-03-20)
+                else if (p1.length >= 4) {
+                    ano = p1.substring(0, 4);
                     mes = p2;
                     dia = p3;
-                } else {
+                } 
+                // Se for ano abreviado (ex: 20/03/26)
+                else {
                     ano = "20" + p3;
                     mes = p2;
                     dia = p1;
@@ -308,7 +316,7 @@
                 };
             }
             
-            return { ano: 'Outros', mes: 'Outros', dia: texto };
+            return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
         } catch(e) {
             return { ano: 'Outros', mes: 'Outros', dia: '??' };
         }
@@ -541,7 +549,7 @@
                         return dB - dA;
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        const linkMapsCorrigido = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
+                        const linkMapsCorrigido = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
