@@ -261,7 +261,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- FUNÇÃO BLINDADA PARA DATAS ---
+    // --- LIMPACOR DE FANTASMAS (APPLE/ANDROID) E SEPARADOR DE DATAS ---
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
         "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
@@ -271,22 +271,28 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    function separarDataSegura(dataString) {
+    function separarDataSegura(dataObjRaw) {
         try {
-            if (!dataString) return { dia: '??', mes: 'Outros', ano: 'Outros' };
-            if (typeof dataString !== 'string') dataString = String(dataString);
-            
-            let apenasData = dataString.split(' '); 
-            let partes = apenasData.split(/[\/\-]/); 
-            
+            if (!dataObjRaw) return { dia: '??', mes: 'Outros', ano: 'Outros' };
+
+            // O ASPIRADOR: Tira todos os códigos invisíveis e caracteres esquisitos da Apple
+            let textoLimpo = String(dataObjRaw).replace(/[^\d\/\-\s:]/g, '').trim();
+
+            let apenasData = textoLimpo.split(' ');
+            let partes = apenasData.split(/[\/\-]/);
+
             if (partes.length >= 3) {
-                if (partes.length === 4) { 
-                    return { ano: partes, mes: partes, dia: partes };
-                } else { 
-                    return { ano: partes, mes: partes, dia: partes };
-                }
+                let p1 = partes.trim();
+                let p2 = partes.trim();
+                let p3 = partes.trim();
+
+                let ano = p1.length === 4 ? p1 : p3;
+                let mes = p2.padStart(2, '0');
+                let dia = p1.length === 4 ? p3 : p1;
+
+                return { ano: ano, mes: mes, dia: dia.padStart(2, '0') };
             }
-            return { ano: 'Outros', mes: 'Outros', dia: apenasData }; 
+            return { ano: 'Outros', mes: 'Outros', dia: apenasData || '??' };
         } catch(e) {
             return { ano: 'Outros', mes: 'Outros', dia: '??' };
         }
@@ -345,7 +351,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E GPS (COM ESCUDO E DESBLOQUEIO MANUAL) ---
+    // --- FUNÇÕES DE PONTO E GPS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -367,7 +373,6 @@
             return Swal.fire('Erro', 'Seu navegador não tem função de GPS.', 'error');
         }
 
-        // Criamos um timer para DESTRAVAR a tela caso o celular do funcionário "congele" a permissão
         let timerGPS = setTimeout(() => {
             Swal.fire({
                 icon: 'error',
@@ -491,7 +496,7 @@
         } catch(e) { Swal.fire('Erro', 'Falha na geração.', 'error'); btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false; }
     };
 
-    // --- BUSCA DE VALES (BLINDADA) ---
+    // --- BUSCA DE VALES ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
@@ -505,7 +510,7 @@
             window.valesEncontrados = {}; let agrupado = {};
             querySnapshot.forEach((docSnap) => {
                 const dados = docSnap.data(); window.valesEncontrados[docSnap.id] = dados;
-                const { ano, mes, dia } = separarDataSegura(dados.data_criacao);
+                const { ano, mes, dia } = separarDataSegura(dados.data_criacao || dados.data);
                 if(!agrupado[ano]) agrupado[ano] = {}; if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
                 agrupado[ano][mes].push({ id: docSnap.id, diaFormatado: dia, ...dados });
             });
@@ -540,7 +545,7 @@
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); Swal.showLoading();
-        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; document.getElementById('pdf-data').innerText = "Data: " + dados.data_criacao + horaPDF; 
+        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; document.getElementById('pdf-assinatura').src = dados.assinatura; document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
         try {
@@ -551,7 +556,7 @@
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
             const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
-            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo sua via do recibo de ${dados.data_criacao}.`;
+            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo sua via do recibo.`;
 
             let sucessoCompartilhamento = false;
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -581,7 +586,7 @@
             if (docSnap.exists()) {
                 const dados = docSnap.data();
                 if(dados.status === 'assinado') { document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; return; }
-                document.getElementById('f-data').innerText = "Gerado em: " + dados.data_criacao; document.getElementById('f-texto').innerHTML = dados.texto; 
+                document.getElementById('f-data').innerText = "Gerado em: " + (dados.data_criacao || ""); document.getElementById('f-texto').innerHTML = dados.texto; 
                 setTimeout(() => { const canvas = document.getElementById('signature-pad'); if (canvas) { signaturePad = new SignaturePad(canvas, { penColor: "#1a2a43", minWidth: 0.5, maxWidth: 1.5 }); resizeCanvas(); } }, 400); 
             } else { document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; }
         } catch(e) { console.error("Erro ao carregar o vale:", e); }
