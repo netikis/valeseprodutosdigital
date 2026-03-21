@@ -261,7 +261,6 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- LIMPACOR DE FANTASMAS (APPLE/ANDROID) E SEPARADOR DE DATAS ---
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
         "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
@@ -271,34 +270,35 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
+    // FUNÇÃO CORRIGIDA DE EXTRAÇÃO DE DATA (Direta e Simples)
     function separarDataSegura(dataObjRaw) {
-        try {
-            if (!dataObjRaw) return { dia: '??', mes: 'Outros', ano: 'Outros' };
+        if (!dataObjRaw) return { dia: '??', mes: 'Outros', ano: 'Outros' };
 
-            // O ASPIRADOR: Tira todos os códigos invisíveis e caracteres esquisitos da Apple
-            let textoLimpo = String(dataObjRaw).replace(/[^\d\/\-\s:]/g, '').trim();
+        let texto = String(dataObjRaw).trim();
+        let apenasData = texto.split(' ');
+        
+        let partes = apenasData.split(/[\/\-]/);
 
-            let apenasData = textoLimpo.split(' ');
-            let partes = apenasData.split(/[\/\-]/);
+        if (partes.length >= 3) {
+            let p1 = partes.replace(/\D/g, ''); 
+            let p2 = partes.replace(/\D/g, ''); 
+            let p3 = partes.replace(/\D/g, ''); 
 
-            if (partes.length >= 3) {
-                let p1 = partes.trim();
-                let p2 = partes.trim();
-                let p3 = partes.trim();
+            let ano, mes, dia;
 
-                let ano = p1.length === 4 ? p1 : p3;
-                let mes = p2.padStart(2, '0');
-                let dia = p1.length === 4 ? p3 : p1;
-
-                return { ano: ano, mes: mes, dia: dia.padStart(2, '0') };
+            if (p3.length === 4) { 
+                ano = p3; mes = p2; dia = p1;
+            } else if (p1.length === 4) { 
+                ano = p1; mes = p2; dia = p3;
+            } else {
+                return { ano: 'Outros', mes: 'Outros', dia: apenasData };
             }
-            return { ano: 'Outros', mes: 'Outros', dia: apenasData || '??' };
-        } catch(e) {
-            return { ano: 'Outros', mes: 'Outros', dia: '??' };
+
+            return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
         }
+        return { ano: 'Outros', mes: 'Outros', dia: apenasData };
     }
 
-    // --- FUNÇÕES DE LOGIN ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
@@ -326,7 +326,6 @@
 
     window.fazerLogout = function() { localStorage.removeItem('funcLogadoId'); localStorage.removeItem('funcLogadoNome'); location.reload(); };
 
-    // --- FUNÇÕES GERAIS PATRÃO ---
     window.mudarAba = function(aba) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -351,7 +350,6 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E GPS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -454,7 +452,6 @@
         } catch(e) { console.error("Erro busca de ponto:", e); divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar: tente novamente.</p>`; }
     };
 
-    // --- CADASTROS E VALES (PATRÃO) ---
     window.excluirFuncionario = async function(id, nome) {
         Swal.fire({title: 'Excluir?', text: `Deseja excluir ${nome}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#1a2a43', confirmButtonText: 'Sim'
         }).then(async (result) => {
@@ -496,7 +493,6 @@
         } catch(e) { Swal.fire('Erro', 'Falha na geração.', 'error'); btn.innerText = "GERAR VALE E ENVIAR LINK"; btn.disabled = false; }
     };
 
-    // --- BUSCA DE VALES ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
@@ -566,7 +562,6 @@
         } catch(e) { console.error("Erro PDF:", e); Swal.fire('Erro', 'Falha no PDF.', 'error'); }
     };
 
-    // --- ASSINATURA ---
     let signaturePad;
     function resizeCanvas() {
         const canvas = document.getElementById('signature-pad');
