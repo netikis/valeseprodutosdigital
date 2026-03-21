@@ -270,13 +270,13 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA INFALÍVEL PARA A LEITURA DA DATA
+// AQUI ESTÁ A CORREÇÃO CIRÚRGICA INFALÍVEL PARA A LEITURA DA DATA
     function separarDataSegura(dataString) {
         try {
             if (!dataString) return { ano: 'Outros', mes: 'Outros', dia: '??' };
             
-            // 1. Isola a data de qualquer hora ou texto que venha depois de um espaço
-            let apenasData = String(dataString).trim().split(' ');
+            // 1. Isola a data de qualquer hora ou texto pegando apenas o que vem antes do espaço
+            let apenasData = String(dataString).trim().split(' ')[0];
             
             // 2. O ASPIRADOR ABSOLUTO: Remove QUALQUER caractere invisível ou letra, deixando SÓ números e barras
             let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
@@ -284,9 +284,9 @@
             let partes = textoLimpo.split(/[\/\-]/);
             
             if (partes.length >= 3) {
-                let p1 = partes;
-                let p2 = partes;
-                let p3 = partes;
+                let p1 = partes[0]; // CORRIGIDO: Pegando a primeira parte da data
+                let p2 = partes[1]; // CORRIGIDO: Pegando a segunda parte da data
+                let p3 = partes[2]; // CORRIGIDO: Pegando a terceira parte da data
                 
                 let ano, mes, dia;
                 
@@ -321,7 +321,6 @@
             return { ano: 'Outros', mes: 'Outros', dia: '??' };
         }
     }
-
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
