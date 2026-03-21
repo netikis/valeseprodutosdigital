@@ -270,37 +270,42 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA QUE SEPARA EXATAMENTE ANO, MÊS E DIA SEM CORROMPER AS PASTAS
+    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA QUE SEPARA ANO, MÊS E DIA COM 100% DE PRECISÃO
     function separarDataSegura(dataString) {
         try {
             if (!dataString) return { ano: 'Outros', mes: 'Outros', dia: '??' };
             
             let texto = String(dataString).trim();
             
-            // O filtro mágico: extrai apenas os blocos de números, removendo barras e traços ocultos da Apple
-            let numeros = texto.match(/\d+/g);
+            // Busca qualquer padrão que se pareça com uma data (ex: 20/03/2026, 20-03-2026)
+            let matchData = texto.match(/(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})/);
             
-            if (numeros && numeros.length >= 3) {
-                let p1 = numeros; // ex: 20
-                let p2 = numeros; // ex: 03
-                let p3 = numeros; // ex: 2026
+            if (matchData) {
+                let p1 = matchData;
+                let p2 = matchData;
+                let p3 = matchData;
                 
                 let ano, mes, dia;
                 
-                if (p3.length === 4) { 
+                if (p3.length === 4) {
                     ano = p3;
-                    mes = p2.padStart(2, '0');
-                    dia = p1.padStart(2, '0');
-                } else if (p1.length === 4) { 
+                    mes = p2;
+                    dia = p1;
+                } else if (p1.length === 4) {
                     ano = p1;
-                    mes = p2.padStart(2, '0');
-                    dia = p3.padStart(2, '0');
-                } else { 
-                    ano = "20" + p3; 
-                    mes = p2.padStart(2, '0');
-                    dia = p1.padStart(2, '0');
+                    mes = p2;
+                    dia = p3;
+                } else {
+                    ano = "20" + p3;
+                    mes = p2;
+                    dia = p1;
                 }
-                return { ano: ano, mes: mes, dia: dia };
+                
+                return { 
+                    ano: ano, 
+                    mes: mes.padStart(2, '0'), 
+                    dia: dia.padStart(2, '0') 
+                };
             }
             
             return { ano: 'Outros', mes: 'Outros', dia: texto };
@@ -536,8 +541,7 @@
                         return dB - dA;
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        // AQUI ESTÁ O LINK DO GOOGLE MAPS CORRIGIDO DEFINITIVO
-                        const linkMapsCorrigido = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
+                        const linkMapsCorrigido = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
