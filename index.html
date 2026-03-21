@@ -242,7 +242,6 @@
 
     window.listaFuncionarios = {};
 
-    // --- ROTEAMENTO ---
     if (valeId) {
         document.title = "FH PONTO"; 
         document.getElementById('tela-funcionario').style.display = 'block';
@@ -262,7 +261,6 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- DICIONÁRIO E EXTRAÇÃO SEGURA DE DATA ---
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
         "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
@@ -272,31 +270,49 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-    function separarDataSegura(dataObjRaw) {
-        if (!dataObjRaw) return { dia: '??', mes: 'Outros', ano: 'Outros' };
-        
-        let texto = String(dataObjRaw).trim();
-        
-        // Regexp infalível: procura por padrão 00/00/0000 ou 00-00-0000
-        let matchBR = texto.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-        if (matchBR) {
-            return { ano: matchBR, mes: matchBR, dia: matchBR };
+    // AQUI ESTÁ A CORREÇÃO CIRÚRGICA QUE SEPARA EXATAMENTE ANO, MÊS E DIA SEM CORROMPER AS PASTAS
+    function separarDataSegura(dataString) {
+        try {
+            if (!dataString) return { ano: 'Outros', mes: 'Outros', dia: '??' };
+            
+            let texto = String(dataString).trim();
+            
+            // O filtro mágico: extrai apenas os blocos de números, removendo barras e traços ocultos da Apple
+            let numeros = texto.match(/\d+/g);
+            
+            if (numeros && numeros.length >= 3) {
+                let p1 = numeros; // ex: 20
+                let p2 = numeros; // ex: 03
+                let p3 = numeros; // ex: 2026
+                
+                let ano, mes, dia;
+                
+                if (p3.length === 4) { 
+                    ano = p3;
+                    mes = p2.padStart(2, '0');
+                    dia = p1.padStart(2, '0');
+                } else if (p1.length === 4) { 
+                    ano = p1;
+                    mes = p2.padStart(2, '0');
+                    dia = p3.padStart(2, '0');
+                } else { 
+                    ano = "20" + p3; 
+                    mes = p2.padStart(2, '0');
+                    dia = p1.padStart(2, '0');
+                }
+                return { ano: ano, mes: mes, dia: dia };
+            }
+            
+            return { ano: 'Outros', mes: 'Outros', dia: texto };
+        } catch(e) {
+            return { ano: 'Outros', mes: 'Outros', dia: '??' };
         }
-        
-        // Procura por padrão 0000/00/00 ou 0000-00-00
-        let matchEN = texto.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
-        if (matchEN) {
-            return { ano: matchEN, mes: matchEN, dia: matchEN };
-        }
-        
-        // Se a data do banco for muito estranha, joga para Outros para não bugar
-        return { ano: 'Outros', mes: 'Outros', dia: texto.split(' ') };
     }
 
-    // --- LOGIN ---
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
+        
         if(!cpf || !senha) return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
         
         Swal.fire({title: 'Autenticando...', allowOutsideClick: false}); 
@@ -344,7 +360,6 @@
         location.reload(); 
     };
 
-    // --- NAVEGAÇÃO ---
     window.mudarAba = function(aba) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -352,7 +367,6 @@
         document.getElementById(`aba-${aba}`).classList.add('active');
     };
 
-    // --- CARREGAR EQUIPE ---
     async function carregarListaDeFuncionarios() {
         try {
             const q = query(collection(db, "funcionarios"), orderBy("nome"));
@@ -370,6 +384,7 @@
                 const func = docSnap.data(); 
                 window.listaFuncionarios[docSnap.id] = func;
                 opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
+                
                 gerenciaHTML += `
                     <div class="func-item">
                         <div>
@@ -385,11 +400,10 @@
                 document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
             }
         } catch(e) { 
-            console.error("Erro ao carregar equipe:", e); 
+            console.error("Erro ao carregar:", e); 
         }
     }
 
-    // --- PONTO E GPS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -456,7 +470,7 @@
             (error) => {
                 clearTimeout(timerGPS); 
                 let msgErro = 'Erro ao buscar o satélite. Vá para um lugar aberto.';
-                if(error.code === 1) msgErro = 'Você negou a permissão ou ela está bloqueada nos Ajustes. Vá nas configurações do celular e Permita a Localização.';
+                if(error.code === 1) msgErro = 'Você negou a permissão ou ela está bloqueada nos Ajustes. Vá nas configurações do Safari/Chrome e Permita a Localização.';
                 Swal.fire('Falha no GPS', msgErro, 'error');
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -480,9 +494,11 @@
             }
 
             let agrupado = {};
+            
             querySnapshot.forEach((doc) => {
                 const dados = doc.data(); 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
+                
                 if(!agrupado[ano]) agrupado[ano] = {}; 
                 if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
                 
@@ -491,19 +507,19 @@
             });
 
             let htmlFinal = "";
-            let chavesAno = Object.keys(agrupado).sort((a,b) => { 
+            let chavesAno = Object.keys(agrupado).sort((a, b) => { 
                 if (a === 'Outros') return 1; 
                 if (b === 'Outros') return -1; 
-                return (Number(b)||0) - (Number(a)||0); 
+                return Number(b) - Number(a); 
             });
 
             chavesAno.forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                let chavesMes = Object.keys(agrupado[ano]).sort((a,b) => { 
+                let chavesMes = Object.keys(agrupado[ano]).sort((a, b) => { 
                     if (a === 'Outros') return 1; 
                     if (b === 'Outros') return -1; 
-                    return (Number(b)||0) - (Number(a)||0); 
+                    return Number(b) - Number(a); 
                 });
                 
                 chavesMes.forEach(mes => {
@@ -520,16 +536,17 @@
                         return dB - dA;
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        // AQUI ESTÁ A CORREÇÃO DO LINK DO MAPA DO GOOGLE OFICIAL
-                        const linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
+                        // AQUI ESTÁ O LINK DO GOOGLE MAPS CORRIGIDO DEFINITIVO
+                        const linkMapsCorrigido = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
-                                <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.diaFormatado} às ${dados.hora || '??'} <br>
+                                <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
                                 <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
-                                <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                                <button class="btn-maps" onclick="window.open('${linkMapsCorrigido}', '_blank')">📍 VER NO MAPA EXATO</button>
                             </div>`;
                     });
+                    
                     htmlFinal += `</div></details>`;
                 });
                 htmlFinal += `</div></details>`;
@@ -537,11 +554,10 @@
             divLista.innerHTML = htmlFinal;
         } catch(e) { 
             console.error("Erro busca de ponto:", e); 
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar as pastas.</p>`; 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar: tente novamente.</p>`; 
         }
     };
 
-    // --- CADASTROS FUNCIONARIO ---
     window.excluirFuncionario = async function(id, nome) {
         Swal.fire({
             title: 'Excluir?', 
@@ -590,7 +606,6 @@
         }
     };
 
-    // --- GERAR VALE ---
     document.getElementById('btnGerarLink').onclick = async function() {
         const funcId = document.getElementById('p-func-select').value; 
         const valor = document.getElementById('p-valor').value; 
@@ -647,7 +662,6 @@
         }
     };
 
-    // --- BUSCAR VALES ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
@@ -671,7 +685,6 @@
                 const dados = docSnap.data(); 
                 window.valesEncontrados[docSnap.id] = dados;
                 
-                // Extrai as pastas de forma segura usando o formato brasileiro ou americano
                 const { ano, mes, dia } = separarDataSegura(dados.data_criacao || dados.data);
                 
                 if(!agrupado[ano]) agrupado[ano] = {}; 
@@ -681,19 +694,19 @@
             });
 
             let htmlFinal = "";
-            let chavesAno = Object.keys(agrupado).sort((a,b) => { 
+            let chavesAno = Object.keys(agrupado).sort((a, b) => { 
                 if (a === 'Outros') return 1; 
                 if (b === 'Outros') return -1; 
-                return (Number(b)||0) - (Number(a)||0); 
+                return Number(b) - Number(a); 
             });
 
             chavesAno.forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                let chavesMes = Object.keys(agrupado[ano]).sort((a,b) => { 
+                let chavesMes = Object.keys(agrupado[ano]).sort((a, b) => { 
                     if (a === 'Outros') return 1; 
                     if (b === 'Outros') return -1; 
-                    return (Number(b)||0) - (Number(a)||0); 
+                    return Number(b) - Number(a); 
                 });
                 
                 chavesMes.forEach(mes => {
@@ -709,12 +722,12 @@
                         let dB = parseInt(b.diaFormatado) || 0;
                         return dB - dA;
                     }).forEach(vale => {
-                        // AQUI ESTÁ A INCLUSÃO DA HORA NO DIA
                         const horaExibicao = vale.hora_criacao ? ` às ${vale.hora_criacao}` : "";
+                        const dataExibicao = vale.data_criacao || vale.data || vale.diaFormatado;
                         
                         htmlFinal += `
                             <div class="resultado-item">
-                                <b style="color:var(--dark-navy);">Dia:</b> ${vale.diaFormatado}${horaExibicao} <br>
+                                <b style="color:var(--dark-navy);">Dia:</b> ${dataExibicao}${horaExibicao} <br>
                                 <b style="color:var(--dark-navy);">Valor:</b> R$ ${vale.valor} <br>
                                 <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
                             </div>`;
@@ -727,11 +740,10 @@
             divLista.innerHTML = htmlFinal;
         } catch(e) { 
             console.error("Erro buscar vales:", e); 
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar as pastas.</p>`; 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar: tente novamente.</p>`; 
         }
     };
 
-    // --- PDF ---
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; 
         Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); 
@@ -785,7 +797,6 @@
         }
     };
 
-    // --- ASSINATURA CANVAS PAD ---
     let signaturePad;
     function resizeCanvas() {
         const canvas = document.getElementById('signature-pad');
@@ -834,7 +845,6 @@
                         resizeCanvas(); 
                     } 
                 }, 400); 
-                
             } else { 
                 document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
             }
