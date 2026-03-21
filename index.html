@@ -262,7 +262,7 @@
         carregarListaDeFuncionarios();
     }
 
-    // --- DICIONÁRIO E FUNÇÃO PARA CONSERTAR DATAS ---
+    // --- DICIONÁRIO E FUNÇÃO BLINDADA PARA DATAS ---
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
         "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
@@ -274,8 +274,13 @@
 
     function separarDataSegura(dataString) {
         if (!dataString) return { dia: '??', mes: 'Outros', ano: 'Outros' };
+        
+        // Converte pra texto caso o celular envie de forma diferente
+        if (typeof dataString !== 'string') dataString = String(dataString);
+        
         let apenasData = dataString.split(' '); 
         let partes = apenasData.split(/[\/\-]/); 
+        
         if (partes.length === 3) {
             if (partes.length === 4) { 
                 return { ano: partes, mes: partes, dia: partes };
@@ -381,7 +386,7 @@
         } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // --- FUNÇÕES DE PONTO E MAPAS ---
+    // --- FUNÇÕES DE PONTO E MAPAS CORRIGIDAS ---
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
@@ -404,7 +409,6 @@
                     const funcId = localStorage.getItem('funcLogadoId');
                     const funcNome = localStorage.getItem('funcLogadoNome');
                     
-                    // Extração de data e hora perfeitos
                     const dataObj = new Date();
                     const diaStr = String(dataObj.getDate()).padStart(2, '0');
                     const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
@@ -432,7 +436,16 @@
                     }
                 },
                 (error) => {
-                    Swal.fire('Erro de GPS', 'Você precisa clicar em "Permitir" quando o celular pedir sua localização, senão o ponto não funciona!', 'error');
+                    // MENSAGEM INTELIGENTE DE ERRO DO GPS PARA AJUDAR O FUNCIONÁRIO
+                    let msg = '';
+                    if (error.code === 1) {
+                        msg = 'Permissão de GPS Negada! Vá nas Configurações do seu celular > procure pelo navegador (Safari ou Chrome) > Localização > e marque "Permitir" ou "Durante o Uso".';
+                    } else if (error.code === 2) {
+                        msg = 'Sinal de GPS fraco ou não encontrado. Vá para um local ao ar livre e tente de novo.';
+                    } else {
+                        msg = 'O tempo limite do GPS esgotou. Tente novamente.';
+                    }
+                    Swal.fire('Erro de GPS', msg, 'error');
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
@@ -470,23 +483,36 @@
             });
 
             let htmlFinal = "";
-            Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
+            
+            // Ordenação blindada contra erros de "NaN" no navegador
+            Object.keys(agrupado).sort((a,b) => {
+                if (a === 'Outros') return 1; if (b === 'Outros') return -1;
+                return Number(b) - Number(a);
+            }).forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
+                Object.keys(agrupado[ano]).sort((a,b) => {
+                    if (a === 'Outros') return 1; if (b === 'Outros') return -1;
+                    return Number(b) - Number(a);
+                }).forEach(mes => {
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    agrupado[ano][mes].sort((a, b) => b.timestamp - a.timestamp).forEach(dados => {
+                    agrupado[ano][mes].sort((a, b) => {
+                        let tA = a.timestamp || 0;
+                        let tB = b.timestamp || 0;
+                        return tB - tA;
+                    }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        // AQUI FOI CORRIGIDO O LINK DO MAPA
-                        const linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
+                        
+                        // LINK DO MAPA OFICIAL DO GOOGLE 100% CORRIGIDO
+                        const linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.diaFormatado} às ${dados.hora} <br>
                                 <span style="font-size: 13px; color: #555;"><b>Local/Obra:</b> ${dados.obra}</span><br>
-                                <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                                <button class="btn-maps" onclick="window.open('${linkMaps}', '_blank')">📍 VER NO MAPA EXATO</button>
                             </div>`;
                     });
                     htmlFinal += `</div></details>`;
@@ -497,7 +523,7 @@
             divLista.innerHTML = htmlFinal;
         } catch(e) { 
             console.error("Erro na busca de ponto:", e); 
-            divLista.innerHTML = "Erro ao buscar."; 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar: ${e.message}</p>`; 
         }
     };
 
@@ -541,7 +567,6 @@
         }
     };
 
-    // AQUI INCLUÍMOS A HORA EXATA NA GERAÇÃO DOS VALES
     document.getElementById('btnGerarLink').onclick = async function() {
         const funcId = document.getElementById('p-func-select').value;
         const valor = document.getElementById('p-valor').value;
@@ -552,7 +577,6 @@
         
         const funcionario = window.listaFuncionarios[funcId]; 
         
-        // Geração limpa da data e da HORA para os vales
         const dataObj = new Date();
         const diaStr = String(dataObj.getDate()).padStart(2, '0');
         const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
@@ -572,12 +596,11 @@
                 descricao: desc, 
                 texto: textoCompleto, 
                 data_criacao: dataAtual, 
-                hora_criacao: horaAtual, // Salvando a hora no banco
-                timestamp: dataObj.getTime(), // Salvando momento exato para ordem da pasta
+                hora_criacao: horaAtual, 
+                timestamp: dataObj.getTime(), 
                 status: "pendente", 
                 assinatura: null 
             });
-            
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
 
@@ -592,7 +615,7 @@
         }
     };
 
-    // --- BUSCA DE VALES ORGANIZADA (COM HORAS) ---
+    // --- BUSCA DE VALES ORGANIZADA E BLINDADA CONTRA ERROS ---
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
         if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
@@ -622,20 +645,29 @@
             });
 
             let htmlFinal = "";
-            Object.keys(agrupado).sort((a,b) => b - a).forEach(ano => {
+            Object.keys(agrupado).sort((a,b) => {
+                if (a === 'Outros') return 1; if (b === 'Outros') return -1;
+                return Number(b) - Number(a);
+            }).forEach(ano => {
                 htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
                 
-                Object.keys(agrupado[ano]).sort((a,b) => b - a).forEach(mes => {
+                Object.keys(agrupado[ano]).sort((a,b) => {
+                    if (a === 'Outros') return 1; if (b === 'Outros') return -1;
+                    return Number(b) - Number(a);
+                }).forEach(mes => {
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    // Ordena usando o tempo exato (timestamp) ou pelo número do dia (para os antigos)
                     agrupado[ano][mes].sort((a, b) => {
-                        if (b.timestamp && a.timestamp) return b.timestamp - a.timestamp;
-                        return parseInt(b.diaFormatado) - parseInt(a.diaFormatado);
+                        let tA = a.timestamp || 0;
+                        let tB = b.timestamp || 0;
+                        if (tA && tB) return tB - tA;
+                        
+                        let diaA = parseInt(a.diaFormatado) || 0;
+                        let diaB = parseInt(b.diaFormatado) || 0;
+                        return diaB - diaA;
                     }).forEach(vale => {
                         
-                        // Sistema inteligente: se for vale novo, ele mostra a hora. Se for antigo, deixa em branco pra não dar erro.
                         const horaExibicao = vale.hora_criacao ? ` às ${vale.hora_criacao}` : "";
                         
                         htmlFinal += `
@@ -652,13 +684,15 @@
             });
 
             divLista.innerHTML = htmlFinal;
-        } catch(e) { console.error("Erro buscar vales:", e); divLista.innerHTML = "Erro."; }
+        } catch(e) { 
+            console.error("Erro buscar vales:", e); 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar os vales: ${e.message}</p>`; 
+        }
     };
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); Swal.showLoading();
         
-        // Inclui a hora na via oficial do PDF (se o vale for novo e possuir a hora gravada)
         const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : "";
         document.getElementById('pdf-data').innerText = "Data: " + dados.data_criacao + horaPDF; 
         
