@@ -13,65 +13,396 @@
     <meta name="theme-color" content="#1a2a43">
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
     <style>
-        :root { --dark-navy: #1a2a43; --gold: #d4a017; --light-bg: #f4f7f6; --white: #ffffff; --text-color: #333333; }
-        body { font-family: 'Poppins', sans-serif; background: var(--light-bg); margin: 0; padding: 15px; color: var(--text-color); }
-        .main-card { background: var(--white); padding: 30px 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); max-width: 480px; margin: auto; border-top: 6px solid var(--dark-navy); }
+        :root { 
+            --dark-navy: #1a2a43; 
+            --gold: #d4a017; 
+            --light-bg: #f4f7f6; 
+            --white: #ffffff; 
+            --text-color: #333333; 
+        }
         
-        .header-logo { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .logo-img { max-width: 160px; height: auto; margin-bottom: 5px; }
-        .title-top { color: var(--dark-navy); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
-
-        label { display: block; margin-top: 15px; font-weight: 600; font-size: 13px; color: var(--dark-navy); text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #e0e6ed; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; transition: 0.3s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--gold); outline: none; }
-
-        .btn-enviar { background: var(--dark-navy); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 25px; cursor: pointer; transition: 0.3s; }
-        .btn-enviar:hover { background: #121e30; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--light-bg); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-color); 
+        }
         
-        .btn-gold { background: var(--gold); color: var(--dark-navy); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 700; font-size: 15px; margin-top: 20px; cursor: pointer; transition: 0.3s; }
-        .btn-gold:hover { background: #b88a12; }
-
-        .btn-entrada { background: #28a745; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .btn-saida { background: #d9534f; color: white; border: none; padding: 18px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .btn-logout { background: #eee; color: #555; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 13px; margin-top: 25px; cursor: pointer; }
-        .btn-limpar { background: #f8d7da; color: #721c24; border: none; font-weight: 600; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 10px; width: 100%; }
-
-        .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 25px; font-size: 12px; flex-wrap: wrap; }
-        .tab { flex: 1; text-align: center; padding: 10px 2px; cursor: pointer; font-weight: 600; color: #aaa; transition: 0.3s; min-width: 20%;}
-        .tab.active { color: var(--dark-navy); border-bottom: 3px solid var(--gold); }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
-
-        .func-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fafcff; border-radius: 8px; margin-bottom: 8px;}
-        .btn-excluir { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;}
-
-        #area-recibo { border: 1px solid #e0e6ed; padding: 25px; border-radius: 15px; margin-top: 20px; background: #fafcff; position: relative; }
-        .recibo-header { text-align: center; font-weight: 700; border-bottom: 2px solid var(--dark-navy); padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: var(--dark-navy); }
-        .data-recibo { text-align: center; font-size: 12px; color: #666; margin-bottom: 15px; font-weight: 600;}
-        #texto-recibo-dinamico { font-size: 14px; line-height: 1.7; text-align: justify; color: #444; }
-
-        canvas { border: 2px solid #e0e6ed; background: var(--white); width: 100%; height: 160px; border-radius: 10px; touch-action: none; margin-top: 15px; }
+        .main-card { 
+            background: var(--white); 
+            padding: 30px 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); 
+            max-width: 480px; 
+            margin: auto; 
+            border-top: 6px solid var(--dark-navy); 
+        }
         
-        .resultado-item { border: 1px solid #e0e6ed; padding: 15px; border-radius: 10px; margin-top: 8px; background: #fff; border-left: 4px solid var(--gold); }
-        .btn-pdf { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: 600; font-size: 13px;}
-        .btn-maps { background: #4285F4; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; font-size: 12px;}
-
-        /* ESTILO DAS PASTAS (ANOS E MESES) */
-        details { background: #fafcff; border: 1px solid #e0e6ed; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
-        summary { padding: 15px; font-weight: 700; font-size: 14px; background: #eef2f5; cursor: pointer; color: var(--dark-navy); list-style: none; display: flex; align-items: center; }
-        summary::-webkit-details-marker { display: none; }
-        summary::before { content: '📁'; margin-right: 8px; font-size: 18px; }
-        details[open] > summary::before { content: '📂'; }
-        .folder-content { padding: 10px; border-top: 1px solid #e0e6ed; }
+        .header-logo { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 15px; 
+        }
         
-        .pasta-mes { border-left: 3px solid var(--gold); margin-top: 5px; border-radius: 0 10px 10px 0; }
-        .pasta-mes summary { background: #ffffff; font-size: 13px; font-weight: 600; padding: 12px; }
+        .logo-img { 
+            max-width: 160px; 
+            height: auto; 
+            margin-bottom: 5px; 
+        }
+        
+        .title-top { 
+            color: var(--dark-navy); 
+            font-weight: 700; 
+            font-size: 15px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+
+        label { 
+            display: block; 
+            margin-top: 15px; 
+            font-weight: 600; 
+            font-size: 13px; 
+            color: var(--dark-navy); 
+            text-transform: uppercase; 
+        }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 8px; 
+            border: 2px solid #e0e6ed; 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            font-size: 15px; 
+            font-family: 'Poppins', sans-serif; 
+            transition: 0.3s; 
+        }
+        
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--gold); 
+            outline: none; 
+        }
+
+        .btn-enviar { 
+            background: var(--dark-navy); 
+            color: var(--white); 
+            border: none; 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            margin-top: 25px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        
+        .btn-enviar:hover { 
+            background: #121e30; 
+        }
+        
+        .btn-gold { 
+            background: var(--gold); 
+            color: var(--dark-navy); 
+            border: none; 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            margin-top: 20px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        
+        .btn-gold:hover { 
+            background: #b88a12; 
+        }
+
+        .btn-entrada { 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+        }
+        
+        .btn-saida { 
+            background: #d9534f; 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+        }
+        
+        .btn-logout { 
+            background: #eee; 
+            color: #555; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 13px; 
+            margin-top: 25px; 
+            cursor: pointer; 
+        }
+        
+        .btn-limpar { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: none; 
+            font-weight: 600; 
+            padding: 8px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            width: 100%; 
+        }
+        
+        .btn-pdf-relatorio { 
+            background: #d9534f; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 13px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            transition: 0.3s;
+        }
+
+        .btn-pdf-relatorio:hover {
+            background: #c9302c;
+        }
+
+        .tabs { 
+            display: flex; 
+            border-bottom: 2px solid #eee; 
+            margin-bottom: 25px; 
+            font-size: 12px; 
+            flex-wrap: wrap; 
+        }
+        
+        .tab { 
+            flex: 1; 
+            text-align: center; 
+            padding: 10px 2px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            color: #aaa; 
+            transition: 0.3s; 
+            min-width: 20%;
+        }
+        
+        .tab.active { 
+            color: var(--dark-navy); 
+            border-bottom: 3px solid var(--gold); 
+        }
+        
+        .view-section { 
+            display: none; 
+        }
+        
+        .view-section.active { 
+            display: block; 
+        }
+
+        .func-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px; 
+            border-bottom: 1px solid #eee; 
+            background: #fafcff; 
+            border-radius: 8px; 
+            margin-bottom: 8px;
+        }
+        
+        .btn-excluir { 
+            background: #d9534f; 
+            color: white; 
+            border: none; 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 11px; 
+            font-weight: bold; 
+            transition: 0.3s;
+        }
+
+        #area-recibo { 
+            border: 1px solid #e0e6ed; 
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-top: 20px; 
+            background: #fafcff; 
+            position: relative; 
+        }
+        
+        .recibo-header { 
+            text-align: center; 
+            font-weight: 700; 
+            border-bottom: 2px solid var(--dark-navy); 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+            font-size: 16px; 
+            color: var(--dark-navy); 
+        }
+        
+        .data-recibo { 
+            text-align: center; 
+            font-size: 12px; 
+            color: #666; 
+            margin-bottom: 15px; 
+            font-weight: 600;
+        }
+        
+        #texto-recibo-dinamico { 
+            font-size: 14px; 
+            line-height: 1.7; 
+            text-align: justify; 
+            color: #444; 
+        }
+
+        canvas { 
+            border: 2px solid #e0e6ed; 
+            background: var(--white); 
+            width: 100%; 
+            height: 160px; 
+            border-radius: 10px; 
+            touch-action: none; 
+            margin-top: 15px; 
+        }
+        
+        .resultado-item { 
+            border: 1px solid #e0e6ed; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-top: 8px; 
+            background: #fff; 
+            border-left: 4px solid var(--gold); 
+        }
+        
+        .btn-pdf { 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 10px; 
+            font-weight: 600; 
+            font-size: 13px;
+        }
+        
+        .btn-maps { 
+            background: #4285F4; 
+            color: white; 
+            border: none; 
+            padding: 8px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 10px; 
+            font-weight: bold; 
+            font-size: 12px;
+        }
+
+        details { 
+            background: #fafcff; 
+            border: 1px solid #e0e6ed; 
+            border-radius: 10px; 
+            margin-bottom: 10px; 
+            overflow: hidden; 
+        }
+        
+        summary { 
+            padding: 15px; 
+            font-weight: 700; 
+            font-size: 14px; 
+            background: #eef2f5; 
+            cursor: pointer; 
+            color: var(--dark-navy); 
+            list-style: none; 
+            display: flex; 
+            align-items: center; 
+        }
+        
+        summary::-webkit-details-marker { 
+            display: none; 
+        }
+        
+        summary::before { 
+            content: '📁'; 
+            margin-right: 8px; 
+            font-size: 18px; 
+        }
+        
+        details[open] > summary::before { 
+            content: '📂'; 
+        }
+        
+        .folder-content { 
+            padding: 10px; 
+            border-top: 1px solid #e0e6ed; 
+        }
+        
+        .pasta-mes { 
+            border-left: 3px solid var(--gold); 
+            margin-top: 5px; 
+            border-radius: 0 10px 10px 0; 
+        }
+        
+        .pasta-mes summary { 
+            background: #ffffff; 
+            font-size: 13px; 
+            font-weight: 600; 
+            padding: 12px; 
+        }
+
+        #video-selfie { 
+            width: 100%; 
+            border-radius: 10px; 
+            border: 2px solid #e0e6ed; 
+            margin-top: 10px; 
+            display: none; 
+            transform: scaleX(-1); 
+        }
+        
+        #foto-tirada { 
+            width: 100%; 
+            border-radius: 10px; 
+            border: 2px solid #28a745; 
+            margin-top: 10px; 
+            display: none; 
+            transform: scaleX(-1); 
+        }
     </style>
 </head>
 <body>
@@ -111,8 +442,17 @@
         <select id="p-func-select" class="lista-funcs"><option value="">Carregando...</option></select>
 
         <div style="display: flex; gap: 10px; margin-top: 5px;">
-            <div style="flex: 1.2;"><label>Valor (R$)</label><input type="number" id="p-valor" placeholder="0,00"></div>
-            <div style="flex: 1;"><label>Tipo</label><select id="p-tipo"><option value="Dinheiro">💰 Dinheiro</option><option value="Produto">📦 Produto</option></select></div>
+            <div style="flex: 1.2;">
+                <label>Valor (R$)</label>
+                <input type="text" id="p-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+            </div>
+            <div style="flex: 1;">
+                <label>Tipo</label>
+                <select id="p-tipo">
+                    <option value="Dinheiro">💰 Dinheiro</option>
+                    <option value="Produto">📦 Produto</option>
+                </select>
+            </div>
         </div>
 
         <label>Descrição / Referente a:</label>
@@ -126,6 +466,7 @@
             <select id="b-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
             <button onclick="buscarVales()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
         </div>
+        <button id="btnExportarVales" class="btn-pdf-relatorio" style="display:none;" onclick="exportarPDF('vales')">📥 EXPORTAR RELATÓRIO PDF</button>
         <div id="lista-resultados" style="margin-top: 20px;">
             <p style="text-align: center; color: #888; font-size: 13px;">Selecione para ver os recibos.</p>
         </div>
@@ -142,6 +483,7 @@
             <select id="pt-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
             <button onclick="buscarPonto()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
         </div>
+        <button id="btnExportarPonto" class="btn-pdf-relatorio" style="display:none;" onclick="exportarPDF('ponto')">📥 EXPORTAR RELATÓRIO PDF</button>
         <div id="lista-ponto-resultados" style="margin-top: 20px;">
             <p style="text-align: center; color: #888; font-size: 13px;">Aqui aparecerão os horários e locais.</p>
         </div>
@@ -164,6 +506,8 @@
     <p style="font-size: 11px; color: #888; margin-top: 5px;"><i>Se for seu primeiro acesso, digite a senha que deseja criar para o seu usuário.</i></p>
 
     <button class="btn-enviar" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
+    
+    <button class="btn-logout" style="margin-top: 15px; background: transparent; color: var(--dark-navy); text-decoration: underline; box-shadow: none;" onclick="esqueciSenha()">Esqueci minha senha</button>
 </div>
 
 <div class="main-card" id="tela-relogio" style="display: none;">
@@ -174,8 +518,21 @@
 
     <h3 style="text-align: center; color: var(--dark-navy); margin-bottom: 5px;">Olá, <span id="nome-logado"></span></h3>
     
+    <div id="alerta-offline" style="display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; margin-bottom: 10px; border: 1px solid #ffeeba;">
+        ⚠️ Você está offline. O ponto será salvo no celular e enviado quando a internet voltar.
+    </div>
+
     <label style="margin-top: 20px;">Em qual local/obra você está agora?</label>
     <input type="text" id="obra-atual" placeholder="Ex: Obra Centro, Condomínio, Escritório...">
+
+    <label style="margin-top: 15px;">Confirmação de Identidade:</label>
+    <button id="btn-iniciar-camera" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
+    <video id="video-selfie" autoplay playsinline></video>
+    <canvas id="canvas-selfie" style="display: none;"></canvas>
+    <img id="foto-tirada" src="" alt="Sua foto aparecerá aqui">
+    <button id="btn-tirar-foto" class="btn-gold" style="display: none; margin-top: 10px;" onclick="tirarFoto()">Tirar Foto</button>
+    
+    <input type="hidden" id="foto-base64" value="">
 
     <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
         ⚠️ O sistema aguardará o sinal do satélite para salvar a localização exata. Permaneça em local aberto.
@@ -241,6 +598,17 @@
     const isPonto = urlParams.get('ponto');
 
     window.listaFuncionarios = {};
+    window.dadosExportacaoVales = [];
+    window.dadosExportacaoPonto = [];
+
+    window.addEventListener('offline', () => { 
+        document.getElementById('alerta-offline').style.display = 'block'; 
+    });
+    
+    window.addEventListener('online', () => { 
+        document.getElementById('alerta-offline').style.display = 'none'; 
+        sincronizarPontoOffline(); 
+    });
 
     if (valeId) {
         document.title = "FH PONTO"; 
@@ -252,6 +620,10 @@
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
             document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
+            if(!navigator.onLine) {
+                document.getElementById('alerta-offline').style.display = 'block';
+            }
+            sincronizarPontoOffline();
         } else {
             document.getElementById('tela-login').style.display = 'block';
         }
@@ -270,62 +642,229 @@
         "11": "Novembro", "12": "Dezembro" 
     };
 
-// AQUI ESTÁ A CORREÇÃO CIRÚRGICA INFALÍVEL PARA A LEITURA DA DATA
     function separarDataSegura(dataString) {
         try {
-            if (!dataString) return { ano: 'Outros', mes: 'Outros', dia: '??' };
+            if (!dataString) {
+                return { ano: 'Outros', mes: 'Outros', dia: '??' };
+            }
             
-            // 1. Isola a data de qualquer hora ou texto pegando apenas o que vem antes do espaço
             let apenasData = String(dataString).trim().split(' ')[0];
-            
-            // 2. O ASPIRADOR ABSOLUTO: Remove QUALQUER caractere invisível ou letra, deixando SÓ números e barras
             let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
-            
             let partes = textoLimpo.split(/[\/\-]/);
             
             if (partes.length >= 3) {
-                let p1 = partes[0]; // CORRIGIDO: Pegando a primeira parte da data
-                let p2 = partes[1]; // CORRIGIDO: Pegando a segunda parte da data
-                let p3 = partes[2]; // CORRIGIDO: Pegando a terceira parte da data
-                
+                let p1 = partes[0];
+                let p2 = partes[1];
+                let p3 = partes[2];
                 let ano, mes, dia;
                 
-                // Se o ano estiver no fim (ex: 20/03/2026)
-                if (p3.length >= 4) {
-                    ano = p3.substring(0, 4);
-                    mes = p2;
-                    dia = p1;
-                } 
-                // Se o ano estiver no começo (ex: 2026-03-20)
-                else if (p1.length >= 4) {
-                    ano = p1.substring(0, 4);
-                    mes = p2;
-                    dia = p3;
-                } 
-                // Se for ano abreviado (ex: 20/03/26)
-                else {
-                    ano = "20" + p3;
-                    mes = p2;
-                    dia = p1;
+                if (p3.length >= 4) { 
+                    ano = p3.substring(0, 4); 
+                    mes = p2; 
+                    dia = p1; 
+                } else if (p1.length >= 4) { 
+                    ano = p1.substring(0, 4); 
+                    mes = p2; 
+                    dia = p3; 
+                } else { 
+                    ano = "20" + p3; 
+                    mes = p2; 
+                    dia = p1; 
                 }
                 
-                return { 
-                    ano: ano, 
-                    mes: mes.padStart(2, '0'), 
-                    dia: dia.padStart(2, '0') 
-                };
+                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
             }
-            
             return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
-        } catch(e) {
-            return { ano: 'Outros', mes: 'Outros', dia: '??' };
+        } catch(e) { 
+            return { ano: 'Outros', mes: 'Outros', dia: '??' }; 
         }
     }
+
+    window.mascaraMoeda = function(input) {
+        let value = input.value.replace(/\D/g, '');
+        if (value === "") { 
+            input.value = ""; 
+            return; 
+        }
+        value = (value / 100).toFixed(2) + '';
+        value = value.replace('.', ',');
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        input.value = value;
+    };
+
+    window.exportarPDF = function(tipo) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); 
+        
+        let title = tipo === 'vales' ? 'FH Construções - Relatório de Vales e Produtos' : 'FH Construções - Relatório de Ponto GPS';
+        let dados = tipo === 'vales' ? window.dadosExportacaoVales : window.dadosExportacaoPonto;
+        
+        if (dados.length === 0) {
+            return Swal.fire('Erro', 'Faça uma busca primeiro antes de exportar o PDF.', 'error');
+        }
+
+        doc.setFontSize(16);
+        doc.text(title, 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 28);
+
+        let head = [];
+        let body = [];
+
+        if (tipo === 'vales') {
+            head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Valor (R$)', 'Tipo', 'Descrição', 'Assinatura']];
+            
+            dados.forEach(row => {
+                const { ano, mes, dia } = separarDataSegura(row.data_criacao || row.data);
+                const mesNome = nomeMeses[mes] || mes;
+                const dataHora = `${dia}/${mes}/${ano}\n${row.hora_criacao || ''}`;
+                
+                body.push([
+                    ano, 
+                    mesNome, 
+                    dataHora, 
+                    row.nome, 
+                    `R$ ${row.valor}`, 
+                    row.tipo, 
+                    row.descricao, 
+                    row.assinatura || '' 
+                ]);
+            });
+
+            doc.autoTable({
+                startY: 35,
+                head: head,
+                body: body,
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
+                columnStyles: {
+                    7: { cellWidth: 40, minCellHeight: 25 } 
+                },
+                didParseCell: function(data) {
+                    if (data.column.index === 7 && data.cell.section === 'body') {
+                        data.cell.customImg = data.cell.raw; 
+                        data.cell.text = ''; 
+                    }
+                },
+                didDrawCell: function(data) {
+                    if (data.column.index === 7 && data.cell.section === 'body') {
+                        let img = data.cell.customImg;
+                        if (img && img.startsWith('data:image')) {
+                            doc.addImage(img, 'PNG', data.cell.x + 2, data.cell.y + 2, 36, data.cell.height - 4);
+                        }
+                    }
+                }
+            });
+
+        } else {
+            head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Tipo', 'Obra/Local', 'Coodenadas GPS', 'Selfie']];
+            
+            dados.forEach(row => {
+                const { ano, mes, dia } = separarDataSegura(row.data);
+                const mesNome = nomeMeses[mes] || mes;
+                const dataHora = `${dia}/${mes}/${ano}\n${row.hora || ''}`;
+                
+                body.push([
+                    ano, 
+                    mesNome, 
+                    dataHora, 
+                    row.nome, 
+                    row.tipo, 
+                    row.obra, 
+                    `${row.latitude}\n${row.longitude}`,
+                    row.foto || '' 
+                ]);
+            });
+
+            doc.autoTable({
+                startY: 35,
+                head: head,
+                body: body,
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
+                columnStyles: {
+                    7: { cellWidth: 35, minCellHeight: 25 } 
+                },
+                didParseCell: function(data) {
+                    if (data.column.index === 7 && data.cell.section === 'body') {
+                        data.cell.customImg = data.cell.raw; 
+                        data.cell.text = ''; 
+                    }
+                },
+                didDrawCell: function(data) {
+                    if (data.column.index === 7 && data.cell.section === 'body') {
+                        let img = data.cell.customImg;
+                        if (img && img.startsWith('data:image')) {
+                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4);
+                        }
+                    }
+                }
+            });
+        }
+
+        doc.save(`relatorio_${tipo}_fhconstrucoes.pdf`);
+    };
+
+    let streamCamera = null;
+    window.iniciarCamera = async function() {
+        const video = document.getElementById('video-selfie');
+        const btnIniciar = document.getElementById('btn-iniciar-camera');
+        const btnTirar = document.getElementById('btn-tirar-foto');
+        const imgFoto = document.getElementById('foto-tirada');
+        
+        try {
+            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            video.srcObject = streamCamera;
+            video.style.display = 'block';
+            btnIniciar.style.display = 'none';
+            btnTirar.style.display = 'block';
+            imgFoto.style.display = 'none';
+        } catch (err) {
+            Swal.fire('Erro', 'Permissão da câmera negada ou não suportada.', 'error');
+        }
+    };
+
+    window.tirarFoto = function() {
+        const video = document.getElementById('video-selfie');
+        const canvas = document.getElementById('canvas-selfie');
+        const imgFoto = document.getElementById('foto-tirada');
+        const inputBase64 = document.getElementById('foto-base64');
+        const btnTirar = document.getElementById('btn-tirar-foto');
+        const btnIniciar = document.getElementById('btn-iniciar-camera');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const fotoDataUrl = canvas.toDataURL('image/jpeg', 0.5); 
+        imgFoto.src = fotoDataUrl;
+        inputBase64.value = fotoDataUrl;
+
+        video.style.display = 'none';
+        imgFoto.style.display = 'block';
+        btnTirar.style.display = 'none';
+        btnIniciar.style.display = 'block';
+        btnIniciar.innerText = "🔄 Tirar Novamente";
+
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    window.esqueciSenha = function() {
+        Swal.fire({
+            icon: 'info',
+            title: 'Recuperar Senha',
+            text: 'Para manter sua conta segura, apenas o gestor (RH) pode resetar sua senha. Peça para ele acessar o painel administrativo e clicar em "Resetar Senha" no seu cadastro. Depois disso, basta você entrar com seu CPF e criar uma senha nova!',
+            confirmButtonColor: '#1a2a43'
+        });
+    };
+
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value;
         const senha = document.getElementById('login-senha').value;
         
-        if(!cpf || !senha) return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
+        if (!cpf || !senha) {
+            return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
+        }
         
         Swal.fire({title: 'Autenticando...', allowOutsideClick: false}); 
         Swal.showLoading();
@@ -351,7 +890,9 @@
                 await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcId); 
                 localStorage.setItem('funcLogadoNome', funcData.nome);
-                Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { location.reload(); });
+                Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { 
+                    location.reload(); 
+                });
             } else {
                 if (funcData.senha !== senha) { 
                     Swal.fire('Erro', 'Senha incorreta!', 'error'); 
@@ -403,12 +944,15 @@
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span>
                         </div>
-                        <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
+                        <div style="display: flex; gap: 5px; flex-direction: column;">
+                            <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${docSnap.id}', '${func.nome}')">🔑 Resetar</button>
+                            <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
+                        </div>
                     </div>`;
             });
             
             document.querySelectorAll('.lista-funcs').forEach(select => select.innerHTML = opcoesHTML);
-            if(document.getElementById('lista-funcionarios-gerencial')) {
+            if (document.getElementById('lista-funcionarios-gerencial')) {
                 document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
             }
         } catch(e) { 
@@ -416,39 +960,105 @@
         }
     }
 
+    window.resetarSenhaFuncionario = async function(id, nome) {
+        Swal.fire({
+            title: 'Resetar Senha?',
+            text: `Deseja apagar a senha de ${nome}? Ele precisará criar uma nova no próximo acesso.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d4a017',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, resetar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await updateDoc(doc(db, "funcionarios", id), { senha: "" });
+                    Swal.fire('Resetada!', `A senha de ${nome} foi apagada.`, 'success');
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível resetar a senha.', 'error');
+                }
+            }
+        });
+    };
+
+    window.excluirFuncionario = async function(id, nome) {
+        Swal.fire({ 
+            title: 'Excluir?', 
+            text: `Deseja excluir ${nome}?`, 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonColor: '#d33', 
+            confirmButtonText: 'Sim' 
+        }).then(async (result) => {
+            if (result.isConfirmed) { 
+                try { 
+                    await deleteDoc(doc(db, "funcionarios", id)); 
+                    Swal.fire('Excluído!', 'Removido.', 'success'); 
+                    carregarListaDeFuncionarios(); 
+                } catch (e) { 
+                    Swal.fire('Erro', 'Não foi possível.', 'error'); 
+                } 
+            }
+        });
+    };
+
     document.getElementById('btnLinkPonto').onclick = function() {
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
         navigator.clipboard.writeText(linkPonto);
         Swal.fire('Link Copiado!', 'Envie este link para a equipe acessar o Ponto Digital.', 'success');
     };
 
+    async function sincronizarPontoOffline() {
+        const pontosOffline = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
+        if (pontosOffline.length > 0 && navigator.onLine) {
+            let salvos = 0;
+            for (let i = 0; i < pontosOffline.length; i++) {
+                try {
+                    await addDoc(collection(db, "ponto_registros"), pontosOffline[i]);
+                    salvos++;
+                } catch(e) { 
+                    console.error('Erro ao sincronizar ponto', e); 
+                }
+            }
+            if (salvos === pontosOffline.length) {
+                localStorage.removeItem('pontos_offline');
+                Swal.fire({ 
+                    toast: true, 
+                    position: 'top-end', 
+                    icon: 'success', 
+                    title: 'Pontos offline sincronizados!', 
+                    showConfirmButton: false, 
+                    timer: 3000 
+                });
+            }
+        }
+    }
+
     window.baterPonto = function(tipo) {
         const obra = document.getElementById('obra-atual').value;
-        if(!obra) return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
+        const fotoBase64 = document.getElementById('foto-base64').value;
 
-        Swal.fire({
+        if (!obra) {
+            return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
+        }
+        
+        if (!fotoBase64) {
+            return Swal.fire('Atenção', 'Tire a foto (selfie) antes de bater o ponto!', 'warning');
+        }
+
+        Swal.fire({ 
             title: 'Buscando GPS...', 
-            html: 'O celular pedirá permissão, clique em <b>Permitir</b>.<br><br><span style="font-size: 12px; color: #d9534f;">Se a tela congelar aqui, seu GPS está bloqueado no navegador.</span>', 
-            allowOutsideClick: false,
-            showConfirmButton: false
+            html: 'O celular pedirá permissão, clique em <b>Permitir</b>.', 
+            allowOutsideClick: false, 
+            showConfirmButton: false 
         });
 
         if (!navigator.geolocation) {
             return Swal.fire('Erro', 'Seu navegador não tem função de GPS.', 'error');
         }
 
-        let timerGPS = setTimeout(() => {
-            Swal.fire({
-                icon: 'error',
-                title: 'GPS Bloqueado',
-                html: 'Seu celular não deixou a gente ver o GPS.<br><br><b>Como resolver:</b> Vá em <b>Configurações</b> > Procure o <b>Safari (ou Chrome)</b> > Vá em <b>Localização</b> e mude para <b>Permitir</b>.'
-            });
-        }, 10000); 
-
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                clearTimeout(timerGPS); 
-                
                 const lat = position.coords.latitude; 
                 const lng = position.coords.longitude;
                 const funcId = localStorage.getItem('funcLogadoId'); 
@@ -458,32 +1068,45 @@
                 const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
                 const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
                 const anoStr = dataObj.getFullYear(); 
+                
                 const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
                 const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
                 
-                try {
-                    await addDoc(collection(db, "ponto_registros"), { 
-                        funcionario_id: funcId, 
-                        nome: funcNome, 
-                        tipo: tipo, 
-                        obra: obra, 
-                        data: dataAtual, 
-                        hora: horaAtual, 
-                        latitude: lat, 
-                        longitude: lng, 
-                        timestamp: dataObj.getTime() 
-                    });
-                    Swal.fire('Sucesso!', `${tipo} em "${obra}" registrada às ${horaAtual}`, 'success');
-                    document.getElementById('obra-atual').value = '';
-                } catch(e) { 
-                    Swal.fire('Erro', 'Problema ao salvar no banco.', 'error'); 
+                const payloadPonto = { 
+                    funcionario_id: funcId, 
+                    nome: funcNome, 
+                    tipo: tipo, 
+                    obra: obra, 
+                    data: dataAtual, 
+                    hora: horaAtual, 
+                    latitude: lat, 
+                    longitude: lng, 
+                    foto: fotoBase64, 
+                    timestamp: dataObj.getTime() 
+                };
+
+                if (navigator.onLine) {
+                    try {
+                        await addDoc(collection(db, "ponto_registros"), payloadPonto);
+                        Swal.fire('Sucesso!', `${tipo} registrada.`, 'success');
+                    } catch(e) { 
+                        Swal.fire('Erro', 'Problema ao salvar no banco.', 'error'); 
+                    }
+                } else {
+                    const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
+                    offlineData.push(payloadPonto);
+                    localStorage.setItem('pontos_offline', JSON.stringify(offlineData));
+                    Swal.fire('Ponto Salvo no Celular!', `Você está sem internet. O ${tipo} foi salvo e será enviado sozinho depois.`, 'info');
                 }
+                
+                document.getElementById('obra-atual').value = '';
+                document.getElementById('foto-base64').value = '';
+                document.getElementById('foto-tirada').style.display = 'none';
+                document.getElementById('btn-iniciar-camera').style.display = 'block';
+                document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
             },
-            (error) => {
-                clearTimeout(timerGPS); 
-                let msgErro = 'Erro ao buscar o satélite. Vá para um lugar aberto.';
-                if(error.code === 1) msgErro = 'Você negou a permissão ou ela está bloqueada nos Ajustes. Vá nas configurações do Safari/Chrome e Permita a Localização.';
-                Swal.fire('Falha no GPS', msgErro, 'error');
+            (error) => { 
+                Swal.fire('Falha no GPS', 'Erro ao buscar o satélite. Vá para um lugar aberto ou libere permissão.', 'error'); 
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
@@ -491,32 +1114,44 @@
 
     window.buscarPonto = async function() {
         const funcId = document.getElementById('pt-func-select').value;
-        if(!funcId) return Swal.fire('Atenção', 'Selecione um funcionário.', 'warning');
+        if (!funcId) {
+            return Swal.fire('Atenção', 'Selecione um funcionário.', 'warning');
+        }
         
         const divLista = document.getElementById('lista-ponto-resultados'); 
-        divLista.innerHTML = "Buscando e organizando...";
+        const btnExportar = document.getElementById('btnExportarPonto');
+        
+        divLista.innerHTML = "Buscando..."; 
+        btnExportar.style.display = 'none'; 
+        window.dadosExportacaoPonto = [];
 
         try {
             const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) { 
-                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registro de ponto encontrado.</p>`; 
+                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registro.</p>`; 
                 return; 
             }
 
             let agrupado = {};
-            
             querySnapshot.forEach((doc) => {
                 const dados = doc.data(); 
+                window.dadosExportacaoPonto.push(dados); 
+                
+                // CORREÇÃO: Usando a URL oficial do Google Maps
+                dados.linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
+                
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
-                if(!agrupado[ano]) agrupado[ano] = {}; 
-                if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                if (!agrupado[ano]) agrupado[ano] = {}; 
+                if (!agrupado[ano][mes]) agrupado[ano][mes] = [];
                 
                 dados.diaFormatado = dia; 
                 agrupado[ano][mes].push(dados);
             });
+
+            btnExportar.style.display = 'block'; 
 
             let htmlFinal = "";
             let chavesAno = Object.keys(agrupado).sort((a, b) => { 
@@ -538,57 +1173,28 @@
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    agrupado[ano][mes].sort((a, b) => {
-                        let tA = a.timestamp || 0; 
-                        let tB = b.timestamp || 0;
-                        if (tA > 0 && tB > 0) return tB - tA;
-                        
-                        let dA = parseInt(a.diaFormatado) || 0; 
-                        let dB = parseInt(b.diaFormatado) || 0;
-                        return dB - dA;
+                    agrupado[ano][mes].sort((a, b) => { 
+                        return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        const linkMapsCorrigido = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
+                        const fotoThumb = dados.foto ? `<img src="${dados.foto}" style="width: 50px; border-radius: 5px; float: right;">` : '';
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
+                                ${fotoThumb}
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
                                 <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
-                                <button class="btn-maps" onclick="window.open('${linkMapsCorrigido}', '_blank')">📍 VER NO MAPA EXATO</button>
+                                <button class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>
                             </div>`;
                     });
-                    
                     htmlFinal += `</div></details>`;
                 });
                 htmlFinal += `</div></details>`;
             });
             divLista.innerHTML = htmlFinal;
         } catch(e) { 
-            console.error("Erro busca de ponto:", e); 
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar: tente novamente.</p>`; 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
         }
-    };
-
-    window.excluirFuncionario = async function(id, nome) {
-        Swal.fire({
-            title: 'Excluir?', 
-            text: `Deseja excluir ${nome}?`, 
-            icon: 'warning', 
-            showCancelButton: true, 
-            confirmButtonColor: '#d33', 
-            cancelButtonColor: '#1a2a43', 
-            confirmButtonText: 'Sim'
-        }).then(async (result) => {
-            if (result.isConfirmed) { 
-                try { 
-                    await deleteDoc(doc(db, "funcionarios", id)); 
-                    Swal.fire('Excluído!', 'Removido.', 'success'); 
-                    carregarListaDeFuncionarios(); 
-                } catch (e) { 
-                    Swal.fire('Erro', 'Não foi possível.', 'error'); 
-                } 
-            }
-        });
     };
 
     document.getElementById('btnCadastrarFunc').onclick = async function() {
@@ -596,18 +1202,28 @@
         const cpf = document.getElementById('c-cpf').value; 
         const tel = document.getElementById('c-tel').value;
         
-        if(!nome || !tel || !cpf) return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
+        if (!nome || !tel || !cpf) {
+            return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
+        }
         
         const btn = document.getElementById('btnCadastrarFunc'); 
         btn.innerText = "⏳ SALVANDO..."; 
         btn.disabled = true;
         
         try {
-            await addDoc(collection(db, "funcionarios"), { nome: nome, tel: tel, cpf: cpf, senha: "" });
+            await addDoc(collection(db, "funcionarios"), { 
+                nome: nome, 
+                tel: tel, 
+                cpf: cpf, 
+                senha: "" 
+            });
+            
             Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
+            
             document.getElementById('c-nome').value = ''; 
             document.getElementById('c-cpf').value = ''; 
             document.getElementById('c-tel').value = ''; 
+            
             carregarListaDeFuncionarios();
         } catch(e) { 
             Swal.fire('Erro', 'Falha ao salvar.', 'error'); 
@@ -619,11 +1235,13 @@
 
     document.getElementById('btnGerarLink').onclick = async function() {
         const funcId = document.getElementById('p-func-select').value; 
-        const valor = document.getElementById('p-valor').value; 
+        const valorLimpo = document.getElementById('p-valor').value; 
         const tipo = document.getElementById('p-tipo').value; 
         const desc = document.getElementById('p-desc').value || 'Não informada';
         
-        if(!funcId || !valor) return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
+        if (!funcId || !valorLimpo) {
+            return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
+        }
         
         const btn = document.getElementById('btnGerarLink'); 
         btn.innerText = "⏳ GERANDO..."; 
@@ -635,19 +1253,20 @@
         const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
         const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
         const anoStr = dataObj.getFullYear();
+        
         const dataAtual = `${diaStr}/${mesStr}/${anoStr}`; 
         const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
 
         let textoCompleto = tipo === 'Dinheiro' 
-            ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valor}</b>, referente a <b>${desc}</b>.` 
-            : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valor}</b>.`;
+            ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
+            : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
 
         try {
             const docRef = await addDoc(collection(db, "vales_sistema"), { 
                 funcionario_id: funcId, 
                 nome: funcionario.nome, 
                 tel: funcionario.tel, 
-                valor: valor, 
+                valor: valorLimpo, 
                 tipo: tipo, 
                 descricao: desc, 
                 texto: textoCompleto, 
@@ -659,7 +1278,7 @@
             });
             
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valor}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
+            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
 
             Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => {
                 window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`;
@@ -675,10 +1294,16 @@
 
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
-        if(!funcId) return Swal.fire('Atenção', 'Selecione.', 'warning');
+        if (!funcId) {
+            return Swal.fire('Atenção', 'Selecione.', 'warning');
+        }
         
         const divLista = document.getElementById('lista-resultados'); 
-        divLista.innerHTML = "Buscando e organizando...";
+        const btnExportar = document.getElementById('btnExportarVales');
+        
+        divLista.innerHTML = "Buscando..."; 
+        btnExportar.style.display = 'none'; 
+        window.dadosExportacaoVales = [];
         
         try {
             const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
@@ -695,14 +1320,17 @@
             querySnapshot.forEach((docSnap) => {
                 const dados = docSnap.data(); 
                 window.valesEncontrados[docSnap.id] = dados;
+                window.dadosExportacaoVales.push(dados); 
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data_criacao || dados.data);
                 
-                if(!agrupado[ano]) agrupado[ano] = {}; 
-                if(!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                if (!agrupado[ano]) agrupado[ano] = {}; 
+                if (!agrupado[ano][mes]) agrupado[ano][mes] = [];
                 
                 agrupado[ano][mes].push({ id: docSnap.id, diaFormatado: dia, ...dados });
             });
+
+            btnExportar.style.display = 'block'; 
 
             let htmlFinal = "";
             let chavesAno = Object.keys(agrupado).sort((a, b) => { 
@@ -724,14 +1352,8 @@
                     const nomeDoMes = nomeMeses[mes] || mes;
                     htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     
-                    agrupado[ano][mes].sort((a, b) => {
-                        let tA = a.timestamp || 0; 
-                        let tB = b.timestamp || 0;
-                        if (tA > 0 && tB > 0) return tB - tA;
-                        
-                        let dA = parseInt(a.diaFormatado) || 0; 
-                        let dB = parseInt(b.diaFormatado) || 0;
-                        return dB - dA;
+                    agrupado[ano][mes].sort((a, b) => { 
+                        return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(vale => {
                         const horaExibicao = vale.hora_criacao ? ` às ${vale.hora_criacao}` : "";
                         const dataExibicao = vale.data_criacao || vale.data || vale.diaFormatado;
@@ -743,21 +1365,23 @@
                                 <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
                             </div>`;
                     });
-                    
                     htmlFinal += `</div></details>`;
                 });
                 htmlFinal += `</div></details>`;
             });
             divLista.innerHTML = htmlFinal;
         } catch(e) { 
-            console.error("Erro buscar vales:", e); 
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar: tente novamente.</p>`; 
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
         }
     };
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; 
-        Swal.fire({title: 'Gerando Documento...', text: 'Aguarde', allowOutsideClick: false}); 
+        Swal.fire({
+            title: 'Gerando Documento...', 
+            text: 'Aguarde', 
+            allowOutsideClick: false
+        }); 
         Swal.showLoading();
         
         const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
@@ -778,32 +1402,33 @@
             const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
             
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
+            
             const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; 
             const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
             const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo sua via do recibo.`;
 
             let sucessoCompartilhamento = false;
-            
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try { 
                     await navigator.share({ files: [file], title: 'Recibo', text: msg }); 
                     sucessoCompartilhamento = true; 
                     Swal.close(); 
                 } catch(e) { 
-                    if (e.name !== 'AbortError') console.error("Bloqueado", e); 
-                    else { Swal.close(); return; } 
+                    if (e.name !== 'AbortError') {
+                        console.error("Bloqueado", e); 
+                    } else { 
+                        Swal.close(); 
+                        return; 
+                    } 
                 }
             }
-            
             if (!sucessoCompartilhamento) { 
                 pdf.save(nomeDoArquivo); 
-                Swal.fire('PDF Baixado!', 'Salvo nos Downloads.', 'success').then(()=>{ 
+                Swal.fire('PDF Baixado!', 'Salvo nos Downloads.', 'success').then(() => { 
                     window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`; 
                 }); 
             }
         } catch(e) { 
-            console.error("Erro PDF:", e); 
             Swal.fire('Erro', 'Falha no PDF.', 'error'); 
         }
     };
@@ -816,6 +1441,7 @@
             if (signaturePad && !signaturePad.isEmpty()) { 
                 data = signaturePad.toData(); 
             }
+            
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.offsetWidth * ratio; 
             canvas.height = canvas.offsetHeight * ratio; 
@@ -840,7 +1466,6 @@
             
             if (docSnap.exists()) {
                 const dados = docSnap.data();
-                
                 if(dados.status === 'assinado') { 
                     document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; 
                     return; 
@@ -859,8 +1484,8 @@
             } else { 
                 document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
             }
-        } catch(e) { 
-            console.error("Erro ao carregar o vale:", e); 
+        } catch(e) {
+            console.error("Erro ao carregar recibo", e);
         }
     }
 
@@ -871,7 +1496,9 @@
     }
 
     document.getElementById('btnAssinar').onclick = async function() {
-        if (!signaturePad || signaturePad.isEmpty()) return Swal.fire('Atenção', 'Por favor, assine no quadro em branco antes de confirmar.', 'warning');
+        if (!signaturePad || signaturePad.isEmpty()) {
+            return Swal.fire('Atenção', 'Por favor, assine no quadro em branco antes de confirmar.', 'warning');
+        }
         
         const btn = document.getElementById('btnAssinar'); 
         btn.innerText = "⏳ SALVANDO..."; 
@@ -879,7 +1506,10 @@
         
         try {
             const assinaturaImg = signaturePad.toDataURL('image/png');
-            await updateDoc(doc(db, "vales_sistema", valeId), { assinatura: assinaturaImg, status: "assinado" });
+            await updateDoc(doc(db, "vales_sistema", valeId), { 
+                assinatura: assinaturaImg, 
+                status: "assinado" 
+            });
             
             Swal.fire({ 
                 title: 'Assinado!', 
@@ -887,8 +1517,8 @@
                 icon: 'success', 
                 allowOutsideClick: false, 
                 confirmButtonColor: '#1a2a43' 
-            }).then(() => {
-                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3></div>`;
+            }).then(() => { 
+                document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3></div>`; 
             });
         } catch(e) { 
             Swal.fire('Erro', 'Tente assinar novamente.', 'error'); 
