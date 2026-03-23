@@ -1139,8 +1139,7 @@
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                // CORREÇÃO: Usando a URL oficial do Google Maps
-                dados.linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
+                dados.linkMaps = `http://googleusercontent.com/maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -1524,6 +1523,17 @@
             Swal.fire('Erro', 'Tente assinar novamente.', 'error'); 
             btn.innerText = "CONFIRMAR E ASSINAR"; 
             btn.disabled = false; 
+        }
+    };
+
+    // BLOQUEIO ANTI-CÓPIA (Pega-Curioso)
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    document.onkeydown = function (e) {
+        if (e.keyCode == 123 || 
+           (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) || 
+           (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
+            return false;
         }
     };
 </script>
