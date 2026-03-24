@@ -407,6 +407,12 @@
 </head>
 <body>
 
+<div id="tela-bloqueio" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a2a43; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 20px; text-align: center; box-sizing: border-box;">
+    <h1 style="color: #d9534f; font-size: 32px; margin-bottom: 10px;">⚠️ SISTEMA SUSPENSO</h1>
+    <p style="font-size: 16px; line-height: 1.6; max-width: 400px; margin-bottom: 20px;">O acesso a este painel foi temporariamente bloqueado.</p>
+    <p style="font-size: 14px; color: #aaa;">Por favor, entre em contato com o administrador do sistema para regularizar a situação.</p>
+</div>
+
 <div class="main-card" id="tela-patrao" style="display: none;">
     <div class="header-logo">
         <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
@@ -592,6 +598,25 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // --- NOVA FUNÇÃO DE CHECAGEM DO STATUS (KILL SWITCH) ---
+    async function verificarStatusSistema() {
+        try {
+            const docRef = doc(db, "sistema", "config");
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                if (docSnap.data().status === "bloqueado") {
+                    document.getElementById('tela-bloqueio').style.display = 'flex';
+                }
+            }
+        } catch(e) {
+            console.log("Sistema OK"); 
+        }
+    }
+    
+    // Chama a checagem logo que o código carrega
+    verificarStatusSistema();
 
     const urlParams = new URLSearchParams(window.location.search);
     const valeId = urlParams.get('id');
@@ -1112,6 +1137,18 @@
         );
     };
 
+    // --- NOVA FUNÇÃO PARA ABRIR A FOTO GRANDE ---
+    window.abrirFoto = function(imgBase64) {
+        Swal.fire({
+            title: 'Selfie do Ponto',
+            imageUrl: imgBase64,
+            imageWidth: 400,
+            imageAlt: 'Selfie do funcionário',
+            confirmButtonText: 'Fechar',
+            confirmButtonColor: '#1a2a43'
+        });
+    };
+
     window.buscarPonto = async function() {
         const funcId = document.getElementById('pt-func-select').value;
         if (!funcId) {
@@ -1139,7 +1176,8 @@
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                dados.linkMaps = `http://googleusercontent.com/maps.google.com/?q=${dados.latitude},${dados.longitude}`;
+                // URL DO MAPA CORRIGIDA PARA O PADRÃO OFICIAL 100%
+                dados.linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -1176,7 +1214,9 @@
                         return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        const fotoThumb = dados.foto ? `<img src="${dados.foto}" style="width: 50px; border-radius: 5px; float: right;">` : '';
+                        
+                        // FOTO COM EFEITO DE CLIQUE PARA AMPLIAR
+                        const fotoThumb = dados.foto ? `<img src="${dados.foto}" onclick="abrirFoto('${dados.foto}')" style="width: 50px; border-radius: 5px; float: right; cursor: pointer; border: 1px solid #ccc; transition: 0.2s;" title="Clique para ampliar" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">` : '';
                         
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
