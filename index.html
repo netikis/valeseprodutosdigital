@@ -37,7 +37,6 @@
             color: var(--text-color); 
         }
         
-        /* PAINEL AUMENTADO PARA CABER TODAS AS OPÇÕES (De 480px para 750px) */
         .main-card { 
             background: var(--white); 
             padding: 35px 30px; 
@@ -521,6 +520,33 @@
             color: var(--white);
             border-color: var(--gold);
         }
+
+        /* Estilo da Tela de Backup */
+        .card-alerta-backup {
+            background: #eef2f5;
+            border: 2px solid var(--dark-navy);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .btn-limpar-nuvem {
+            background: #d9534f;
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            margin-top: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(217, 83, 79, 0.3);
+            transition: 0.3s;
+        }
+        .btn-limpar-nuvem:hover {
+            background: #c9302c;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -559,6 +585,7 @@
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
         <div class="tab" onclick="mudarAba('folha', this)">📄 Folha</div>
         <div class="tab tab-despesas" onclick="mudarAba('despesas', this)">📉 Despesas</div>
+        <div class="tab" style="background: #1a2a43; color: white;" onclick="mudarAba('backup', this)">💾 Backup</div>
     </div>
 
     <div id="aba-cadastrar" class="view-section active">
@@ -778,6 +805,45 @@
         </details>
     </div>
 
+    <div id="aba-backup" class="view-section">
+        <div class="card-alerta-backup">
+            <h3 style="color: var(--dark-navy); margin-top: 0;">💾 Gestão de Armazenamento</h3>
+            <p style="font-size: 13px; color: #555; text-align: justify; margin-bottom: 20px;">
+                Para manter o seu sistema rápido e evitar cobranças de servidor do Google devido ao excesso de fotos pesadas, recomendamos que, ao fechar o mês, descarregue o Backup Completo Offline e, em seguida, faça a Limpeza da Nuvem.
+            </p>
+
+            <div style="display: flex; gap: 10px; text-align: left;">
+                <div style="flex: 1.5;">
+                    <label>Mês do Backup</label>
+                    <select id="backup-mes">
+                        <option value="01">Janeiro</option>
+                        <option value="02">Fevereiro</option>
+                        <option value="03">Março</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Maio</option>
+                        <option value="06">Junho</option>
+                        <option value="07">Julho</option>
+                        <option value="08">Agosto</option>
+                        <option value="09">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label>Ano</label>
+                    <input type="number" id="backup-ano" value="2026">
+                </div>
+            </div>
+
+            <button class="btn-entrada" onclick="fazerBackupMes()" style="box-shadow: none;">⬇️ 1º PASSO: BAIXAR BACKUP (OFFLINE)</button>
+            <p style="font-size: 11px; color: #888; margin-top: 5px;">* Guarda todas as fotos de pontos, vales e despesas num ficheiro seguro no seu computador.</p>
+
+            <button class="btn-limpar-nuvem" onclick="limparDadosMes()">🗑️ 2º PASSO: APAGAR DADOS (LIMPAR NUVEM)</button>
+            <p style="font-size: 11px; color: #d9534f; margin-top: 5px; font-weight: bold;">* Atenção: Clique apenas após garantir que o ficheiro de Backup foi salvo com segurança!</p>
+        </div>
+    </div>
+
     <button class="btn-logout" onclick="sairPainelGestor()" style="background: transparent; border: 1px solid #ccc; color: #666; margin-top: 40px;">⬅️ Trocar de Empresa (Sair)</button>
 </div>
 
@@ -929,6 +995,7 @@
         carregarListaDeFuncionarios();
         const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
         document.getElementById('folha-mes').value = mesAtual;
+        document.getElementById('backup-mes').value = mesAtual;
     }
 
     // --- ROTAS INICIAIS ---
@@ -1424,6 +1491,170 @@
         }
 
         doc.save(`relatorio_${tipo}_${empresaAtualNome}.pdf`.replace(/\s+/g, '_'));
+    };
+
+    // --- NOVO MÓDULO: BACKUP E LIMPEZA DA NUVEM ---
+
+    window.fazerBackupMes = async function() {
+        const mesSelected = document.getElementById('backup-mes').value;
+        const anoSelected = document.getElementById('backup-ano').value;
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        Swal.fire({ title: 'Gerando Backup Offline...', text: 'Isto pode demorar alguns segundos.', allowOutsideClick: false });
+        Swal.showLoading();
+
+        try {
+            // Busca Vales
+            const qVales = query(collection(db, "vales_sistema"), where("empresa_id", "==", empresaLogada));
+            const snapVales = await getDocs(qVales);
+            let valesHTML = "";
+            snapVales.forEach(doc => {
+                let d = doc.data();
+                let {mes, ano} = separarDataSegura(d.data_criacao || d.data);
+                if(mes === mesSelected && ano === anoSelected) {
+                    valesHTML += `<div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
+                        <b>Vale:</b> ${d.nome} - R$ ${d.valor} (${d.tipo})<br>
+                        <b>Data:</b> ${d.data_criacao || d.data} - ${d.descricao}<br>
+                        ${d.assinatura ? `<img src="${d.assinatura}" style="max-height:80px; border:1px solid #000;">` : 'Não assinado'}
+                    </div>`;
+                }
+            });
+
+            // Busca Ponto
+            const qPonto = query(collection(db, "ponto_registros"), where("empresa_id", "==", empresaLogada));
+            const snapPonto = await getDocs(qPonto);
+            let pontoHTML = "";
+            snapPonto.forEach(doc => {
+                let d = doc.data();
+                let {mes, ano} = separarDataSegura(d.data);
+                if(mes === mesSelected && ano === anoSelected) {
+                    pontoHTML += `<div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
+                        <b>Ponto:</b> ${d.nome} - ${d.tipo}<br>
+                        <b>Obra:</b> ${d.obra} - <b>Data/Hora:</b> ${d.data} ${d.hora}<br>
+                        <b>GPS:</b> ${d.latitude}, ${d.longitude}<br>
+                        ${d.foto ? `<img src="${d.foto}" style="max-height:100px; border:1px solid #000;">` : ''}
+                    </div>`;
+                }
+            });
+
+            // Busca Despesas
+            const qDespesas = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
+            const snapDespesas = await getDocs(qDespesas);
+            let despesasHTML = "";
+            snapDespesas.forEach(doc => {
+                let d = doc.data();
+                let {mes, ano} = separarDataSegura(d.data);
+                if(mes === mesSelected && ano === anoSelected) {
+                    despesasHTML += `<div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
+                        <b>Despesa Obra:</b> ${d.obra_nome} - <b>Loja:</b> ${d.loja_nome}<br>
+                        <b>Valor:</b> R$ ${d.valor_string} - <b>Data:</b> ${d.data}<br>
+                        <b>Desc:</b> ${d.descricao}<br>
+                        ${d.foto_recibo ? `<img src="${d.foto_recibo}" style="max-height:150px; border:1px solid #000;">` : ''}
+                    </div>`;
+                }
+            });
+
+            if(!valesHTML && !pontoHTML && !despesasHTML) {
+                return Swal.fire('Aviso', 'Não há dados registrados neste mês para fazer backup.', 'info');
+            }
+
+            // Constrói o HTML final do Backup
+            let backupContent = `
+                <html>
+                <head><meta charset="utf-8"><title>Backup - ${empresaLogada} - ${mesSelected}/${anoSelected}</title></head>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h1>Backup Completo - ${empresaLogada}</h1>
+                    <h2>Período: Mês ${mesSelected} / Ano ${anoSelected}</h2>
+                    <hr>
+                    <h3>1. DESPESAS E NOTAS FISCAIS</h3>
+                    ${despesasHTML || '<p>Sem despesas.</p>'}
+                    <hr>
+                    <h3>2. REGISTROS DE PONTO (GPS E SELFIE)</h3>
+                    ${pontoHTML || '<p>Sem pontos.</p>'}
+                    <hr>
+                    <h3>3. VALES E PRODUTOS (ASSINATURAS)</h3>
+                    ${valesHTML || '<p>Sem vales.</p>'}
+                </body>
+                </html>
+            `;
+
+            // Faz o Download do arquivo HTML para abrir Offline
+            const blob = new Blob([backupContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Backup_${empresaLogada.replace(/\s+/g, '_')}_${mesSelected}_${anoSelected}.html`;
+            link.click();
+
+            Swal.fire('Backup Salvo!', 'O arquivo HTML foi transferido para o seu computador. Abra-o no navegador para ver tudo offline.', 'success');
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Falha ao gerar o Backup.', 'error');
+        }
+    };
+
+    window.limparDadosMes = async function() {
+        const mesSelected = document.getElementById('backup-mes').value;
+        const anoSelected = document.getElementById('backup-ano').value;
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        Swal.fire({
+            title: '⚠️ CUIDADO: ZERAR NUVEM?',
+            html: `Você está prestes a <b>APAGAR TODOS OS DADOS E FOTOS</b> do Mês <b>${mesSelected}/${anoSelected}</b> para economizar servidor.<br><br>Você tem certeza que já baixou o Backup e guardou o arquivo HTML com segurança?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, eu já baixei o Backup. Apagar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'A Apagar Dados...', allowOutsideClick: false });
+                Swal.showLoading();
+
+                try {
+                    let deletados = 0;
+
+                    // Apaga Vales
+                    const qVales = query(collection(db, "vales_sistema"), where("empresa_id", "==", empresaLogada));
+                    const snapVales = await getDocs(qVales);
+                    for (const docSnap of snapVales.docs) {
+                        let {mes, ano} = separarDataSegura(docSnap.data().data_criacao || docSnap.data().data);
+                        if(mes === mesSelected && ano === anoSelected) {
+                            await deleteDoc(doc(db, "vales_sistema", docSnap.id));
+                            deletados++;
+                        }
+                    }
+
+                    // Apaga Ponto
+                    const qPonto = query(collection(db, "ponto_registros"), where("empresa_id", "==", empresaLogada));
+                    const snapPonto = await getDocs(qPonto);
+                    for (const docSnap of snapPonto.docs) {
+                        let {mes, ano} = separarDataSegura(docSnap.data().data);
+                        if(mes === mesSelected && ano === anoSelected) {
+                            await deleteDoc(doc(db, "ponto_registros", docSnap.id));
+                            deletados++;
+                        }
+                    }
+
+                    // Apaga Despesas
+                    const qDespesas = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
+                    const snapDespesas = await getDocs(qDespesas);
+                    for (const docSnap of snapDespesas.docs) {
+                        let {mes, ano} = separarDataSegura(docSnap.data().data);
+                        if(mes === mesSelected && ano === anoSelected) {
+                            await deleteDoc(doc(db, "despesas_obras", docSnap.id));
+                            deletados++;
+                        }
+                    }
+
+                    Swal.fire('Limpeza Concluída!', `Foram apagados ${deletados} registros. O seu armazenamento na nuvem está livre!`, 'success');
+
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('Erro', 'Falha ao limpar o banco de dados. Pode haver arquivos demais.', 'error');
+                }
+            }
+        });
     };
 
     let streamCamera = null;
