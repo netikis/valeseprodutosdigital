@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Gestão</title>
+    <title>Sistema de Gestão - FH Construções</title>
     
     <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
@@ -37,6 +37,7 @@
             color: var(--text-color); 
         }
         
+        /* PAINEL AUMENTADO PARA CABER TODAS AS OPÇÕES (De 480px para 750px) */
         .main-card { 
             background: var(--white); 
             padding: 35px 30px; 
@@ -552,7 +553,7 @@
     <div class="empresa-destaque" id="nome-empresa-painel">Empresa...</div>
 
     <div class="tabs">
-        <div class="tab active" onclick="mudarAba('cadastrar', this)">👥 Equipa</div>
+        <div class="tab active" onclick="mudarAba('cadastrar', this)">👥 Equipe</div>
         <div class="tab" onclick="mudarAba('criar', this)">💰 Vales</div>
         <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
@@ -593,7 +594,7 @@
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
-        <label>Equipa Cadastrada:</label>
+        <label>Equipe Cadastrada:</label>
         <div id="lista-funcionarios-gerencial" style="margin-top: 15px;">
             <p style="text-align: center; color: #888; font-size: 13px;">A carregar...</p>
         </div>
@@ -901,14 +902,14 @@
     const urlParams = new URLSearchParams(window.location.search);
     const valeId = urlParams.get('id');
     const isPonto = urlParams.get('ponto');
-    const empresaPontoURL = urlParams.get('empresa'); // NOVO: Captura a empresa do link do funcionário
+    const empresaPontoURL = urlParams.get('empresa');
 
     window.listaFuncionarios = {};
     window.dadosExportacaoVales = [];
     window.dadosExportacaoPonto = [];
     window.dadosExportacaoDespesas = [];
 
-    // --- NOVA LÓGICA DE LOGIN MULTI-TENANT (GESTOR) ---
+    // --- LÓGICA DE LOGIN MULTI-TENANT (GESTOR) ---
     window.entrarEmpresa = function(nomeEmpresa) {
         localStorage.setItem('empresaGestor', nomeEmpresa);
         iniciarPainelGestor();
@@ -1082,7 +1083,7 @@
         const valor = document.getElementById('d-valor').value;
         const desc = document.getElementById('d-desc').value;
         const fotoBase64 = document.getElementById('d-anexo-base64').value;
-        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA A EMPRESA
+        const empresaLogada = localStorage.getItem('empresaGestor'); 
 
         if (!obra || !loja || !valor) {
             return Swal.fire('Atenção', 'Preencha a Obra, Loja e o Valor!', 'warning');
@@ -1100,7 +1101,7 @@
 
         try {
             await addDoc(collection(db, "despesas_obras"), {
-                empresa_id: empresaLogada, // TRAVA DE ISOLAMENTO
+                empresa_id: empresaLogada, 
                 obra_nome: obra,
                 obra_lower: obra.toLowerCase(),
                 loja_nome: loja,
@@ -1219,7 +1220,6 @@
         window.dadosExportacaoDespesas = [];
 
         try {
-            // Busca apenas as despesas da empresa logada
             const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
 
@@ -1227,7 +1227,6 @@
             let somaTotal = 0;
             let encontrou = false;
             
-            // Ordenação local (Anti-Bug de Indexação do Firebase)
             let despesasArray = [];
             querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
             despesasArray.sort((a, b) => b.timestamp - a.timestamp);
@@ -1279,7 +1278,6 @@
         let title = '';
         let dados = [];
         
-        // Pega o nome da empresa atual para pôr no PDF
         let empresaAtualNome = localStorage.getItem('empresaGestor') || "Empresa";
 
         if (tipo === 'vales') {
@@ -1505,7 +1503,6 @@
         Swal.showLoading();
         
         try {
-            // VERIFICA O CPF DENTRO DA EMPRESA CORRETA DO LINK!
             const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf), where("empresa_id", "==", empresaDaURL)); 
             const querySnapshot = await getDocs(q);
             
@@ -1525,7 +1522,7 @@
                 await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcId); 
                 localStorage.setItem('funcLogadoNome', funcData.nome);
-                localStorage.setItem('funcLogadoEmpresa', empresaDaURL); // SALVA A EMPRESA DELE
+                localStorage.setItem('funcLogadoEmpresa', empresaDaURL); 
                 
                 Swal.fire('Senha Criada!', 'O seu utilizador foi ativado com sucesso.', 'success').then(() => {
                     location.reload();
@@ -1569,7 +1566,6 @@
     async function carregarListaDeFuncionarios() {
         const empresaLogada = localStorage.getItem('empresaGestor');
         try {
-            // Busca os funcionários daquela empresa específica
             const q = query(collection(db, "funcionarios"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
             
@@ -1582,7 +1578,6 @@
                 gerenciaHTML = '<p style="text-align: center; color: #888; font-size: 13px;">Nenhum funcionário cadastrado ainda.</p>';
             }
 
-            // Ordenação local (Anti-bug de index)
             let funcsArray = [];
             querySnapshot.forEach(doc => funcsArray.push({id: doc.id, ...doc.data()}));
             funcsArray.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -1799,7 +1794,6 @@
         }
     }
 
-    // BOTÃO COPIAR LINK PONTO AGORA ADICIONA A EMPRESA
     document.getElementById('btnLinkPonto').onclick = function() {
         const empresaLogada = localStorage.getItem('empresaGestor');
         const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true&empresa=${encodeURIComponent(empresaLogada)}`;
@@ -1810,7 +1804,7 @@
     window.baterPonto = function(tipo) {
         const obra = document.getElementById('obra-atual').value; 
         const fotoBase64 = document.getElementById('foto-base64').value;
-        const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa'); // PEGA A EMPRESA
+        const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa'); 
         
         if (!obra) {
             return Swal.fire('Atenção', 'Deve informar em qual obra está!', 'warning');
@@ -1847,7 +1841,7 @@
                 const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
                 
                 const payloadPonto = { 
-                    empresa_id: empresaDoFuncionario, // SALVA A EMPRESA
+                    empresa_id: empresaDoFuncionario, 
                     funcionario_id: funcId, 
                     nome: funcNome, 
                     tipo: tipo, 
@@ -1912,7 +1906,6 @@
         window.dadosExportacaoPonto = [];
 
         try {
-            // Como o funcionario já está filtrado pela empresa, puxar os pontos dele já garante a segurança
             const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId)); 
             const querySnapshot = await getDocs(q);
             
@@ -1926,7 +1919,7 @@
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                dados.linkMaps = `maps.google.com9{dados.latitude},${dados.longitude}`;
+                dados.linkMaps = `https://maps.google.com/?q=...{dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -1999,7 +1992,7 @@
         const salario = document.getElementById('c-salario').value; 
         const horaEntrada = document.getElementById('c-entrada').value; 
         const horaSaida = document.getElementById('c-saida').value;
-        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA EMPRESA
+        const empresaLogada = localStorage.getItem('empresaGestor'); 
         
         if (!nome || !tel || !cpf) {
             return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
@@ -2011,7 +2004,7 @@
         
         try {
             await addDoc(collection(db, "funcionarios"), { 
-                empresa_id: empresaLogada, // SALVA A EMPRESA
+                empresa_id: empresaLogada, 
                 nome: nome, 
                 tel: tel, 
                 cpf: cpf, 
@@ -2043,7 +2036,7 @@
         const valorLimpo = document.getElementById('p-valor').value; 
         const tipo = document.getElementById('p-tipo').value; 
         const desc = document.getElementById('p-desc').value || 'Não informada';
-        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA EMPRESA
+        const empresaLogada = localStorage.getItem('empresaGestor'); 
         
         if (!funcId || !valorLimpo) {
             return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
@@ -2069,7 +2062,7 @@
 
         try {
             const docRef = await addDoc(collection(db, "vales_sistema"), { 
-                empresa_id: empresaLogada, // SALVA A EMPRESA NO VALE
+                empresa_id: empresaLogada, 
                 funcionario_id: funcId, 
                 nome: funcionario.nome, 
                 tel: funcionario.tel, 
@@ -2084,7 +2077,6 @@
                 assinatura: null 
             });
             
-            // O link do vale já acha tudo sozinho pelo ID, não precisa colocar a empresa na URL do vale
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             const msgZap = `*${empresaLogada}*\nOlá ${funcionario.nome}, o seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
             
@@ -2206,7 +2198,7 @@
         Swal.showLoading();
         
         const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
-        document.getElementById('pdf-empresa-nome').innerText = empresaLogada; // ATUALIZA O NOME DA EMPRESA NO RECIBO PDF
+        document.getElementById('pdf-empresa-nome').innerText = empresaLogada; 
         document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; 
         document.getElementById('pdf-assinatura').src = dados.assinatura; 
