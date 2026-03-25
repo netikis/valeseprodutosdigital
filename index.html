@@ -33,16 +33,17 @@
             font-family: 'Poppins', sans-serif; 
             background: var(--light-bg); 
             margin: 0; 
-            padding: 15px; 
+            padding: 20px 15px; 
             color: var(--text-color); 
         }
         
+        /* PAINEL AUMENTADO PARA CABER TODAS AS OPÇÕES (De 480px para 750px) */
         .main-card { 
             background: var(--white); 
-            padding: 30px 25px; 
+            padding: 35px 30px; 
             border-radius: 20px; 
             box-shadow: 0 10px 30px rgba(26, 42, 67, 0.1); 
-            max-width: 480px; 
+            max-width: 750px; 
             margin: auto; 
             border-top: 6px solid var(--dark-navy); 
         }
@@ -63,7 +64,7 @@
         .title-top { 
             color: var(--dark-navy); 
             font-weight: 700; 
-            font-size: 15px; 
+            font-size: 16px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
@@ -87,11 +88,14 @@
             font-size: 15px; 
             font-family: 'Poppins', sans-serif; 
             transition: 0.3s; 
+            background-color: #fafcff;
         }
         
         input:focus, select:focus, textarea:focus { 
             border-color: var(--gold); 
             outline: none; 
+            box-shadow: 0 0 8px rgba(212, 160, 23, 0.2);
+            background-color: var(--white);
         }
 
         .btn-enviar { 
@@ -100,16 +104,18 @@
             border: none; 
             padding: 15px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             font-weight: 700; 
             font-size: 15px; 
             margin-top: 25px; 
             cursor: pointer; 
             transition: 0.3s; 
+            box-shadow: 0 4px 15px rgba(26, 42, 67, 0.2);
         }
         
         .btn-enviar:hover { 
             background: #121e30; 
+            transform: translateY(-2px);
         }
         
         .btn-gold { 
@@ -118,16 +124,18 @@
             border: none; 
             padding: 15px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             font-weight: 700; 
             font-size: 15px; 
             margin-top: 20px; 
             cursor: pointer; 
             transition: 0.3s; 
+            box-shadow: 0 4px 15px rgba(212, 160, 23, 0.3);
         }
         
         .btn-gold:hover { 
             background: #b88a12; 
+            transform: translateY(-2px);
         }
 
         .btn-entrada { 
@@ -136,12 +144,15 @@
             border: none; 
             padding: 18px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             font-weight: bold; 
             font-size: 16px; 
             margin-top: 15px; 
             cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: 0.3s;
         }
+        .btn-entrada:active { transform: scale(0.98); }
         
         .btn-saida { 
             background: #d9534f; 
@@ -149,12 +160,15 @@
             border: none; 
             padding: 18px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             font-weight: bold; 
             font-size: 16px; 
             margin-top: 15px; 
             cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(217, 83, 79, 0.3);
+            transition: 0.3s;
         }
+        .btn-saida:active { transform: scale(0.98); }
         
         .btn-logout { 
             background: #eee; 
@@ -200,34 +214,73 @@
             background: #c9302c;
         }
 
+        /* --- MENU PREMIUM ADAPTÁVEL (FLEX WRAP) --- */
         .tabs { 
             display: flex; 
-            border-bottom: 2px solid #eee; 
+            flex-wrap: wrap; /* Agora ele quebra a linha em telas de celular se faltar espaço */
+            justify-content: center; /* Mantém centralizado e bonito */
+            gap: 10px;
+            padding-bottom: 10px;
             margin-bottom: 25px; 
-            font-size: 12px; 
-            flex-wrap: wrap; 
         }
         
         .tab { 
-            flex: 1; 
-            text-align: center; 
-            padding: 10px 2px; 
-            cursor: pointer; 
+            flex: 1 1 auto; /* Permite esticar e encolher */
+            background: #eef2f5;
+            color: #666;
+            padding: 12px 18px; 
+            border-radius: 20px; 
             font-weight: 600; 
-            color: #aaa; 
-            transition: 0.3s; 
-            min-width: 20%;
+            font-size: 13px;
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: 1px solid transparent;
+            white-space: nowrap;
         }
         
+        .tab:hover {
+            background: #e0e6ed;
+        }
+
         .tab.active { 
-            color: var(--dark-navy); 
-            border-bottom: 3px solid var(--gold); 
+            background: var(--dark-navy); 
+            color: var(--white); 
+            box-shadow: 0 4px 12px rgba(26, 42, 67, 0.25);
+            border-color: var(--dark-navy);
+        }
+
+        /* --- ABA DESPESAS DESTAQUE --- */
+        .tab-despesas {
+            color: #d9534f;
+            background: #fdf2f2;
         }
         
+        .tab-despesas:hover {
+            background: #f9e4e4;
+        }
+
+        .tab-despesas.active {
+            background: #d9534f;
+            color: #fff;
+            border-color: #d9534f;
+            box-shadow: 0 4px 12px rgba(217, 83, 79, 0.25);
+        }
+        /* ------------------------------------------- */
+
         .view-section { 
             display: none; 
+            animation: fadeIn 0.4s ease;
         }
         
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .view-section.active { 
             display: block; 
         }
@@ -239,8 +292,9 @@
             padding: 12px; 
             border-bottom: 1px solid #eee; 
             background: #fafcff; 
-            border-radius: 8px; 
+            border-radius: 10px; 
             margin-bottom: 8px;
+            border: 1px solid #f0f4f8;
         }
         
         .btn-excluir { 
@@ -403,6 +457,57 @@
             display: none; 
             transform: scaleX(-1); 
         }
+
+        /* Estilo da Tabela de Folha de Pagamento */
+        .card-folha { 
+            background: #fff; 
+            border: 2px solid var(--dark-navy); 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-top: 20px; 
+        }
+        
+        .folha-linha { 
+            display: flex; 
+            justify-content: space-between; 
+            border-bottom: 1px solid #eee; 
+            padding: 10px 0; 
+            font-size: 14px;
+        }
+        
+        .folha-linha.destaque { 
+            font-weight: bold; 
+            color: var(--dark-navy); 
+            font-size: 16px; 
+            border-bottom: none; 
+            margin-top: 10px;
+        }
+        
+        .folha-linha.desconto { 
+            color: #d9534f; 
+        }
+        
+        .folha-linha.acrescimo { 
+            color: #28a745; 
+        }
+
+        /* Estilo das Etiquetas (Tags) de Despesas */
+        .badge-tag {
+            background: #e0e6ed;
+            color: var(--dark-navy);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+            border: 1px solid #ccc;
+        }
+        .badge-tag:hover {
+            background: var(--gold);
+            color: var(--white);
+            border-color: var(--gold);
+        }
     </style>
 </head>
 <body>
@@ -420,32 +525,58 @@
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="mudarAba('cadastrar')">1. Equipe</div>
-        <div class="tab" onclick="mudarAba('criar')">2. Vales</div>
-        <div class="tab" onclick="mudarAba('buscar')">3. Arquivo</div>
-        <div class="tab" onclick="mudarAba('ponto')">4. Ponto GPS</div>
+        <div class="tab active" onclick="mudarAba('cadastrar', this)">👥 Equipa</div>
+        <div class="tab" onclick="mudarAba('criar', this)">💰 Vales</div>
+        <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
+        <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
+        <div class="tab" onclick="mudarAba('folha', this)">📄 Folha</div>
+        <div class="tab tab-despesas" onclick="mudarAba('despesas', this)">📉 Despesas</div>
     </div>
 
     <div id="aba-cadastrar" class="view-section active">
         <label>Nome Completo</label>
-        <input type="text" id="c-nome" placeholder="Ex: João da Silva">
-        <label>CPF (Apenas Números - Login)</label>
-        <input type="number" id="c-cpf" placeholder="Ex: 12345678900">
+        <input type="text" id="c-nome" placeholder="Digite o nome completo">
+        
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>CPF (Login)</label>
+                <input type="number" id="c-cpf" placeholder="Apenas números">
+            </div>
+            <div style="flex: 1;">
+                <label>Salário (R$)</label>
+                <input type="text" id="c-salario" placeholder="0,00" oninput="mascaraMoeda(this)">
+            </div>
+        </div>
+
         <label>WhatsApp (com DDD)</label>
-        <input type="number" id="c-tel" placeholder="Ex: 43999999999">
+        <input type="number" id="c-tel" placeholder="Apenas números">
+
+        <label style="margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Jornada de Trabalho Padrão</label>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Horário de Entrada</label>
+                <input type="time" id="c-entrada" value="07:00">
+            </div>
+            <div style="flex: 1;">
+                <label>Horário de Saída</label>
+                <input type="time" id="c-saida" value="17:00">
+            </div>
+        </div>
         
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
-        <label>Equipe Cadastrada:</label>
+        <label>Equipa Cadastrada:</label>
         <div id="lista-funcionarios-gerencial" style="margin-top: 15px;">
-            <p style="text-align: center; color: #888; font-size: 13px;">Carregando...</p>
+            <p style="text-align: center; color: #888; font-size: 13px;">A carregar...</p>
         </div>
     </div>
 
     <div id="aba-criar" class="view-section">
         <label>Selecione o Funcionário</label>
-        <select id="p-func-select" class="lista-funcs"><option value="">Carregando...</option></select>
+        <select id="p-func-select" class="lista-funcs">
+            <option value="">A carregar...</option>
+        </select>
 
         <div style="display: flex; gap: 10px; margin-top: 5px;">
             <div style="flex: 1.2;">
@@ -462,17 +593,21 @@
         </div>
 
         <label>Descrição / Referente a:</label>
-        <textarea id="p-desc" rows="2" placeholder="Ex: Adiantamento"></textarea>
+        <textarea id="p-desc" rows="2" placeholder="Descreva o motivo do vale ou os produtos"></textarea>
         <button class="btn-enviar" id="btnGerarLink">GERAR VALE E ENVIAR LINK</button>
     </div>
 
     <div id="aba-buscar" class="view-section">
         <label>Histórico do Funcionário (Vales):</label>
         <div style="display: flex; gap: 10px;">
-            <select id="b-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
+            <select id="b-func-select" class="lista-funcs" style="margin: 0; flex: 2;">
+                <option value="">A carregar...</option>
+            </select>
             <button onclick="buscarVales()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
         </div>
+        
         <button id="btnExportarVales" class="btn-pdf-relatorio" style="display:none;" onclick="exportarPDF('vales')">📥 EXPORTAR RELATÓRIO PDF</button>
+        
         <div id="lista-resultados" style="margin-top: 20px;">
             <p style="text-align: center; color: #888; font-size: 13px;">Selecione para ver os recibos.</p>
         </div>
@@ -480,19 +615,137 @@
 
     <div id="aba-ponto" class="view-section">
         <div style="background: #eef2f5; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto do celular deles:</p>
+            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto do telemóvel deles:</p>
             <button class="btn-gold" id="btnLinkPonto" style="margin: 0; padding: 10px; font-size: 13px;">Copiar Link do Relógio de Ponto</button>
         </div>
 
         <label>Consultar Ponto do Funcionário:</label>
         <div style="display: flex; gap: 10px;">
-            <select id="pt-func-select" class="lista-funcs" style="margin: 0; flex: 2;"><option value="">Carregando...</option></select>
+            <select id="pt-func-select" class="lista-funcs" style="margin: 0; flex: 2;">
+                <option value="">A carregar...</option>
+            </select>
             <button onclick="buscarPonto()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
         </div>
+        
         <button id="btnExportarPonto" class="btn-pdf-relatorio" style="display:none;" onclick="exportarPDF('ponto')">📥 EXPORTAR RELATÓRIO PDF</button>
+        
         <div id="lista-ponto-resultados" style="margin-top: 20px;">
             <p style="text-align: center; color: #888; font-size: 13px;">Aqui aparecerão os horários e locais.</p>
         </div>
+    </div>
+
+    <div id="aba-folha" class="view-section">
+        <label>Gerar Acerto Mensal (Folha/Holerite)</label>
+        <select id="folha-func-select" class="lista-funcs" style="margin-bottom: 10px;">
+            <option value="">A carregar...</option>
+        </select>
+        
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1.5;">
+                <label>Mês</label>
+                <select id="folha-mes">
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>Ano</label>
+                <input type="number" id="folha-ano" value="2026">
+            </div>
+        </div>
+
+        <button class="btn-enviar" onclick="gerarFolhaPagamento()">💰 CALCULAR FECHAMENTO</button>
+
+        <div id="resultado-folha" style="display: none;">
+            <div class="card-folha">
+                <div style="text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: var(--dark-navy);" id="f-nome-display">Nome</h3>
+                    <p style="margin: 0; font-size: 12px; color: #666;" id="f-periodo-display">Ref: Mês/Ano</p>
+                </div>
+                
+                <div class="folha-linha">
+                    <span>(+) Salário Base:</span>
+                    <strong id="f-salario-base">R$ 0,00</strong>
+                </div>
+                <div class="folha-linha acrescimo">
+                    <span id="f-horas-extras-texto">(+) Horas Extras (0h):</span>
+                    <strong id="f-valor-extras">R$ 0,00</strong>
+                </div>
+                <div class="folha-linha desconto">
+                    <span>(-) Vales / Adiantamentos:</span>
+                    <strong id="f-valor-vales">R$ 0,00</strong>
+                </div>
+                <div class="folha-linha desconto">
+                    <span>(-) Produtos / Materiais:</span>
+                    <strong id="f-valor-produtos">R$ 0,00</strong>
+                </div>
+                
+                <div class="folha-linha destaque">
+                    <span>LÍQUIDO A RECEBER:</span>
+                    <span id="f-valor-liquido" style="color: #28a745; font-size: 18px;">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="aba-despesas" class="view-section">
+        <details open style="margin-bottom: 20px;">
+            <summary style="background: #eef2f5;">➕ Lançar Nova Despesa</summary>
+            <div style="padding: 15px;">
+                <label>Nome da Obra ou Local</label>
+                <input type="text" id="d-obra" placeholder="Onde o material foi usado?">
+
+                <label>Nome da Loja ou Fornecedor</label>
+                <input type="text" id="d-loja" placeholder="Onde foi comprado?">
+
+                <label>Valor da Fatura (R$)</label>
+                <input type="text" id="d-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+
+                <label>Descrição / Materiais</label>
+                <textarea id="d-desc" rows="2" placeholder="Descreva os materiais adquiridos"></textarea>
+
+                <label>Foto do Recibo / Fatura</label>
+                <input type="file" id="d-anexo" accept="image/*" capture="environment" style="background: #fff; padding: 10px; border-radius: 8px;">
+                <input type="hidden" id="d-anexo-base64">
+                <p style="font-size: 11px; color: #888; margin-top: 5px;">* Tire uma foto clara do recibo impresso.</p>
+
+                <button class="btn-gold" id="btnSalvarDespesa" onclick="salvarDespesaObra()">SALVAR DESPESA</button>
+            </div>
+        </details>
+
+        <details open>
+            <summary style="background: #eef2f5;">🔍 Relatório de Gastos por Obra</summary>
+            <div style="padding: 15px;">
+                <label>Procurar despesas da Obra ou Loja:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="busca-obra" placeholder="Nome da obra ou fornecedor" style="flex: 2; margin: 0;">
+                    <button onclick="buscarDespesasObra()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
+                </div>
+
+                <div id="tags-filtros-despesas" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; padding: 10px; background: #fafcff; border-radius: 8px; border: 1px dashed #e0e6ed;">
+                    <p style="font-size: 11px; color: #888; width: 100%; text-align: center; margin: 0;">A carregar locais registados...</p>
+                </div>
+
+                <div id="resumo-total-despesas" style="display: none; margin-top: 20px; background: #fff3cd; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #ffeeba;">
+                    <h4 style="margin: 0; color: #856404;">Total Gasto (Pesquisa Atual):</h4>
+                    <h2 style="margin: 5px 0 0 0; color: #d9534f;" id="total-gasto-display">R$ 0,00</h2>
+                </div>
+
+                <div id="lista-despesas-resultados" style="margin-top: 15px;">
+                    <p style="text-align: center; color: #888; font-size: 13px;">Selecione uma etiqueta acima ou digite para procurar.</p>
+                </div>
+            </div>
+        </details>
     </div>
 </div>
 
@@ -502,18 +755,18 @@
         <div class="title-top">Login do Funcionário</div>
     </div>
 
-    <p style="text-align: center; font-size: 13px; color: #555;">Digite seu CPF para acessar o sistema de ponto da empresa.</p>
+    <p style="text-align: center; font-size: 13px; color: #555;">Digite o seu CPF para aceder ao sistema de ponto da empresa.</p>
 
     <label>Seu CPF (Somente números)</label>
-    <input type="number" id="login-cpf" placeholder="Ex: 12345678900">
+    <input type="number" id="login-cpf" placeholder="Apenas números">
 
     <label>Sua Senha</label>
     <input type="password" id="login-senha" placeholder="Digite sua senha">
-    <p style="font-size: 11px; color: #888; margin-top: 5px;"><i>Se for seu primeiro acesso, digite a senha que deseja criar para o seu usuário.</i></p>
+    <p style="font-size: 11px; color: #888; margin-top: 5px;"><i>Se for o seu primeiro acesso, digite a senha que deseja criar para o seu utilizador.</i></p>
 
     <button class="btn-enviar" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
     
-    <button class="btn-logout" style="margin-top: 15px; background: transparent; color: var(--dark-navy); text-decoration: underline; box-shadow: none;" onclick="esqueciSenha()">Esqueci minha senha</button>
+    <button class="btn-logout" style="margin-top: 15px; background: transparent; color: var(--dark-navy); text-decoration: underline; box-shadow: none;" onclick="esqueciSenha()">Esqueci a minha senha</button>
 </div>
 
 <div class="main-card" id="tela-relogio" style="display: none;">
@@ -525,11 +778,11 @@
     <h3 style="text-align: center; color: var(--dark-navy); margin-bottom: 5px;">Olá, <span id="nome-logado"></span></h3>
     
     <div id="alerta-offline" style="display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; margin-bottom: 10px; border: 1px solid #ffeeba;">
-        ⚠️ Você está offline. O ponto será salvo no celular e enviado quando a internet voltar.
+        ⚠️ Está offline. O ponto será guardado no telemóvel e enviado quando a internet voltar.
     </div>
 
-    <label style="margin-top: 20px;">Em qual local/obra você está agora?</label>
-    <input type="text" id="obra-atual" placeholder="Ex: Obra Centro, Condomínio, Escritório...">
+    <label style="margin-top: 20px;">Em qual local ou obra está agora?</label>
+    <input type="text" id="obra-atual" placeholder="Informe a obra ou local atual">
 
     <label style="margin-top: 15px;">Confirmação de Identidade:</label>
     <button id="btn-iniciar-camera" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
@@ -541,11 +794,11 @@
     <input type="hidden" id="foto-base64" value="">
 
     <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
-        ⚠️ O sistema aguardará o sinal do satélite para salvar a localização exata. Permaneça em local aberto.
+        ⚠️ O sistema aguardará o sinal do satélite para guardar a localização exata. Permaneça num local aberto.
     </div>
 
-    <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTRAR ENTRADA</button>
-    <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTRAR SAÍDA</button>
+    <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTAR ENTRADA</button>
+    <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTAR SAÍDA</button>
 
     <button class="btn-logout" onclick="fazerLogout()">Sair da Conta (Logout)</button>
 </div>
@@ -559,7 +812,7 @@
     <div id="area-recibo">
         <div class="recibo-header">RECIBO DE ASSINATURA</div>
         <div class="data-recibo" id="f-data">--/--/----</div>
-        <div id="f-texto">Carregando dados...</div>
+        <div id="f-texto">A carregar dados...</div>
         <label style="text-align: center; margin-top: 30px;">ASSINATURA DIGITAL AQUI:</label>
         <canvas id="signature-pad"></canvas>
         <button class="btn-limpar" onclick="limpar()">Corrigir Assinatura</button>
@@ -599,23 +852,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- NOVA FUNÇÃO DE CHECAGEM DO STATUS (KILL SWITCH) ---
+    // CHECAGEM DO STATUS (KILL SWITCH)
     async function verificarStatusSistema() {
         try {
             const docRef = doc(db, "sistema", "config");
             const docSnap = await getDoc(docRef);
-            
-            if (docSnap.exists()) {
-                if (docSnap.data().status === "bloqueado") {
-                    document.getElementById('tela-bloqueio').style.display = 'flex';
-                }
+            if (docSnap.exists() && docSnap.data().status === "bloqueado") {
+                document.getElementById('tela-bloqueio').style.display = 'flex';
             }
         } catch(e) {
-            console.log("Sistema OK"); 
+            console.log("Sistema OK");
         }
     }
-    
-    // Chama a checagem logo que o código carrega
     verificarStatusSistema();
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -656,15 +904,22 @@
         document.title = "GESTÃO RH"; 
         document.getElementById('tela-patrao').style.display = 'block';
         carregarListaDeFuncionarios();
+        
+        const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
+        document.getElementById('folha-mes').value = mesAtual;
     }
 
     const nomeMeses = { 
-        "01": "Janeiro", "1": "Janeiro", "02": "Fevereiro", "2": "Fevereiro", 
-        "03": "Março", "3": "Março", "04": "Abril", "4": "Abril", 
-        "05": "Maio", "5": "Maio", "06": "Junho", "6": "Junho", 
-        "07": "Julho", "7": "Julho", "08": "Agosto", "8": "Agosto", 
-        "09": "Setembro", "9": "Setembro", "10": "Outubro", 
-        "11": "Novembro", "12": "Dezembro" 
+        "01": "Janeiro", "1": "Janeiro", 
+        "02": "Fevereiro", "2": "Fevereiro", 
+        "03": "Março", "3": "Março", 
+        "04": "Abril", "4": "Abril", 
+        "05": "Maio", "5": "Maio", 
+        "06": "Junho", "6": "Junho", 
+        "07": "Julho", "7": "Julho", 
+        "08": "Agosto", "8": "Agosto", 
+        "09": "Setembro", "9": "Setembro", 
+        "10": "Outubro", "11": "Novembro", "12": "Dezembro" 
     };
 
     function separarDataSegura(dataString) {
@@ -678,8 +933,8 @@
             let partes = textoLimpo.split(/[\/\-]/);
             
             if (partes.length >= 3) {
-                let p1 = partes[0];
-                let p2 = partes[1];
+                let p1 = partes[0]; 
+                let p2 = partes[1]; 
                 let p3 = partes[2];
                 let ano, mes, dia;
                 
@@ -717,6 +972,227 @@
         input.value = value;
     };
 
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function parseMoedaLocal(stringValor) {
+        if (!stringValor) return 0;
+        let limpo = String(stringValor).replace(/\./g, '').replace(',', '.');
+        return parseFloat(limpo) || 0;
+    }
+
+    document.getElementById('d-anexo').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 500;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height = height * (MAX_WIDTH / width);
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                document.getElementById('d-anexo-base64').value = canvas.toDataURL('image/jpeg', 0.4);
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    });
+
+    window.salvarDespesaObra = async function() {
+        const obra = document.getElementById('d-obra').value.trim();
+        const loja = document.getElementById('d-loja').value.trim();
+        const valor = document.getElementById('d-valor').value;
+        const desc = document.getElementById('d-desc').value;
+        const fotoBase64 = document.getElementById('d-anexo-base64').value;
+
+        if (!obra || !loja || !valor) {
+            return Swal.fire('Atenção', 'Preencha a Obra, Loja e o Valor!', 'warning');
+        }
+
+        const btn = document.getElementById('btnSalvarDespesa');
+        btn.innerText = "⏳ A GUARDAR..."; 
+        btn.disabled = true;
+
+        const dataObj = new Date();
+        const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
+        const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
+        const anoStr = dataObj.getFullYear();
+        const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
+
+        try {
+            await addDoc(collection(db, "despesas_obras"), {
+                obra_nome: obra,
+                obra_lower: obra.toLowerCase(),
+                loja_nome: loja,
+                loja_lower: loja.toLowerCase(),
+                valor_string: valor,
+                valor_numero: parseMoedaLocal(valor),
+                descricao: desc,
+                foto_recibo: fotoBase64,
+                data: dataAtual,
+                timestamp: dataObj.getTime()
+            });
+
+            Swal.fire('Sucesso!', 'Despesa cadastrada com sucesso.', 'success');
+            
+            document.getElementById('d-obra').value = '';
+            document.getElementById('d-loja').value = '';
+            document.getElementById('d-valor').value = '';
+            document.getElementById('d-desc').value = '';
+            document.getElementById('d-anexo').value = '';
+            document.getElementById('d-anexo-base64').value = '';
+
+            carregarFiltrosDespesas();
+
+        } catch (e) {
+            console.error("Erro despesa", e);
+            let msgErro = e.message;
+            if (msgErro.includes("permissions")) msgErro = "O Firebase bloqueou a gravação. Verifique as 'Rules'.";
+            else if (msgErro.includes("exceeds")) msgErro = "A foto anexada é demasiado pesada.";
+            Swal.fire('Falha Técnica', msgErro, 'error');
+        } finally {
+            btn.innerText = "SALVAR DESPESA"; 
+            btn.disabled = false;
+        }
+    };
+
+    window.carregarFiltrosDespesas = async function() {
+        const divTags = document.getElementById('tags-filtros-despesas');
+        try {
+            const q = query(collection(db, "despesas_obras"));
+            const querySnapshot = await getDocs(q);
+            
+            let obrasAtivas = new Set();
+            let lojasAtivas = new Set();
+
+            querySnapshot.forEach((doc) => {
+                const d = doc.data();
+                if(d.obra_nome) obrasAtivas.add(d.obra_nome);
+                if(d.loja_nome) lojasAtivas.add(d.loja_nome);
+            });
+
+            if(obrasAtivas.size === 0 && lojasAtivas.size === 0) {
+                divTags.innerHTML = '<p style="font-size: 11px; color: #888; width: 100%; text-align: center; margin: 0;">Nenhuma obra ou loja registada ainda.</p>';
+                return;
+            }
+
+            let htmlObras = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy);">🏢 Obras:</span>';
+            obrasAtivas.forEach(obra => {
+                htmlObras += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${obra}'; buscarDespesasObra();">${obra}</span>`;
+            });
+
+            let htmlLojas = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy); margin-top: 5px;">🏪 Lojas:</span>';
+            lojasAtivas.forEach(loja => {
+                htmlLojas += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${loja}'; buscarDespesasObra();">${loja}</span>`;
+            });
+
+            divTags.innerHTML = htmlObras + htmlLojas;
+
+        } catch (e) {
+            console.error("Erro ao carregar etiquetas", e);
+            divTags.innerHTML = '<p style="font-size: 11px; color: #d9534f; width: 100%; text-align: center; margin: 0;">Erro ao carregar locais.</p>';
+        }
+    };
+
+    window.excluirDespesa = async function(id) {
+        Swal.fire({
+            title: 'Apagar / Marcar Pago?',
+            text: "Ao apagar, este valor será descontado do total e a fatura será removida do sistema. Deseja continuar?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, apagar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "despesas_obras", id));
+                    Swal.fire('Apagado!', 'A despesa foi removida com sucesso.', 'success');
+                    
+                    buscarDespesasObra(); 
+                    carregarFiltrosDespesas(); 
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível apagar a despesa. Verifique as suas Regras do Firebase.', 'error');
+                }
+            }
+        });
+    };
+
+    window.buscarDespesasObra = async function() {
+        const termoBusca = document.getElementById('busca-obra').value.trim().toLowerCase();
+        
+        if (!termoBusca) {
+            return Swal.fire('Atenção', 'Digite o nome da obra ou da loja para procurar.', 'warning');
+        }
+
+        const divLista = document.getElementById('lista-despesas-resultados');
+        const divTotal = document.getElementById('resumo-total-despesas');
+        
+        divLista.innerHTML = "A procurar relatórios..."; 
+        divTotal.style.display = 'none';
+
+        try {
+            const q = query(collection(db, "despesas_obras"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+
+            let htmlFinal = "";
+            let somaTotal = 0;
+            let encontrou = false;
+
+            querySnapshot.forEach((docSnap) => {
+                const d = docSnap.data();
+                const docId = docSnap.id; 
+                
+                if (d.obra_lower.includes(termoBusca) || d.loja_lower.includes(termoBusca)) {
+                    encontrou = true;
+                    somaTotal += (d.valor_numero || 0);
+
+                    const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;" title="Ver Fatura">` : '';
+
+                    htmlFinal += `
+                        <div class="resultado-item" style="border-left-color: #d9534f;">
+                            ${fotoHtml}
+                            <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <br>
+                            <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
+                            <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
+                            <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
+                            <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
+                            
+                            <button onclick="excluirDespesa('${docId}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 12px; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ MARCAR COMO PAGO / APAGAR</button>
+                        </div>`;
+                }
+            });
+
+            if (!encontrou) {
+                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada para esta busca.</p>`;
+                return;
+            }
+
+            document.getElementById('total-gasto-display').innerText = formatarMoeda(somaTotal);
+            divTotal.style.display = 'block';
+            divLista.innerHTML = htmlFinal;
+
+        } catch (e) {
+            console.error("Erro busca despesa", e);
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas. Verifique as Regras de Leitura no Firebase.</p>`;
+        }
+    };
+
+
     window.exportarPDF = function(tipo) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4'); 
@@ -733,7 +1209,7 @@
         doc.setFontSize(10);
         doc.text(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 28);
 
-        let head = [];
+        let head = []; 
         let body = [];
 
         if (tipo === 'vales') {
@@ -744,7 +1220,7 @@
                 const mesNome = nomeMeses[mes] || mes;
                 const dataHora = `${dia}/${mes}/${ano}\n${row.hora_criacao || ''}`;
                 
-                body.push([
+                body.push([ 
                     ano, 
                     mesNome, 
                     dataHora, 
@@ -757,26 +1233,24 @@
             });
 
             doc.autoTable({
-                startY: 35,
-                head: head,
-                body: body,
-                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
-                columnStyles: {
-                    7: { cellWidth: 40, minCellHeight: 25 } 
-                },
-                didParseCell: function(data) {
-                    if (data.column.index === 7 && data.cell.section === 'body') {
+                startY: 35, 
+                head: head, 
+                body: body, 
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
+                columnStyles: { 7: { cellWidth: 40, minCellHeight: 25 } },
+                didParseCell: function(data) { 
+                    if (data.column.index === 7 && data.cell.section === 'body') { 
                         data.cell.customImg = data.cell.raw; 
                         data.cell.text = ''; 
-                    }
+                    } 
                 },
-                didDrawCell: function(data) {
-                    if (data.column.index === 7 && data.cell.section === 'body') {
-                        let img = data.cell.customImg;
-                        if (img && img.startsWith('data:image')) {
-                            doc.addImage(img, 'PNG', data.cell.x + 2, data.cell.y + 2, 36, data.cell.height - 4);
-                        }
-                    }
+                didDrawCell: function(data) { 
+                    if (data.column.index === 7 && data.cell.section === 'body') { 
+                        let img = data.cell.customImg; 
+                        if (img && img.startsWith('data:image')) { 
+                            doc.addImage(img, 'PNG', data.cell.x + 2, data.cell.y + 2, 36, data.cell.height - 4); 
+                        } 
+                    } 
                 }
             });
 
@@ -788,39 +1262,37 @@
                 const mesNome = nomeMeses[mes] || mes;
                 const dataHora = `${dia}/${mes}/${ano}\n${row.hora || ''}`;
                 
-                body.push([
+                body.push([ 
                     ano, 
                     mesNome, 
                     dataHora, 
                     row.nome, 
                     row.tipo, 
                     row.obra, 
-                    `${row.latitude}\n${row.longitude}`,
+                    `${row.latitude}\n${row.longitude}`, 
                     row.foto || '' 
                 ]);
             });
 
             doc.autoTable({
-                startY: 35,
-                head: head,
-                body: body,
-                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
-                columnStyles: {
-                    7: { cellWidth: 35, minCellHeight: 25 } 
-                },
-                didParseCell: function(data) {
-                    if (data.column.index === 7 && data.cell.section === 'body') {
+                startY: 35, 
+                head: head, 
+                body: body, 
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
+                columnStyles: { 7: { cellWidth: 35, minCellHeight: 25 } },
+                didParseCell: function(data) { 
+                    if (data.column.index === 7 && data.cell.section === 'body') { 
                         data.cell.customImg = data.cell.raw; 
                         data.cell.text = ''; 
-                    }
+                    } 
                 },
-                didDrawCell: function(data) {
-                    if (data.column.index === 7 && data.cell.section === 'body') {
-                        let img = data.cell.customImg;
-                        if (img && img.startsWith('data:image')) {
-                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4);
-                        }
-                    }
+                didDrawCell: function(data) { 
+                    if (data.column.index === 7 && data.cell.section === 'body') { 
+                        let img = data.cell.customImg; 
+                        if (img && img.startsWith('data:image')) { 
+                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4); 
+                        } 
+                    } 
                 }
             });
         }
@@ -829,78 +1301,82 @@
     };
 
     let streamCamera = null;
+
     window.iniciarCamera = async function() {
-        const video = document.getElementById('video-selfie');
-        const btnIniciar = document.getElementById('btn-iniciar-camera');
-        const btnTirar = document.getElementById('btn-tirar-foto');
+        const video = document.getElementById('video-selfie'); 
+        const btnIniciar = document.getElementById('btn-iniciar-camera'); 
+        const btnTirar = document.getElementById('btn-tirar-foto'); 
         const imgFoto = document.getElementById('foto-tirada');
         
         try {
-            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            video.srcObject = streamCamera;
-            video.style.display = 'block';
-            btnIniciar.style.display = 'none';
-            btnTirar.style.display = 'block';
+            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
+            video.srcObject = streamCamera; 
+            video.style.display = 'block'; 
+            btnIniciar.style.display = 'none'; 
+            btnTirar.style.display = 'block'; 
             imgFoto.style.display = 'none';
-        } catch (err) {
-            Swal.fire('Erro', 'Permissão da câmera negada ou não suportada.', 'error');
+        } catch (err) { 
+            Swal.fire('Erro', 'Permissão da câmera negada ou não suportada.', 'error'); 
         }
     };
 
     window.tirarFoto = function() {
-        const video = document.getElementById('video-selfie');
-        const canvas = document.getElementById('canvas-selfie');
-        const imgFoto = document.getElementById('foto-tirada');
-        const inputBase64 = document.getElementById('foto-base64');
-        const btnTirar = document.getElementById('btn-tirar-foto');
+        const video = document.getElementById('video-selfie'); 
+        const canvas = document.getElementById('canvas-selfie'); 
+        const imgFoto = document.getElementById('foto-tirada'); 
+        const inputBase64 = document.getElementById('foto-base64'); 
+        const btnTirar = document.getElementById('btn-tirar-foto'); 
         const btnIniciar = document.getElementById('btn-iniciar-camera');
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        
+        canvas.width = video.videoWidth; 
+        canvas.height = video.videoHeight; 
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
         
         const fotoDataUrl = canvas.toDataURL('image/jpeg', 0.5); 
-        imgFoto.src = fotoDataUrl;
+        imgFoto.src = fotoDataUrl; 
         inputBase64.value = fotoDataUrl;
-
-        video.style.display = 'none';
-        imgFoto.style.display = 'block';
-        btnTirar.style.display = 'none';
-        btnIniciar.style.display = 'block';
+        
+        video.style.display = 'none'; 
+        imgFoto.style.display = 'block'; 
+        btnTirar.style.display = 'none'; 
+        btnIniciar.style.display = 'block'; 
         btnIniciar.innerText = "🔄 Tirar Novamente";
-
+        
         if (streamCamera) {
             streamCamera.getTracks().forEach(track => track.stop());
         }
     };
 
     window.esqueciSenha = function() {
-        Swal.fire({
-            icon: 'info',
-            title: 'Recuperar Senha',
-            text: 'Para manter sua conta segura, apenas o gestor (RH) pode resetar sua senha. Peça para ele acessar o painel administrativo e clicar em "Resetar Senha" no seu cadastro. Depois disso, basta você entrar com seu CPF e criar uma senha nova!',
-            confirmButtonColor: '#1a2a43'
+        Swal.fire({ 
+            icon: 'info', 
+            title: 'Recuperar Senha', 
+            text: 'Para manter a conta segura, apenas o gestor (RH) pode resetar a sua senha. Peça para ele aceder ao painel administrativo e clicar em "Resetar" no seu cadastro.', 
+            confirmButtonColor: '#1a2a43' 
         });
     };
 
     window.fazerLogin = async function() {
-        const cpf = document.getElementById('login-cpf').value;
+        const cpf = document.getElementById('login-cpf').value; 
         const senha = document.getElementById('login-senha').value;
         
         if (!cpf || !senha) {
             return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
         }
         
-        Swal.fire({title: 'Autenticando...', allowOutsideClick: false}); 
+        Swal.fire({
+            title: 'Autenticando...', 
+            allowOutsideClick: false
+        }); 
+        
         Swal.showLoading();
         
         try {
-            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf));
+            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf)); 
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) {
-                Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão te cadastrar.', 'error'); 
-                return;
+                return Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão o cadastrar.', 'error'); 
             }
             
             let funcId = null; 
@@ -915,11 +1391,12 @@
                 await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcId); 
                 localStorage.setItem('funcLogadoNome', funcData.nome);
-                Swal.fire('Senha Criada!', 'Seu usuário foi ativado com sucesso.', 'success').then(() => { 
-                    location.reload(); 
+                
+                Swal.fire('Senha Criada!', 'O seu utilizador foi ativado com sucesso.', 'success').then(() => {
+                    location.reload();
                 });
             } else {
-                if (funcData.senha !== senha) { 
+                if (funcData.senha !== senha) {
                     Swal.fire('Erro', 'Senha incorreta!', 'error'); 
                 } else { 
                     localStorage.setItem('funcLogadoId', funcId); 
@@ -938,11 +1415,19 @@
         location.reload(); 
     };
 
-    window.mudarAba = function(aba) {
+    // --- ATUALIZADO: MENU PREMIUM CLICK HANDLER ---
+    window.mudarAba = function(aba, elementoAtivado) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-        event.target.classList.add('active');
+        
+        if(elementoAtivado) {
+            elementoAtivado.classList.add('active');
+        }
         document.getElementById(`aba-${aba}`).classList.add('active');
+
+        if (aba === 'despesas') {
+            carregarFiltrosDespesas();
+        }
     };
 
     async function carregarListaDeFuncionarios() {
@@ -952,6 +1437,7 @@
             
             let opcoesHTML = '<option value="">Selecione o funcionário...</option>'; 
             let gerenciaHTML = ''; 
+            
             window.listaFuncionarios = {};
             
             if (querySnapshot.empty) {
@@ -961,13 +1447,15 @@
             querySnapshot.forEach((docSnap) => {
                 const func = docSnap.data(); 
                 window.listaFuncionarios[docSnap.id] = func;
+                
                 opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
                 
                 gerenciaHTML += `
                     <div class="func-item">
                         <div>
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
-                            <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span>
+                            <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
+                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'}</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${docSnap.id}', '${func.nome}')">🔑 Resetar</button>
@@ -977,6 +1465,7 @@
             });
             
             document.querySelectorAll('.lista-funcs').forEach(select => select.innerHTML = opcoesHTML);
+            
             if (document.getElementById('lista-funcionarios-gerencial')) {
                 document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
             }
@@ -985,22 +1474,137 @@
         }
     }
 
+    window.gerarFolhaPagamento = async function() {
+        const funcId = document.getElementById('folha-func-select').value;
+        const mesSelected = document.getElementById('folha-mes').value;
+        const anoSelected = document.getElementById('folha-ano').value;
+
+        if (!funcId || !mesSelected || !anoSelected) {
+            return Swal.fire('Atenção', 'Selecione o funcionário, mês e ano.', 'warning');
+        }
+
+        Swal.fire({ 
+            title: 'A calcular Folha...', 
+            text: 'Buscando pontos e descontos.', 
+            allowOutsideClick: false 
+        });
+        Swal.showLoading();
+
+        const funcionario = window.listaFuncionarios[funcId];
+        const salarioBase = parseMoedaLocal(funcionario.salario || "0");
+        const horaEntPadrão = funcionario.hora_entrada || "07:00";
+        const horaSaiPadrão = funcionario.hora_saida || "17:00";
+
+        let [eH, eM] = horaEntPadrão.split(':').map(Number);
+        let [sH, sM] = horaSaiPadrão.split(':').map(Number);
+        let jornadaDiariaHoras = (sH + sM/60) - (eH + eM/60);
+        if (jornadaDiariaHoras < 0) jornadaDiariaHoras += 24; 
+
+        try {
+            const qVales = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
+            const valesSnap = await getDocs(qVales);
+            
+            let totalDinheiro = 0; 
+            let totalProduto = 0;
+
+            valesSnap.forEach(doc => {
+                const vale = doc.data();
+                const dataVale = separarDataSegura(vale.data_criacao || vale.data);
+                
+                if (dataVale.mes === mesSelected && dataVale.ano === anoSelected) {
+                    let v = parseMoedaLocal(vale.valor);
+                    if(vale.tipo === 'Dinheiro') totalDinheiro += v;
+                    if(vale.tipo === 'Produto') totalProduto += v;
+                }
+            });
+
+            const qPonto = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
+            const pontoSnap = await getDocs(qPonto);
+
+            let pontosDoMes = [];
+            pontoSnap.forEach(doc => {
+                const pt = doc.data();
+                const dataPonto = separarDataSegura(pt.data);
+                
+                if (dataPonto.mes === mesSelected && dataPonto.ano === anoSelected) {
+                    pontosDoMes.push(pt);
+                }
+            });
+
+            let diasTrabalhados = {};
+            pontosDoMes.forEach(pt => {
+                if(!diasTrabalhados[pt.data]) {
+                    diasTrabalhados[pt.data] = [];
+                }
+                diasTrabalhados[pt.data].push(pt);
+            });
+
+            let totalHorasExtrasDecimais = 0;
+
+            Object.keys(diasTrabalhados).forEach(dia => {
+                let batidas = diasTrabalhados[dia];
+                let entradas = batidas.filter(b => b.tipo === 'Entrada').map(b => b.timestamp);
+                let saidas = batidas.filter(b => b.tipo === 'Saída').map(b => b.timestamp);
+
+                if (entradas.length > 0 && saidas.length > 0) {
+                    let primeiraEntrada = Math.min(...entradas);
+                    let ultimaSaida = Math.max(...saidas);
+                    
+                    if (ultimaSaida > primeiraEntrada) {
+                        let horasTrabalhadas = (ultimaSaida - primeiraEntrada) / (1000 * 60 * 60);
+                        if (horasTrabalhadas > jornadaDiariaHoras) {
+                            totalHorasExtrasDecimais += (horasTrabalhadas - jornadaDiariaHoras);
+                        }
+                    }
+                }
+            });
+
+            let valorHoraTrabalho = salarioBase / 220; 
+            let valorHoraExtra = valorHoraTrabalho * 1.5; 
+            let valorTotalReceberExtras = totalHorasExtrasDecimais * valorHoraExtra;
+
+            let liquidoReceber = salarioBase + valorTotalReceberExtras - totalDinheiro - totalProduto;
+
+            let horasDisplay = Math.floor(totalHorasExtrasDecimais);
+            let minutosDisplay = Math.round((totalHorasExtrasDecimais - horasDisplay) * 60);
+
+            document.getElementById('f-nome-display').innerText = funcionario.nome;
+            document.getElementById('f-periodo-display').innerText = `Referência: ${nomeMeses[mesSelected]} de ${anoSelected}`;
+            
+            document.getElementById('f-salario-base').innerText = formatarMoeda(salarioBase);
+            document.getElementById('f-horas-extras-texto').innerText = `(+) Horas Extras (${horasDisplay}h ${minutosDisplay}m):`;
+            document.getElementById('f-valor-extras').innerText = formatarMoeda(valorTotalReceberExtras);
+            
+            document.getElementById('f-valor-vales').innerText = formatarMoeda(totalDinheiro);
+            document.getElementById('f-valor-produtos').innerText = formatarMoeda(totalProduto);
+            
+            document.getElementById('f-valor-liquido').innerText = formatarMoeda(liquidoReceber);
+
+            document.getElementById('resultado-folha').style.display = 'block';
+            Swal.close();
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Ocorreu um erro ao calcular a folha de pagamento.', 'error');
+        }
+    };
+
     window.resetarSenhaFuncionario = async function(id, nome) {
         Swal.fire({
-            title: 'Resetar Senha?',
-            text: `Deseja apagar a senha de ${nome}? Ele precisará criar uma nova no próximo acesso.`,
+            title: 'Resetar Senha?', 
+            text: `Deseja apagar a senha de ${nome}? Ele precisará criar uma nova no próximo acesso.`, 
             icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d4a017',
-            cancelButtonColor: '#1a2a43',
+            showCancelButton: true, 
+            confirmButtonColor: '#d4a017', 
+            cancelButtonColor: '#1a2a43', 
             confirmButtonText: 'Sim, resetar!'
         }).then(async (result) => {
             if (result.isConfirmed) {
-                try {
-                    await updateDoc(doc(db, "funcionarios", id), { senha: "" });
-                    Swal.fire('Resetada!', `A senha de ${nome} foi apagada.`, 'success');
-                } catch (e) {
-                    Swal.fire('Erro', 'Não foi possível resetar a senha.', 'error');
+                try { 
+                    await updateDoc(doc(db, "funcionarios", id), { senha: "" }); 
+                    Swal.fire('Resetada!', `A senha de ${nome} foi apagada.`, 'success'); 
+                } catch (e) { 
+                    Swal.fire('Erro', 'Não foi possível resetar a senha.', 'error'); 
                 }
             }
         });
@@ -1027,22 +1631,17 @@
         });
     };
 
-    document.getElementById('btnLinkPonto').onclick = function() {
-        const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true`;
-        navigator.clipboard.writeText(linkPonto);
-        Swal.fire('Link Copiado!', 'Envie este link para a equipe acessar o Ponto Digital.', 'success');
-    };
-
     async function sincronizarPontoOffline() {
         const pontosOffline = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
+        
         if (pontosOffline.length > 0 && navigator.onLine) {
             let salvos = 0;
             for (let i = 0; i < pontosOffline.length; i++) {
-                try {
-                    await addDoc(collection(db, "ponto_registros"), pontosOffline[i]);
-                    salvos++;
-                } catch(e) { 
-                    console.error('Erro ao sincronizar ponto', e); 
+                try { 
+                    await addDoc(collection(db, "ponto_registros"), pontosOffline[i]); 
+                    salvos++; 
+                } catch(e) {
+                    console.error('Erro de sincronização', e);
                 }
             }
             if (salvos === pontosOffline.length) {
@@ -1060,11 +1659,11 @@
     }
 
     window.baterPonto = function(tipo) {
-        const obra = document.getElementById('obra-atual').value;
+        const obra = document.getElementById('obra-atual').value; 
         const fotoBase64 = document.getElementById('foto-base64').value;
-
+        
         if (!obra) {
-            return Swal.fire('Atenção', 'Você deve informar em qual obra está!', 'warning');
+            return Swal.fire('Atenção', 'Deve informar em qual obra está!', 'warning');
         }
         
         if (!fotoBase64) {
@@ -1073,11 +1672,11 @@
 
         Swal.fire({ 
             title: 'Buscando GPS...', 
-            html: 'O celular pedirá permissão, clique em <b>Permitir</b>.', 
+            html: 'O telemóvel pedirá permissão, clique em <b>Permitir</b>.', 
             allowOutsideClick: false, 
             showConfirmButton: false 
         });
-
+        
         if (!navigator.geolocation) {
             return Swal.fire('Erro', 'Seu navegador não tem função de GPS.', 'error');
         }
@@ -1091,7 +1690,7 @@
                 
                 const dataObj = new Date();
                 const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
-                const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
+                const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
                 const anoStr = dataObj.getFullYear(); 
                 
                 const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
@@ -1111,41 +1710,40 @@
                 };
 
                 if (navigator.onLine) {
-                    try {
-                        await addDoc(collection(db, "ponto_registros"), payloadPonto);
-                        Swal.fire('Sucesso!', `${tipo} registrada.`, 'success');
+                    try { 
+                        await addDoc(collection(db, "ponto_registros"), payloadPonto); 
+                        Swal.fire('Sucesso!', `${tipo} registada.`, 'success'); 
                     } catch(e) { 
-                        Swal.fire('Erro', 'Problema ao salvar no banco.', 'error'); 
+                        Swal.fire('Erro', 'Problema ao guardar na base de dados.', 'error'); 
                     }
                 } else {
-                    const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
-                    offlineData.push(payloadPonto);
+                    const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]'); 
+                    offlineData.push(payloadPonto); 
                     localStorage.setItem('pontos_offline', JSON.stringify(offlineData));
-                    Swal.fire('Ponto Salvo no Celular!', `Você está sem internet. O ${tipo} foi salvo e será enviado sozinho depois.`, 'info');
+                    Swal.fire('Ponto Guardado no Telemóvel!', `Está sem internet. A ${tipo} foi guardada e será enviada sozinha depois.`, 'info');
                 }
                 
-                document.getElementById('obra-atual').value = '';
-                document.getElementById('foto-base64').value = '';
-                document.getElementById('foto-tirada').style.display = 'none';
-                document.getElementById('btn-iniciar-camera').style.display = 'block';
+                document.getElementById('obra-atual').value = ''; 
+                document.getElementById('foto-base64').value = ''; 
+                document.getElementById('foto-tirada').style.display = 'none'; 
+                document.getElementById('btn-iniciar-camera').style.display = 'block'; 
                 document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
             },
             (error) => { 
-                Swal.fire('Falha no GPS', 'Erro ao buscar o satélite. Vá para um lugar aberto ou libere permissão.', 'error'); 
+                Swal.fire('Falha no GPS', 'Erro ao buscar o satélite. Vá para um lugar aberto ou liberte a permissão.', 'error'); 
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     };
 
-    // --- NOVA FUNÇÃO PARA ABRIR A FOTO GRANDE ---
     window.abrirFoto = function(imgBase64) {
-        Swal.fire({
-            title: 'Selfie do Ponto',
-            imageUrl: imgBase64,
-            imageWidth: 400,
-            imageAlt: 'Selfie do funcionário',
-            confirmButtonText: 'Fechar',
-            confirmButtonColor: '#1a2a43'
+        Swal.fire({ 
+            title: 'Visualização', 
+            imageUrl: imgBase64, 
+            imageWidth: 400, 
+            imageAlt: 'Foto Anexada', 
+            confirmButtonText: 'Fechar', 
+            confirmButtonColor: '#1a2a43' 
         });
     };
 
@@ -1158,16 +1756,16 @@
         const divLista = document.getElementById('lista-ponto-resultados'); 
         const btnExportar = document.getElementById('btnExportarPonto');
         
-        divLista.innerHTML = "Buscando..."; 
+        divLista.innerHTML = "A procurar..."; 
         btnExportar.style.display = 'none'; 
         window.dadosExportacaoPonto = [];
 
         try {
-            const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
+            const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId)); 
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) { 
-                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registro.</p>`; 
+                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registo.</p>`; 
                 return; 
             }
 
@@ -1176,21 +1774,26 @@
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                // URL DO MAPA CORRIGIDA PARA O PADRÃO OFICIAL 100%
-                dados.linkMaps = `https://www.google.com/maps?q=${dados.latitude},${dados.longitude}`;
+                // LINK DO MAPA OFICIAL GOOGLE
+                dados.linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
-                if (!agrupado[ano]) agrupado[ano] = {}; 
-                if (!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                if (!agrupado[ano]) {
+                    agrupado[ano] = {}; 
+                }
+                
+                if (!agrupado[ano][mes]) {
+                    agrupado[ano][mes] = [];
+                }
                 
                 dados.diaFormatado = dia; 
                 agrupado[ano][mes].push(dados);
             });
 
             btnExportar.style.display = 'block'; 
-
             let htmlFinal = "";
+            
             let chavesAno = Object.keys(agrupado).sort((a, b) => { 
                 if (a === 'Outros') return 1; 
                 if (b === 'Outros') return -1; 
@@ -1214,8 +1817,6 @@
                         return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(dados => {
                         const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
-                        
-                        // FOTO COM EFEITO DE CLIQUE PARA AMPLIAR
                         const fotoThumb = dados.foto ? `<img src="${dados.foto}" onclick="abrirFoto('${dados.foto}')" style="width: 50px; border-radius: 5px; float: right; cursor: pointer; border: 1px solid #ccc; transition: 0.2s;" title="Clique para ampliar" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">` : '';
                         
                         htmlFinal += `
@@ -1226,11 +1827,15 @@
                                 <button class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>
                             </div>`;
                     });
+                    
                     htmlFinal += `</div></details>`;
                 });
+                
                 htmlFinal += `</div></details>`;
             });
+            
             divLista.innerHTML = htmlFinal;
+            
         } catch(e) { 
             divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
         }
@@ -1240,13 +1845,16 @@
         const nome = document.getElementById('c-nome').value; 
         const cpf = document.getElementById('c-cpf').value; 
         const tel = document.getElementById('c-tel').value;
+        const salario = document.getElementById('c-salario').value; 
+        const horaEntrada = document.getElementById('c-entrada').value; 
+        const horaSaida = document.getElementById('c-saida').value;
         
         if (!nome || !tel || !cpf) {
             return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
         }
         
         const btn = document.getElementById('btnCadastrarFunc'); 
-        btn.innerText = "⏳ SALVANDO..."; 
+        btn.innerText = "⏳ A GUARDAR..."; 
         btn.disabled = true;
         
         try {
@@ -1254,7 +1862,10 @@
                 nome: nome, 
                 tel: tel, 
                 cpf: cpf, 
-                senha: "" 
+                senha: "", 
+                salario: salario, 
+                hora_entrada: horaEntrada, 
+                hora_saida: horaSaida 
             });
             
             Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
@@ -1262,10 +1873,12 @@
             document.getElementById('c-nome').value = ''; 
             document.getElementById('c-cpf').value = ''; 
             document.getElementById('c-tel').value = ''; 
+            document.getElementById('c-salario').value = '';
             
             carregarListaDeFuncionarios();
+            
         } catch(e) { 
-            Swal.fire('Erro', 'Falha ao salvar.', 'error'); 
+            Swal.fire('Erro', 'Falha ao guardar.', 'error'); 
         } finally { 
             btn.innerText = "SALVAR FUNCIONÁRIO"; 
             btn.disabled = false; 
@@ -1283,12 +1896,12 @@
         }
         
         const btn = document.getElementById('btnGerarLink'); 
-        btn.innerText = "⏳ GERANDO..."; 
+        btn.innerText = "⏳ A GERAR..."; 
         btn.disabled = true;
         
         const funcionario = window.listaFuncionarios[funcId]; 
-        
         const dataObj = new Date(); 
+        
         const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
         const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
         const anoStr = dataObj.getFullYear();
@@ -1297,8 +1910,8 @@
         const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
 
         let textoCompleto = tipo === 'Dinheiro' 
-            ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
-            : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
+        ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
+        : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
 
         try {
             const docRef = await addDoc(collection(db, "vales_sistema"), { 
@@ -1317,13 +1930,14 @@
             });
             
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
-
-            Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => {
-                window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`;
+            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, o seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
+            
+            Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => { 
+                window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`; 
                 btn.innerText = "GERAR VALE E ENVIAR LINK"; 
-                btn.disabled = false;
+                btn.disabled = false; 
             });
+            
         } catch(e) { 
             Swal.fire('Erro', 'Falha na geração.', 'error'); 
             btn.innerText = "GERAR VALE E ENVIAR LINK"; 
@@ -1333,6 +1947,7 @@
 
     window.buscarVales = async function() {
         const funcId = document.getElementById('b-func-select').value;
+        
         if (!funcId) {
             return Swal.fire('Atenção', 'Selecione.', 'warning');
         }
@@ -1340,7 +1955,7 @@
         const divLista = document.getElementById('lista-resultados'); 
         const btnExportar = document.getElementById('btnExportarVales');
         
-        divLista.innerHTML = "Buscando..."; 
+        divLista.innerHTML = "A procurar..."; 
         btnExportar.style.display = 'none'; 
         window.dadosExportacaoVales = [];
         
@@ -1358,20 +1973,25 @@
             
             querySnapshot.forEach((docSnap) => {
                 const dados = docSnap.data(); 
-                window.valesEncontrados[docSnap.id] = dados;
+                window.valesEncontrados[docSnap.id] = dados; 
                 window.dadosExportacaoVales.push(dados); 
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data_criacao || dados.data);
                 
-                if (!agrupado[ano]) agrupado[ano] = {}; 
-                if (!agrupado[ano][mes]) agrupado[ano][mes] = [];
+                if (!agrupado[ano]) {
+                    agrupado[ano] = {}; 
+                }
+                
+                if (!agrupado[ano][mes]) {
+                    agrupado[ano][mes] = [];
+                }
                 
                 agrupado[ano][mes].push({ id: docSnap.id, diaFormatado: dia, ...dados });
             });
 
             btnExportar.style.display = 'block'; 
-
             let htmlFinal = "";
+            
             let chavesAno = Object.keys(agrupado).sort((a, b) => { 
                 if (a === 'Outros') return 1; 
                 if (b === 'Outros') return -1; 
@@ -1404,11 +2024,15 @@
                                 <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
                             </div>`;
                     });
+                    
                     htmlFinal += `</div></details>`;
                 });
+                
                 htmlFinal += `</div></details>`;
             });
+            
             divLista.innerHTML = htmlFinal;
+            
         } catch(e) { 
             divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
         }
@@ -1416,10 +2040,11 @@
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; 
-        Swal.fire({
+        
+        Swal.fire({ 
             title: 'Gerando Documento...', 
             text: 'Aguarde', 
-            allowOutsideClick: false
+            allowOutsideClick: false 
         }); 
         Swal.showLoading();
         
@@ -1431,6 +2056,7 @@
 
         try {
             await new Promise(r => setTimeout(r, 800)); 
+            
             const { jsPDF } = window.jspdf; 
             const pdf = new jsPDF('p', 'mm', 'a4'); 
             const element = document.getElementById('area-pdf-escondida');
@@ -1444,9 +2070,10 @@
             
             const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; 
             const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
-            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo sua via do recibo.`;
+            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo a sua via do recibo.`;
 
             let sucessoCompartilhamento = false;
+            
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try { 
                     await navigator.share({ files: [file], title: 'Recibo', text: msg }); 
@@ -1461,9 +2088,10 @@
                     } 
                 }
             }
+            
             if (!sucessoCompartilhamento) { 
                 pdf.save(nomeDoArquivo); 
-                Swal.fire('PDF Baixado!', 'Salvo nos Downloads.', 'success').then(() => { 
+                Swal.fire('PDF Descarregado!', 'Guardado nas Transferências.', 'success').then(() => { 
                     window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`; 
                 }); 
             }
@@ -1473,10 +2101,13 @@
     };
 
     let signaturePad;
+    
     function resizeCanvas() {
         const canvas = document.getElementById('signature-pad');
+        
         if (canvas) {
             let data = null; 
+            
             if (signaturePad && !signaturePad.isEmpty()) { 
                 data = signaturePad.toData(); 
             }
@@ -1494,7 +2125,7 @@
             }
         }
     }
-
+    
     window.addEventListener("resize", resizeCanvas); 
     window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 200));
 
@@ -1505,6 +2136,7 @@
             
             if (docSnap.exists()) {
                 const dados = docSnap.data();
+                
                 if(dados.status === 'assinado') { 
                     document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#28a745;">✅ Documento assinado!</h3></div>`; 
                     return; 
@@ -1520,6 +2152,7 @@
                         resizeCanvas(); 
                     } 
                 }, 400); 
+                
             } else { 
                 document.getElementById('tela-funcionario').innerHTML = `<h3 style="text-align:center; color:#d9534f; padding: 40px;">Link inválido.</h3>`; 
             }
@@ -1529,9 +2162,9 @@
     }
 
     window.limpar = function() { 
-        if (signaturePad) { 
+        if (signaturePad) {
             signaturePad.clear(); 
-        } 
+        }
     }
 
     document.getElementById('btnAssinar').onclick = async function() {
@@ -1540,7 +2173,7 @@
         }
         
         const btn = document.getElementById('btnAssinar'); 
-        btn.innerText = "⏳ SALVANDO..."; 
+        btn.innerText = "⏳ A GUARDAR..."; 
         btn.disabled = true;
         
         try {
@@ -1552,13 +2185,14 @@
             
             Swal.fire({ 
                 title: 'Assinado!', 
-                text: 'Registrado com sucesso.', 
+                text: 'Registado com sucesso.', 
                 icon: 'success', 
                 allowOutsideClick: false, 
                 confirmButtonColor: '#1a2a43' 
             }).then(() => { 
                 document.getElementById('tela-funcionario').innerHTML = `<div style="text-align:center; padding: 40px;"><img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" style="max-width:150px; margin-bottom:20px;"><h3 style="color:#1a2a43;">✅ Assinatura Concluída!</h3></div>`; 
             });
+            
         } catch(e) { 
             Swal.fire('Erro', 'Tente assinar novamente.', 'error'); 
             btn.innerText = "CONFIRMAR E ASSINAR"; 
@@ -1568,13 +2202,13 @@
 
     // BLOQUEIO ANTI-CÓPIA (Pega-Curioso)
     document.addEventListener('contextmenu', event => event.preventDefault());
-
-    document.onkeydown = function (e) {
+    
+    document.onkeydown = function (e) { 
         if (e.keyCode == 123 || 
            (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) || 
-           (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
-            return false;
-        }
+           (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) { 
+            return false; 
+        } 
     };
 </script>
 </body>
