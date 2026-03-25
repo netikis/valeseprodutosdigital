@@ -2417,69 +2417,81 @@
         }
     };
 
-    window.gerarEnviarPDF = async function(id) {
-        const dados = window.valesEncontrados[id]; 
-        const empresaLogada = dados.empresa_id || "Empresa";
-        
-        Swal.fire({ 
-            title: 'Gerando Documento...', 
-            text: 'Aguarde', 
-            allowOutsideClick: false 
-        }); 
-        Swal.showLoading();
-        
+window.gerarEnviarPDF = async function(id) {
+    const dados = window.valesEncontrados[id]; 
+    const empresaLogada = dados.empresa_id || "Empresa";
+    
+    Swal.fire({ 
+        title: 'Gerando Documento...', 
+        text: 'Aguarde...', 
+        allowOutsideClick: false 
+    }); 
+    Swal.showLoading();
+
+    try {
         const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
+        
         document.getElementById('pdf-empresa-nome').innerText = empresaLogada; 
         document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; 
         document.getElementById('pdf-assinatura').src = dados.assinatura; 
         document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
-        try {
-            await new Promise(r => setTimeout(r, 800)); 
-            
-            const { jsPDF } = window.jspdf; 
-            const pdf = new jsPDF('p', 'mm', 'a4'); 
-            const element = document.getElementById('area-pdf-escondida');
-            
-            const canvasImg = await html2canvas(element, { scale: 2, useCORS: true }); 
-            const imgData = canvasImg.toDataURL('image/jpeg');
-            const pdfWidth = pdf.internal.pageSize.getWidth(); 
-            const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            
-            const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; 
-            const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
-            const msg = `*${empresaLogada}*\n\nOlá ${dados.nome}, anexo a sua via do recibo.`;
+        await new Promise(r => setTimeout(r, 500));
 
-            let sucessoCompartilhamento = false;
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try { 
-                    await navigator.share({ files: [file], title: 'Recibo', text: msg }); 
-                    sucessoCompartilhamento = true; 
-                    Swal.close(); 
-                } catch(e) { 
-                    if (e.name !== 'AbortError') {
-                        console.error("Bloqueado", e); 
-                    } else { 
-                        Swal.close(); 
-                        return; 
-                    } 
-                }
-            }
-            
-            if (!sucessoCompartilhamento) { 
-                pdf.save(nomeDoArquivo); 
-                Swal.fire('PDF Descarregado!', 'Guardado nas Transferências.', 'success').then(() => { 
-                    window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`; 
-                }); 
-            }
-        } catch(e) { 
-            Swal.fire('Erro', 'Falha no PDF.', 'error'); 
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const element = document.getElementById('area-pdf-escondida');
+
+        element.style.backgroundColor = "#ffffff";
+
+        const canvas = await html2canvas(element, {
+            scale: 3,
+            useCORS: true,
+            logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
         }
-    };
+
+        const nomeArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`;
+
+        // 🔥 DOWNLOAD GARANTIDO (FUNCIONA NO PC)
+        pdf.save(nomeArquivo);
+
+        Swal.fire('PDF Gerado!', 'Arquivo baixado com sucesso.', 'success');
+
+        // 🔹 WhatsApp separado (não interfere no download)
+        const msg = `*${empresaLogada}*\n\nOlá ${dados.nome}, aqui está o seu recibo.`;
+
+        setTimeout(() => {
+            window.open(`https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`, '_blank');
+        }, 1000);
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire('Erro', 'Falha ao gerar PDF.', 'error');
+    }
+};
 
     let signaturePad;
     
