@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Gestão - FH Construções</title>
+    <title>Sistema de Gestão</title>
     
     <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
@@ -37,7 +37,6 @@
             color: var(--text-color); 
         }
         
-        /* PAINEL AUMENTADO PARA CABER TODAS AS OPÇÕES (De 480px para 750px) */
         .main-card { 
             background: var(--white); 
             padding: 35px 30px; 
@@ -47,16 +46,20 @@
             margin: auto; 
             border-top: 6px solid var(--dark-navy); 
         }
+
+        .login-card {
+            max-width: 400px;
+        }
         
         .header-logo { 
             text-align: center; 
-            margin-bottom: 25px; 
+            margin-bottom: 20px; 
             border-bottom: 1px solid #eee; 
             padding-bottom: 15px; 
         }
         
         .logo-img { 
-            max-width: 160px; 
+            max-width: 130px; 
             height: auto; 
             margin-bottom: 5px; 
         }
@@ -67,6 +70,18 @@
             font-size: 16px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
+        }
+
+        .empresa-destaque {
+            text-align: center;
+            background: #eef2f5;
+            color: var(--dark-navy);
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 25px;
+            border: 1px dashed #ccc;
         }
 
         label { 
@@ -116,6 +131,25 @@
         .btn-enviar:hover { 
             background: #121e30; 
             transform: translateY(-2px);
+        }
+
+        .btn-empresa-select {
+            background: var(--white); 
+            color: var(--dark-navy); 
+            border: 2px solid var(--dark-navy);
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+
+        .btn-empresa-select:hover {
+            background: var(--dark-navy);
+            color: var(--white);
         }
         
         .btn-gold { 
@@ -214,18 +248,17 @@
             background: #c9302c;
         }
 
-        /* --- MENU PREMIUM ADAPTÁVEL (FLEX WRAP) --- */
         .tabs { 
             display: flex; 
-            flex-wrap: wrap; /* Agora ele quebra a linha em telas de celular se faltar espaço */
-            justify-content: center; /* Mantém centralizado e bonito */
+            flex-wrap: wrap; 
+            justify-content: center; 
             gap: 10px;
             padding-bottom: 10px;
             margin-bottom: 25px; 
         }
         
         .tab { 
-            flex: 1 1 auto; /* Permite esticar e encolher */
+            flex: 1 1 auto; 
             background: #eef2f5;
             color: #666;
             padding: 12px 18px; 
@@ -253,23 +286,9 @@
             border-color: var(--dark-navy);
         }
 
-        /* --- ABA DESPESAS DESTAQUE --- */
-        .tab-despesas {
-            color: #d9534f;
-            background: #fdf2f2;
-        }
-        
-        .tab-despesas:hover {
-            background: #f9e4e4;
-        }
-
-        .tab-despesas.active {
-            background: #d9534f;
-            color: #fff;
-            border-color: #d9534f;
-            box-shadow: 0 4px 12px rgba(217, 83, 79, 0.25);
-        }
-        /* ------------------------------------------- */
+        .tab-despesas { color: #d9534f; background: #fdf2f2; }
+        .tab-despesas:hover { background: #f9e4e4; }
+        .tab-despesas.active { background: #d9534f; color: #fff; border-color: #d9534f; box-shadow: 0 4px 12px rgba(217, 83, 79, 0.25); }
 
         .view-section { 
             display: none; 
@@ -458,7 +477,6 @@
             transform: scaleX(-1); 
         }
 
-        /* Estilo da Tabela de Folha de Pagamento */
         .card-folha { 
             background: #fff; 
             border: 2px solid var(--dark-navy); 
@@ -483,15 +501,9 @@
             margin-top: 10px;
         }
         
-        .folha-linha.desconto { 
-            color: #d9534f; 
-        }
-        
-        .folha-linha.acrescimo { 
-            color: #28a745; 
-        }
+        .folha-linha.desconto { color: #d9534f; }
+        .folha-linha.acrescimo { color: #28a745; }
 
-        /* Estilo das Etiquetas (Tags) de Despesas */
         .badge-tag {
             background: #e0e6ed;
             color: var(--dark-navy);
@@ -518,11 +530,26 @@
     <p style="font-size: 14px; color: #aaa;">Por favor, entre em contato com o administrador do sistema para regularizar a situação.</p>
 </div>
 
-<div class="main-card" id="tela-patrao" style="display: none;">
+<div class="main-card login-card" id="tela-selecao-empresa" style="display: none;">
     <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Painel de Gestão - RH</div>
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="Logo" class="logo-img">
+        <div class="title-top">Portal do Gestor</div>
     </div>
+    <p style="text-align: center; font-size: 14px; color: #555; margin-bottom: 20px;">Selecione a empresa para aceder ao painel:</p>
+
+    <button class="btn-empresa-select" onclick="entrarEmpresa('FH CONSTRUÇÕES CIVIS')">🏢 FH CONSTRUÇÕES CIVIS</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresa('OLIVEIRA DANTAS')">🏢 OLIVEIRA DANTAS</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresa('MANUTENÇÃO')">🛠️ MANUTENÇÃO</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresa('PEDIU - CHEGOU')">📦 PEDIU - CHEGOU</button>
+</div>
+
+<div class="main-card" id="tela-patrao" style="display: none;">
+    <div class="header-logo" style="margin-bottom: 10px;">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" class="logo-img">
+        <div class="title-top">Painel de Gestão</div>
+    </div>
+    
+    <div class="empresa-destaque" id="nome-empresa-painel">Empresa...</div>
 
     <div class="tabs">
         <div class="tab active" onclick="mudarAba('cadastrar', this)">👥 Equipa</div>
@@ -615,7 +642,7 @@
 
     <div id="aba-ponto" class="view-section">
         <div style="background: #eef2f5; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto do telemóvel deles:</p>
+            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto no telemóvel deles:</p>
             <button class="btn-gold" id="btnLinkPonto" style="margin: 0; padding: 10px; font-size: 13px;">Copiar Link do Relógio de Ponto</button>
         </div>
 
@@ -739,6 +766,8 @@
                 <div id="resumo-total-despesas" style="display: none; margin-top: 20px; background: #fff3cd; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #ffeeba;">
                     <h4 style="margin: 0; color: #856404;">Total Gasto (Pesquisa Atual):</h4>
                     <h2 style="margin: 5px 0 0 0; color: #d9534f;" id="total-gasto-display">R$ 0,00</h2>
+                    
+                    <button id="btnExportarDespesas" class="btn-pdf-relatorio" style="display:none; margin-top: 15px; background-color: var(--dark-navy);" onclick="exportarPDF('despesas')">📥 EXPORTAR RELATÓRIO PDF</button>
                 </div>
 
                 <div id="lista-despesas-resultados" style="margin-top: 15px;">
@@ -747,12 +776,14 @@
             </div>
         </details>
     </div>
+
+    <button class="btn-logout" onclick="sairPainelGestor()" style="background: transparent; border: 1px solid #ccc; color: #666; margin-top: 40px;">⬅️ Trocar de Empresa (Sair)</button>
 </div>
 
-<div class="main-card" id="tela-login" style="display: none;">
+<div class="main-card login-card" id="tela-login" style="display: none;">
     <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
-        <div class="title-top">Login do Funcionário</div>
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="Logo" class="logo-img">
+        <div class="title-top" id="login-nome-empresa">Login do Funcionário</div>
     </div>
 
     <p style="text-align: center; font-size: 13px; color: #555;">Digite o seu CPF para aceder ao sistema de ponto da empresa.</p>
@@ -771,11 +802,12 @@
 
 <div class="main-card" id="tela-relogio" style="display: none;">
     <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" class="logo-img">
         <div class="title-top">Relógio de Ponto Digital</div>
     </div>
 
     <h3 style="text-align: center; color: var(--dark-navy); margin-bottom: 5px;">Olá, <span id="nome-logado"></span></h3>
+    <p style="text-align: center; font-size: 12px; color: #666; margin-top: 0;" id="relogio-nome-empresa"></p>
     
     <div id="alerta-offline" style="display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; margin-bottom: 10px; border: 1px solid #ffeeba;">
         ⚠️ Está offline. O ponto será guardado no telemóvel e enviado quando a internet voltar.
@@ -805,7 +837,7 @@
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
     <div class="header-logo">
-        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="FH Construções" class="logo-img">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" class="logo-img">
         <div class="title-top">Recibo Digital Oficial</div>
     </div>
 
@@ -824,7 +856,7 @@
 <div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
     <div style="text-align: center; border-bottom: 3px solid #1a2a43; padding-bottom: 20px; margin-bottom: 30px;">
         <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" style="max-height: 80px; margin-bottom: 10px;">
-        <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;">FH CONSTRUÇÕES CIVIS LTDA</h2>
+        <h2 style="color: #1a2a43; margin: 0; font-size: 24px; letter-spacing: 1px;" id="pdf-empresa-nome">FH CONSTRUÇÕES CIVIS LTDA</h2>
         <p style="margin: 5px 0 0 0; font-size: 14px; color: #555; text-transform: uppercase;">Recibo Oficial - Via da Empresa</p>
     </div>
     <p style="text-align: right; font-size: 14px; color: #666; font-weight: 600;" id="pdf-data"></p>
@@ -869,26 +901,48 @@
     const urlParams = new URLSearchParams(window.location.search);
     const valeId = urlParams.get('id');
     const isPonto = urlParams.get('ponto');
+    const empresaPontoURL = urlParams.get('empresa'); // NOVO: Captura a empresa do link do funcionário
 
     window.listaFuncionarios = {};
     window.dadosExportacaoVales = [];
     window.dadosExportacaoPonto = [];
+    window.dadosExportacaoDespesas = [];
 
-    window.addEventListener('offline', () => { 
-        document.getElementById('alerta-offline').style.display = 'block'; 
-    });
-    
-    window.addEventListener('online', () => { 
-        document.getElementById('alerta-offline').style.display = 'none'; 
-        sincronizarPontoOffline(); 
-    });
+    // --- NOVA LÓGICA DE LOGIN MULTI-TENANT (GESTOR) ---
+    window.entrarEmpresa = function(nomeEmpresa) {
+        localStorage.setItem('empresaGestor', nomeEmpresa);
+        iniciarPainelGestor();
+    };
 
+    window.sairPainelGestor = function() {
+        localStorage.removeItem('empresaGestor');
+        location.reload();
+    };
+
+    function iniciarPainelGestor() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        document.getElementById('tela-selecao-empresa').style.display = 'none';
+        document.getElementById('tela-patrao').style.display = 'block';
+        document.getElementById('nome-empresa-painel').innerText = "🏢 " + empresaLogada;
+        
+        carregarListaDeFuncionarios();
+        const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
+        document.getElementById('folha-mes').value = mesAtual;
+    }
+
+    // --- ROTAS INICIAIS ---
     if (valeId) {
-        document.title = "FH PONTO"; 
+        document.title = "ASSINATURA"; 
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
     } else if (isPonto) {
-        document.title = "FH PONTO"; 
+        document.title = "PONTO DIGITAL"; 
+        
+        if (empresaPontoURL) {
+            document.getElementById('login-nome-empresa').innerText = empresaPontoURL;
+            document.getElementById('relogio-nome-empresa').innerText = empresaPontoURL;
+        }
+
         const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
@@ -901,13 +955,23 @@
             document.getElementById('tela-login').style.display = 'block';
         }
     } else {
-        document.title = "GESTÃO RH"; 
-        document.getElementById('tela-patrao').style.display = 'block';
-        carregarListaDeFuncionarios();
-        
-        const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
-        document.getElementById('folha-mes').value = mesAtual;
+        document.title = "PORTAL GESTOR"; 
+        const temSessaoGestor = localStorage.getItem('empresaGestor');
+        if (temSessaoGestor) {
+            iniciarPainelGestor();
+        } else {
+            document.getElementById('tela-selecao-empresa').style.display = 'block';
+        }
     }
+
+    window.addEventListener('offline', () => { 
+        document.getElementById('alerta-offline').style.display = 'block'; 
+    });
+    
+    window.addEventListener('online', () => { 
+        document.getElementById('alerta-offline').style.display = 'none'; 
+        sincronizarPontoOffline(); 
+    });
 
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", 
@@ -1018,6 +1082,7 @@
         const valor = document.getElementById('d-valor').value;
         const desc = document.getElementById('d-desc').value;
         const fotoBase64 = document.getElementById('d-anexo-base64').value;
+        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA A EMPRESA
 
         if (!obra || !loja || !valor) {
             return Swal.fire('Atenção', 'Preencha a Obra, Loja e o Valor!', 'warning');
@@ -1035,6 +1100,7 @@
 
         try {
             await addDoc(collection(db, "despesas_obras"), {
+                empresa_id: empresaLogada, // TRAVA DE ISOLAMENTO
                 obra_nome: obra,
                 obra_lower: obra.toLowerCase(),
                 loja_nome: loja,
@@ -1072,8 +1138,10 @@
 
     window.carregarFiltrosDespesas = async function() {
         const divTags = document.getElementById('tags-filtros-despesas');
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
         try {
-            const q = query(collection(db, "despesas_obras"));
+            const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
             
             let obrasAtivas = new Set();
@@ -1086,7 +1154,7 @@
             });
 
             if(obrasAtivas.size === 0 && lojasAtivas.size === 0) {
-                divTags.innerHTML = '<p style="font-size: 11px; color: #888; width: 100%; text-align: center; margin: 0;">Nenhuma obra ou loja registada ainda.</p>';
+                divTags.innerHTML = '<p style="font-size: 11px; color: #888; width: 100%; text-align: center; margin: 0;">Nenhuma obra ou loja registada ainda nesta empresa.</p>';
                 return;
             }
 
@@ -1134,6 +1202,7 @@
 
     window.buscarDespesasObra = async function() {
         const termoBusca = document.getElementById('busca-obra').value.trim().toLowerCase();
+        const empresaLogada = localStorage.getItem('empresaGestor');
         
         if (!termoBusca) {
             return Swal.fire('Atenção', 'Digite o nome da obra ou da loja para procurar.', 'warning');
@@ -1141,25 +1210,34 @@
 
         const divLista = document.getElementById('lista-despesas-resultados');
         const divTotal = document.getElementById('resumo-total-despesas');
+        const btnExportar = document.getElementById('btnExportarDespesas');
         
         divLista.innerHTML = "A procurar relatórios..."; 
         divTotal.style.display = 'none';
+        if (btnExportar) btnExportar.style.display = 'none';
+
+        window.dadosExportacaoDespesas = [];
 
         try {
-            const q = query(collection(db, "despesas_obras"), orderBy("timestamp", "desc"));
+            // Busca apenas as despesas da empresa logada
+            const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
 
             let htmlFinal = "";
             let somaTotal = 0;
             let encontrou = false;
+            
+            // Ordenação local (Anti-Bug de Indexação do Firebase)
+            let despesasArray = [];
+            querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
+            despesasArray.sort((a, b) => b.timestamp - a.timestamp);
 
-            querySnapshot.forEach((docSnap) => {
-                const d = docSnap.data();
-                const docId = docSnap.id; 
-                
+            despesasArray.forEach((d) => {
                 if (d.obra_lower.includes(termoBusca) || d.loja_lower.includes(termoBusca)) {
                     encontrou = true;
                     somaTotal += (d.valor_numero || 0);
+                    
+                    window.dadosExportacaoDespesas.push(d);
 
                     const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;" title="Ver Fatura">` : '';
 
@@ -1172,7 +1250,7 @@
                             <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
                             <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
                             
-                            <button onclick="excluirDespesa('${docId}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 12px; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ MARCAR COMO PAGO / APAGAR</button>
+                            <button onclick="excluirDespesa('${d.id}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 12px; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ MARCAR COMO PAGO / APAGAR</button>
                         </div>`;
                 }
             });
@@ -1184,6 +1262,7 @@
 
             document.getElementById('total-gasto-display').innerText = formatarMoeda(somaTotal);
             divTotal.style.display = 'block';
+            if (btnExportar) btnExportar.style.display = 'block';
             divLista.innerHTML = htmlFinal;
 
         } catch (e) {
@@ -1197,8 +1276,22 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4'); 
         
-        let title = tipo === 'vales' ? 'FH Construções - Relatório de Vales e Produtos' : 'FH Construções - Relatório de Ponto GPS';
-        let dados = tipo === 'vales' ? window.dadosExportacaoVales : window.dadosExportacaoPonto;
+        let title = '';
+        let dados = [];
+        
+        // Pega o nome da empresa atual para pôr no PDF
+        let empresaAtualNome = localStorage.getItem('empresaGestor') || "Empresa";
+
+        if (tipo === 'vales') {
+            title = `${empresaAtualNome} - Relatório de Vales`;
+            dados = window.dadosExportacaoVales;
+        } else if (tipo === 'ponto') {
+            title = `${empresaAtualNome} - Relatório de Ponto GPS`;
+            dados = window.dadosExportacaoPonto;
+        } else if (tipo === 'despesas') {
+            title = `${empresaAtualNome} - Relatório de Despesas`;
+            dados = window.dadosExportacaoDespesas;
+        }
         
         if (dados.length === 0) {
             return Swal.fire('Erro', 'Faça uma busca primeiro antes de exportar o PDF.', 'error');
@@ -1254,7 +1347,7 @@
                 }
             });
 
-        } else {
+        } else if (tipo === 'ponto') {
             head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Tipo', 'Obra/Local', 'Coodenadas GPS', 'Selfie']];
             
             dados.forEach(row => {
@@ -1295,9 +1388,44 @@
                     } 
                 }
             });
+        } else if (tipo === 'despesas') {
+            head = [['Data', 'Obra / Local', 'Fornecedor', 'Descrição', 'Valor (R$)', 'Fatura / Recibo']];
+            
+            dados.forEach(row => {
+                body.push([ 
+                    row.data || '', 
+                    row.obra_nome || '', 
+                    row.loja_nome || '', 
+                    row.descricao || '', 
+                    `R$ ${row.valor_string || '0,00'}`, 
+                    row.foto_recibo || '' 
+                ]);
+            });
+
+            doc.autoTable({
+                startY: 35, 
+                head: head, 
+                body: body, 
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
+                columnStyles: { 5: { cellWidth: 35, minCellHeight: 25 } },
+                didParseCell: function(data) { 
+                    if (data.column.index === 5 && data.cell.section === 'body') { 
+                        data.cell.customImg = data.cell.raw; 
+                        data.cell.text = ''; 
+                    } 
+                },
+                didDrawCell: function(data) { 
+                    if (data.column.index === 5 && data.cell.section === 'body') { 
+                        let img = data.cell.customImg; 
+                        if (img && img.startsWith('data:image')) { 
+                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4); 
+                        } 
+                    } 
+                }
+            });
         }
 
-        doc.save(`relatorio_${tipo}_fhconstrucoes.pdf`);
+        doc.save(`relatorio_${tipo}_${empresaAtualNome}.pdf`.replace(/\s+/g, '_'));
     };
 
     let streamCamera = null;
@@ -1359,24 +1487,30 @@
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value; 
         const senha = document.getElementById('login-senha').value;
+        const urlParams = new URLSearchParams(window.location.search);
+        const empresaDaURL = urlParams.get('empresa');
         
         if (!cpf || !senha) {
             return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
+        }
+        
+        if (!empresaDaURL) {
+            return Swal.fire('Atenção', 'Link de ponto inválido (Falta a Empresa). Peça um novo link ao patrão.', 'error');
         }
         
         Swal.fire({
             title: 'Autenticando...', 
             allowOutsideClick: false
         }); 
-        
         Swal.showLoading();
         
         try {
-            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf)); 
+            // VERIFICA O CPF DENTRO DA EMPRESA CORRETA DO LINK!
+            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf), where("empresa_id", "==", empresaDaURL)); 
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) {
-                return Swal.fire('Erro', 'CPF não encontrado. Peça para o patrão o cadastrar.', 'error'); 
+                return Swal.fire('Erro', 'Funcionário não encontrado nesta Empresa.', 'error'); 
             }
             
             let funcId = null; 
@@ -1391,6 +1525,7 @@
                 await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcId); 
                 localStorage.setItem('funcLogadoNome', funcData.nome);
+                localStorage.setItem('funcLogadoEmpresa', empresaDaURL); // SALVA A EMPRESA DELE
                 
                 Swal.fire('Senha Criada!', 'O seu utilizador foi ativado com sucesso.', 'success').then(() => {
                     location.reload();
@@ -1401,6 +1536,7 @@
                 } else { 
                     localStorage.setItem('funcLogadoId', funcId); 
                     localStorage.setItem('funcLogadoNome', funcData.nome); 
+                    localStorage.setItem('funcLogadoEmpresa', empresaDaURL);
                     location.reload(); 
                 }
             }
@@ -1412,10 +1548,10 @@
     window.fazerLogout = function() { 
         localStorage.removeItem('funcLogadoId'); 
         localStorage.removeItem('funcLogadoNome'); 
+        localStorage.removeItem('funcLogadoEmpresa');
         location.reload(); 
     };
 
-    // --- ATUALIZADO: MENU PREMIUM CLICK HANDLER ---
     window.mudarAba = function(aba, elementoAtivado) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -1431,8 +1567,10 @@
     };
 
     async function carregarListaDeFuncionarios() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
         try {
-            const q = query(collection(db, "funcionarios"), orderBy("nome"));
+            // Busca os funcionários daquela empresa específica
+            const q = query(collection(db, "funcionarios"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
             
             let opcoesHTML = '<option value="">Selecione o funcionário...</option>'; 
@@ -1444,11 +1582,14 @@
                 gerenciaHTML = '<p style="text-align: center; color: #888; font-size: 13px;">Nenhum funcionário cadastrado ainda.</p>';
             }
 
-            querySnapshot.forEach((docSnap) => {
-                const func = docSnap.data(); 
-                window.listaFuncionarios[docSnap.id] = func;
-                
-                opcoesHTML += `<option value="${docSnap.id}">${func.nome}</option>`;
+            // Ordenação local (Anti-bug de index)
+            let funcsArray = [];
+            querySnapshot.forEach(doc => funcsArray.push({id: doc.id, ...doc.data()}));
+            funcsArray.sort((a, b) => a.nome.localeCompare(b.nome));
+
+            funcsArray.forEach((func) => {
+                window.listaFuncionarios[func.id] = func;
+                opcoesHTML += `<option value="${func.id}">${func.nome}</option>`;
                 
                 gerenciaHTML += `
                     <div class="func-item">
@@ -1458,8 +1599,8 @@
                             <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'}</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
-                            <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${docSnap.id}', '${func.nome}')">🔑 Resetar</button>
-                            <button class="btn-excluir" onclick="excluirFuncionario('${docSnap.id}', '${func.nome}')">🗑️ Excluir</button>
+                            <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
+                            <button class="btn-excluir" onclick="excluirFuncionario('${func.id}', '${func.nome}')">🗑️ Excluir</button>
                         </div>
                     </div>`;
             });
@@ -1658,9 +1799,18 @@
         }
     }
 
+    // BOTÃO COPIAR LINK PONTO AGORA ADICIONA A EMPRESA
+    document.getElementById('btnLinkPonto').onclick = function() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true&empresa=${encodeURIComponent(empresaLogada)}`;
+        navigator.clipboard.writeText(linkPonto);
+        Swal.fire('Link Copiado!', 'Envie este link para a equipe. Ele já tem a configuração da sua empresa.', 'success');
+    };
+
     window.baterPonto = function(tipo) {
         const obra = document.getElementById('obra-atual').value; 
         const fotoBase64 = document.getElementById('foto-base64').value;
+        const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa'); // PEGA A EMPRESA
         
         if (!obra) {
             return Swal.fire('Atenção', 'Deve informar em qual obra está!', 'warning');
@@ -1697,6 +1847,7 @@
                 const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
                 
                 const payloadPonto = { 
+                    empresa_id: empresaDoFuncionario, // SALVA A EMPRESA
                     funcionario_id: funcId, 
                     nome: funcNome, 
                     tipo: tipo, 
@@ -1761,6 +1912,7 @@
         window.dadosExportacaoPonto = [];
 
         try {
+            // Como o funcionario já está filtrado pela empresa, puxar os pontos dele já garante a segurança
             const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId)); 
             const querySnapshot = await getDocs(q);
             
@@ -1774,8 +1926,7 @@
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                // LINK DO MAPA OFICIAL GOOGLE
-                dados.linkMaps = `https://maps.google.com/?q=${dados.latitude},${dados.longitude}`;
+                dados.linkMaps = `maps.google.com9{dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -1848,6 +1999,7 @@
         const salario = document.getElementById('c-salario').value; 
         const horaEntrada = document.getElementById('c-entrada').value; 
         const horaSaida = document.getElementById('c-saida').value;
+        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA EMPRESA
         
         if (!nome || !tel || !cpf) {
             return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
@@ -1859,6 +2011,7 @@
         
         try {
             await addDoc(collection(db, "funcionarios"), { 
+                empresa_id: empresaLogada, // SALVA A EMPRESA
                 nome: nome, 
                 tel: tel, 
                 cpf: cpf, 
@@ -1890,6 +2043,7 @@
         const valorLimpo = document.getElementById('p-valor').value; 
         const tipo = document.getElementById('p-tipo').value; 
         const desc = document.getElementById('p-desc').value || 'Não informada';
+        const empresaLogada = localStorage.getItem('empresaGestor'); // PEGA EMPRESA
         
         if (!funcId || !valorLimpo) {
             return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
@@ -1910,11 +2064,12 @@
         const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
 
         let textoCompleto = tipo === 'Dinheiro' 
-        ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>FH Construções Civis LTDA</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
-        : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>FH Construções Civis LTDA</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
+        ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>${empresaLogada}</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
+        : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>${empresaLogada}</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
 
         try {
             const docRef = await addDoc(collection(db, "vales_sistema"), { 
+                empresa_id: empresaLogada, // SALVA A EMPRESA NO VALE
                 funcionario_id: funcId, 
                 nome: funcionario.nome, 
                 tel: funcionario.tel, 
@@ -1929,8 +2084,9 @@
                 assinatura: null 
             });
             
+            // O link do vale já acha tudo sozinho pelo ID, não precisa colocar a empresa na URL do vale
             const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            const msgZap = `*FH Construções*\nOlá ${funcionario.nome}, o seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
+            const msgZap = `*${empresaLogada}*\nOlá ${funcionario.nome}, o seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
             
             Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => { 
                 window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`; 
@@ -2040,6 +2196,7 @@
 
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; 
+        const empresaLogada = dados.empresa_id || "Empresa";
         
         Swal.fire({ 
             title: 'Gerando Documento...', 
@@ -2049,6 +2206,7 @@
         Swal.showLoading();
         
         const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
+        document.getElementById('pdf-empresa-nome').innerText = empresaLogada; // ATUALIZA O NOME DA EMPRESA NO RECIBO PDF
         document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; 
         document.getElementById('pdf-assinatura').src = dados.assinatura; 
@@ -2070,7 +2228,7 @@
             
             const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; 
             const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
-            const msg = `*FH Construções*\n\nOlá ${dados.nome}, anexo a sua via do recibo.`;
+            const msg = `*${empresaLogada}*\n\nOlá ${dados.nome}, anexo a sua via do recibo.`;
 
             let sucessoCompartilhamento = false;
             
