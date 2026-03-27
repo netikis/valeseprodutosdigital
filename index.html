@@ -1007,9 +1007,63 @@
     window.dadosExportacaoDespesas = [];
 
     // --- LÓGICA DE LOGIN MULTI-TENANT (GESTOR) ---
-    window.entrarEmpresa = function(nomeEmpresa) {
-        localStorage.setItem('empresaGestor', nomeEmpresa);
-        iniciarPainelGestor();
+ window.entrarEmpresa = async function(nomeEmpresa) {
+        // Pede a senha ao usuário antes de fazer qualquer coisa
+        const { value: senhaDigitada } = await Swal.fire({
+            title: '🔐 Acesso Restrito',
+            text: `Digite a senha para acessar o painel da ${nomeEmpresa}`,
+            input: 'password',
+            inputPlaceholder: 'Sua senha',
+            showCancelButton: true,
+            confirmButtonText: 'Entrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#1a2a43',
+            cancelButtonColor: '#d9534f'
+        });
+
+        if (!senhaDigitada) return; // Se ele cancelar ou não digitar nada, para aqui.
+
+        Swal.fire({
+            title: 'A verificar...',
+            text: 'Por favor, aguarde.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading() }
+        });
+
+        try {
+            // Vai ao Firebase procurar a empresa e verificar a senha
+            const q = query(collection(db, "empresas"), where("nome", "==", nomeEmpresa));
+            const querySnapshot = await getDocs(q);
+
+            let acessoLiberado = false;
+
+            if (querySnapshot.empty) {
+                // Se não encontrar a empresa na coleção "empresas", significa que ainda não foi cadastrada lá.
+                // Como proteção inicial, se não houver senha no sistema, não deixa entrar.
+                Swal.fire('Erro', 'Esta empresa não tem uma senha cadastrada no sistema de segurança. Peça ao administrador para configurar.', 'error');
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const dadosEmpresa = doc.data();
+                if (dadosEmpresa.senha === senhaDigitada) {
+                    acessoLiberado = true;
+                }
+            });
+
+            if (acessoLiberado) {
+                // Se a senha bater com a do Firebase, o cadeado abre e a pessoa entra.
+                Swal.close();
+                localStorage.setItem('empresaGestor', nomeEmpresa);
+                iniciarPainelGestor();
+            } else {
+                Swal.fire('Acesso Negado', 'A senha está incorreta.', 'error');
+            }
+
+        } catch (error) {
+            Swal.fire('Erro de Conexão', 'Não foi possível verificar a senha. Tente novamente.', 'error');
+            console.error("Erro ao verificar senha:", error);
+        }
     };
 
     window.sairPainelGestor = function() {
