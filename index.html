@@ -583,7 +583,8 @@
         <div class="tab" onclick="mudarAba('criar', this)">💰 Vales</div>
         <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
-        <div class="tab" onclick="mudarAba('folha', this)">📄 Folha</div>
+        <div class="tab" onclick="mudarAba('folha', this)">📄 Folha Pagamento</div>
+        <div class="tab" style="background: #eef2f5; color: #1a2a43; border: 1px solid #1a2a43;" onclick="mudarAba('terceiros', this)">👷 Terceiros</div>
         <div class="tab tab-despesas" onclick="mudarAba('despesas', this)">📉 Despesas</div>
         <div class="tab" style="background: #1a2a43; color: white;" onclick="mudarAba('backup', this)">💾 Backup</div>
     </div>
@@ -753,6 +754,33 @@
         </div>
     </div>
 
+<div id="aba-terceiros" class="view-section">
+        <details open style="margin-bottom: 20px;">
+            <summary style="background: #eef2f5;">➕ Cadastrar Pagamento de Terceiro</summary>
+            <div style="padding: 15px;">
+                <label>Nome do Terceiro (Ex: Pintor, Pedreiro)</label><input type="text" id="t-nome" placeholder="Nome do profissional">
+                <label>CPF</label><input type="number" id="t-cpf" placeholder="Apenas números">
+                <label>Telefone / WhatsApp</label><input type="number" id="t-tel" placeholder="Apenas números com DDD">
+                <label>Obra / Local</label><input type="text" id="t-obra" placeholder="Onde ele prestou serviço?">
+                <label>Valor Pago (R$)</label><input type="text" id="t-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+                <label>Descrição do Serviço</label><textarea id="t-desc" rows="2" placeholder="O que foi feito? Ex: Pintura da fachada"></textarea>
+                <button class="btn-gold" id="btnSalvarTerceiro" onclick="salvarTerceiro()">SALVAR PAGAMENTO</button>
+            </div>
+        </details>
+
+        <details open>
+            <summary style="background: #eef2f5;">🔍 Histórico de Terceiros</summary>
+            <div style="padding: 15px;">
+                <label>Procurar por Obra ou Nome:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="busca-terceiro" placeholder="Nome da obra ou do profissional" style="flex: 2; margin: 0;">
+                    <button onclick="buscarTerceiros()" style="flex: 1; background: var(--dark-navy); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:bold;">Buscar</button>
+                </div>
+                <div id="lista-terceiros-resultados" style="margin-top: 15px;"></div>
+            </div>
+        </details>
+    </div>
+
     <div id="aba-despesas" class="view-section">
         <details open style="margin-bottom: 20px;">
             <summary style="background: #eef2f5;">➕ Lançar Nova Despesa</summary>
@@ -767,6 +795,7 @@
 
                 <label>Valor da Fatura (R$)</label>
                 <input type="text" id="d-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+                <label>Data de Vencimento</label><input type="date" id="d-vencimento">
 
                 <label>Descrição / Materiais</label>
                 <textarea id="d-desc" rows="2" placeholder="Descreva os materiais adquiridos"></textarea>
@@ -1146,131 +1175,88 @@
         reader.readAsDataURL(file);
     });
 
-    window.salvarDespesaObra = async function() {
-        const obra = document.getElementById('d-obra').value.trim();
-        const loja = document.getElementById('d-loja').value.trim();
-        const nf = document.getElementById('d-nf') ? document.getElementById('d-nf').value.trim() : "";
-        const valor = document.getElementById('d-valor').value;
-        const desc = document.getElementById('d-desc').value;
-        const fotoBase64 = document.getElementById('d-anexo-base64').value;
-        const empresaLogada = localStorage.getItem('empresaGestor'); 
-
-        if (!obra || !loja || !valor) {
-            return Swal.fire('Atenção', 'Preencha a Obra, Loja e o Valor!', 'warning');
-        }
-
-        const btn = document.getElementById('btnSalvarDespesa');
-        btn.innerText = "⏳ A GUARDAR..."; 
-        btn.disabled = true;
-
-        const dataObj = new Date();
-        const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
-        const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
-        const anoStr = dataObj.getFullYear();
-        const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
-
-        try {
-            await addDoc(collection(db, "despesas_obras"), {
-                empresa_id: empresaLogada, 
-                obra_nome: obra,
-                obra_lower: obra.toLowerCase(),
-                loja_nome: loja,
-                loja_lower: loja.toLowerCase(),
-                nota_fiscal: nf,
-                valor_string: valor,
-                valor_numero: parseMoedaLocal(valor),
-                descricao: desc,
-                foto_recibo: fotoBase64,
-                data: dataAtual,
-                timestamp: dataObj.getTime()
-            });
-
-            Swal.fire('Sucesso!', 'Despesa cadastrada com sucesso.', 'success');
-            
-            document.getElementById('d-obra').value = '';
-            document.getElementById('d-loja').value = '';
-            
-            document.getElementById('d-valor').value = '';
-            document.getElementById('d-desc').value = '';
-            document.getElementById('d-anexo').value = '';
-            document.getElementById('d-anexo-base64').value = '';
-
-            carregarFiltrosDespesas();
-
-        } catch (e) {
-            console.error("Erro despesa", e);
-            let msgErro = e.message;
-            if (msgErro.includes("permissions")) msgErro = "O Firebase bloqueou a gravação. Verifique as 'Rules'.";
-            else if (msgErro.includes("exceeds")) msgErro = "A foto anexada é demasiado pesada.";
-            Swal.fire('Falha Técnica', msgErro, 'error');
-        } finally {
-            btn.innerText = "SALVAR DESPESA"; 
-            btn.disabled = false;
-        }
-    };
-
-    window.carregarFiltrosDespesas = async function() {
+window.carregarFiltrosDespesas = async function() {
         const divTags = document.getElementById('tags-filtros-despesas');
+        if(!divTags) return;
+        
         const empresaLogada = localStorage.getItem('empresaGestor');
-
         try {
             const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
             
-            let obrasAtivas = new Set();
-            let lojasAtivas = new Set();
-
+            let obrasAtivas = new Set(), lojasAtivas = new Set();
+            
             querySnapshot.forEach((doc) => {
                 const d = doc.data();
                 if(d.obra_nome) obrasAtivas.add(d.obra_nome);
                 if(d.loja_nome) lojasAtivas.add(d.loja_nome);
             });
-
-            if(obrasAtivas.size === 0 && lojasAtivas.size === 0) {
-                divTags.innerHTML = '<p style="font-size: 11px; color: #888; width: 100%; text-align: center; margin: 0;">Nenhuma obra ou loja registada ainda nesta empresa.</p>';
-                return;
+            
+            if(obrasAtivas.size === 0 && lojasAtivas.size === 0) { 
+                divTags.innerHTML = '<p style="font-size: 11px; color: #888;">Nenhuma obra ou loja registada.</p>'; 
+                return; 
             }
-
-            let htmlObras = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy);">🏢 Obras:</span>';
-            obrasAtivas.forEach(obra => {
-                htmlObras += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${obra}'; buscarDespesasObra();">${obra}</span>`;
+            
+            let htmlObras = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy);">🏢 Obras:</span>'; 
+            obrasAtivas.forEach(obra => { 
+                htmlObras += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${obra}'; buscarDespesasObra();">${obra}</span>`; 
             });
-
-            let htmlLojas = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy); margin-top: 5px;">🏪 Lojas:</span>';
-            lojasAtivas.forEach(loja => {
-                htmlLojas += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${loja}'; buscarDespesasObra();">${loja}</span>`;
+            
+            let htmlLojas = '<span style="font-size: 12px; font-weight: bold; width: 100%; color: var(--dark-navy); margin-top: 5px;">🏪 Lojas:</span>'; 
+            lojasAtivas.forEach(loja => { 
+                htmlLojas += `<span class="badge-tag" onclick="document.getElementById('busca-obra').value='${loja}'; buscarDespesasObra();">${loja}</span>`; 
             });
-
+            
             divTags.innerHTML = htmlObras + htmlLojas;
-
-        } catch (e) {
-            console.error("Erro ao carregar etiquetas", e);
-            divTags.innerHTML = '<p style="font-size: 11px; color: #d9534f; width: 100%; text-align: center; margin: 0;">Erro ao carregar locais.</p>';
+        } catch (e) { 
+            divTags.innerHTML = '<p style="font-size: 11px; color: #d9534f;">Erro ao carregar locais.</p>'; 
         }
     };
 
-    window.excluirDespesa = async function(id) {
-        Swal.fire({
-            title: 'Apagar / Marcar Pago?',
-            text: "Ao apagar, este valor será descontado do total e a fatura será removida do sistema. Deseja continuar?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d9534f',
-            cancelButtonColor: '#1a2a43',
-            confirmButtonText: 'Sim, apagar!'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await deleteDoc(doc(db, "despesas_obras", id));
-                    Swal.fire('Apagado!', 'A despesa foi removida com sucesso.', 'success');
-                    
-                    buscarDespesasObra(); 
-                    carregarFiltrosDespesas(); 
-                } catch (e) {
-                    Swal.fire('Erro', 'Não foi possível apagar a despesa. Verifique as suas Regras do Firebase.', 'error');
-                }
-            }
-        });
+  window.salvarDespesaObra = async function() {
+        const obra = document.getElementById('d-obra').value.trim();
+        const loja = document.getElementById('d-loja').value.trim();
+        const nf = document.getElementById('d-nf') ? document.getElementById('d-nf').value.trim() : "";
+        const vencimento = document.getElementById('d-vencimento') ? document.getElementById('d-vencimento').value : "";
+        const valor = document.getElementById('d-valor').value;
+        const desc = document.getElementById('d-desc').value;
+        const fotoBase64 = document.getElementById('d-anexo-base64').value;
+        const empresaLogada = localStorage.getItem('empresaGestor'); 
+        
+        if (!obra || !loja || !valor) return Swal.fire('Atenção', 'Preencha a Obra, Loja e o Valor!', 'warning');
+        
+        const btn = document.getElementById('btnSalvarDespesa'); 
+        btn.innerText = "⏳ A GUARDAR..."; btn.disabled = true;
+        
+        const dataObj = new Date(); 
+        const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
+        
+        try {
+            await addDoc(collection(db, "despesas_obras"), { 
+                empresa_id: empresaLogada, 
+                obra_nome: obra, obra_lower: obra.toLowerCase(), 
+                loja_nome: loja, loja_lower: loja.toLowerCase(), 
+                nota_fiscal: nf,
+                data_vencimento: vencimento,
+                valor_string: valor, valor_numero: parseMoedaLocal(valor), 
+                descricao: desc, foto_recibo: fotoBase64, 
+                data: dataAtual, timestamp: dataObj.getTime(), status: "pendente" 
+            });
+            Swal.fire('Sucesso!', 'Despesa cadastrada.', 'success'); 
+            document.getElementById('d-obra').value = ''; 
+            document.getElementById('d-loja').value = ''; 
+            if(document.getElementById('d-nf')) document.getElementById('d-nf').value = '';
+            if(document.getElementById('d-vencimento')) document.getElementById('d-vencimento').value = '';
+            document.getElementById('d-valor').value = ''; 
+            document.getElementById('d-desc').value = ''; 
+            document.getElementById('d-anexo').value = ''; 
+            document.getElementById('d-anexo-base64').value = ''; 
+            carregarFiltrosDespesas();
+        } catch (e) { 
+            Swal.fire('Falha Técnica', 'Não foi possível salvar.', 'error'); 
+        } finally { 
+            btn.innerText = "SALVAR DESPESA"; btn.disabled = false; 
+        }
     };
 
     window.marcarComoPago = async function(id) {
@@ -1293,7 +1279,7 @@
                     await updateDoc(docRef, { status: "pago", data_pagamento: dataSegura });
                     Swal.fire('Sucesso!', 'A despesa foi marcada como paga.', 'success');
                     buscarDespesasObra(); 
-                } catch (e) { Swal.fire('Erro', 'Não foi possível atualizar o estado.', 'error'); }
+                } catch (e) { Swal.fire('Erro', 'Não foi possível atualizar.', 'error'); }
             }
         });
     };
@@ -1315,11 +1301,11 @@
                     <label style="margin-top: 10px;">Nota Fiscal:</label>
                     <input id="edit-nf" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.nota_fiscal || ''}">
                     
+                    <label style="margin-top: 10px;">Data de Vencimento:</label>
+                    <input type="date" id="edit-vencimento" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.data_vencimento || ''}">
+                    
                     <label style="margin-top: 10px;">Valor (R$):</label>
                     <input id="edit-valor" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.valor_string || ''}" oninput="mascaraMoeda(this)">
-                    
-                    <label style="margin-top: 10px;">Data (DD/MM/AAAA):</label>
-                    <input id="edit-data" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.data_pagamento || despesa.data || ''}">
                     
                     <label style="margin-top: 10px;">Descrição / Materiais:</label>
                     <textarea id="edit-desc" class="swal2-textarea" style="margin: 0; width: 100%; font-size: 14px; height: 80px;">${despesa.descricao || ''}</textarea>
@@ -1337,29 +1323,19 @@
                     loja_nome: document.getElementById('edit-loja').value.trim(),
                     loja_lower: document.getElementById('edit-loja').value.trim().toLowerCase(),
                     nota_fiscal: document.getElementById('edit-nf').value.trim(),
+                    data_vencimento: document.getElementById('edit-vencimento').value,
                     valor_string: document.getElementById('edit-valor').value,
                     valor_numero: parseMoedaLocal(document.getElementById('edit-valor').value),
-                    data_editada: document.getElementById('edit-data').value.trim(),
                     descricao: document.getElementById('edit-desc').value.trim()
                 }
             }
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const atualizacao = result.value;
-                    if(despesa.status === 'pago') {
-                        atualizacao.data_pagamento = atualizacao.data_editada;
-                    } else {
-                        atualizacao.data = atualizacao.data_editada;
-                    }
-                    delete atualizacao.data_editada;
-
-                    await updateDoc(doc(db, "despesas_obras", id), atualizacao);
+                    await updateDoc(doc(db, "despesas_obras", id), result.value);
                     Swal.fire('Atualizado!', 'As informações foram corrigidas.', 'success');
                     buscarDespesasObra();
-                } catch (e) {
-                    Swal.fire('Erro', 'Não foi possível editar o item.', 'error');
-                }
+                } catch (e) { Swal.fire('Erro', 'Não foi possível editar.', 'error'); }
             }
         });
     };
@@ -1368,16 +1344,13 @@
         const termoBusca = document.getElementById('busca-obra').value.trim().toLowerCase();
         const empresaLogada = localStorage.getItem('empresaGestor');
         
-        if (!termoBusca) {
-            return Swal.fire('Atenção', 'Digite o nome da obra ou da loja para procurar.', 'warning');
-        }
+        if (!termoBusca) return Swal.fire('Atenção', 'Digite o nome da obra ou da loja para procurar.', 'warning');
 
         const divLista = document.getElementById('lista-despesas-resultados');
         const divTotal = document.getElementById('resumo-total-despesas');
         const btnExportar = document.getElementById('btnExportarDespesas');
         
-        divLista.innerHTML = "A procurar relatórios..."; 
-        divTotal.style.display = 'none';
+        divLista.innerHTML = "A procurar relatórios..."; divTotal.style.display = 'none';
         if (btnExportar) btnExportar.style.display = 'none';
 
         window.dadosExportacaoDespesas = [];
@@ -1386,45 +1359,45 @@
             const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
 
-            let htmlPendentes = "";
-            let htmlPagas = "";
-            let somaPendentes = 0;
-            let somaPagas = 0;
-            let encontrou = false;
+            let htmlPendentes = ""; let htmlPagas = "";
+            let somaPendentes = 0; let somaPagas = 0; let encontrou = false;
             
             let despesasArray = [];
             querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
             despesasArray.sort((a, b) => b.timestamp - a.timestamp);
 
-            let pendentesArray = [];
-            let agrupadoPagas = {};
+            let pendentesArray = []; let agrupadoPagas = {};
 
             despesasArray.forEach((d) => {
-                if (d.obra_lower.includes(termoBusca) || d.loja_lower.includes(termoBusca)) {
-                    encontrou = true;
-                    window.dadosExportacaoDespesas.push(d);
+                // ESCUDO DE PROTEÇÃO PARA AS DESPESAS ANTIGAS APARECEREM NOVAMENTE
+                const nomeDaObraParaBusca = (d.obra_lower || d.obra_nome || "").toLowerCase();
+                const nomeDaLojaParaBusca = (d.loja_lower || d.loja_nome || "").toLowerCase();
+
+                if (nomeDaObraParaBusca.includes(termoBusca) || nomeDaLojaParaBusca.includes(termoBusca)) {
+                    encontrou = true; window.dadosExportacaoDespesas.push(d);
 
                     if (d.status === "pendente" || !d.status) {
                         somaPendentes += (d.valor_numero || 0);
                         pendentesArray.push(d);
                     } else if (d.status === "pago") {
                         somaPagas += (d.valor_numero || 0);
-                        
-                        // CORREÇÃO: Usa a função oficial do sistema para extrair as datas
                         const { ano, mes, dia } = separarDataSegura(d.data_pagamento || d.data);
 
                         if (!agrupadoPagas[ano]) agrupadoPagas[ano] = {}; 
                         if (!agrupadoPagas[ano][mes]) agrupadoPagas[ano][mes] = [];
                         
-                        d.diaFormatado = dia; 
-                        agrupadoPagas[ano][mes].push(d);
+                        d.diaFormatado = dia; agrupadoPagas[ano][mes].push(d);
                     }
                 }
             });
 
-            if (!encontrou) {
-                divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada para esta busca.</p>`;
-                return;
+            if (!encontrou) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada.</p>`; return; }
+
+            function formatarVencimento(dataVenc) {
+                if(!dataVenc) return 'Sem prazo';
+                const partes = dataVenc.split('-');
+                if(partes.length === 3) return `${partes}/${partes}/${partes}`;
+                return dataVenc;
             }
 
             pendentesArray.forEach(d => {
@@ -1432,13 +1405,13 @@
                 htmlPendentes += `
                     <div class="resultado-item" style="border-left-color: #d9534f;">
                         ${fotoHtml}
-                        <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">AGUARDA PAGAMENTO</span><br>
+                        <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">PENDENTE</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
-                        <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
+                        <span style="font-size: 13px; color: #d9534f;"><b>Vencimento:</b> ${formatarVencimento(d.data_vencimento)}</span><br>
+                        <span style="font-size: 12px; color: #888;">Inserido em: ${d.data}</span>
                         <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
-                        
                         <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
                             <button onclick="marcarComoPago('${d.id}')" style="background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">✅ MARCAR PAGO</button>
                             <button onclick="editarDespesa('${d.id}')" style="background: #4285F4; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">✏️ EDITAR</button>
@@ -1447,20 +1420,12 @@
                     </div>`;
             });
 
-            let chavesAno = Object.keys(agrupadoPagas).sort((a, b) => { 
-                if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); 
-            });
-
+            let chavesAno = Object.keys(agrupadoPagas).sort((a, b) => { if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); });
             chavesAno.forEach(ano => {
                 htmlPagas += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
-                let chavesMes = Object.keys(agrupadoPagas[ano]).sort((a, b) => { 
-                    if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); 
-                });
-                
+                let chavesMes = Object.keys(agrupadoPagas[ano]).sort((a, b) => { if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); });
                 chavesMes.forEach(mes => {
-                    const nomeDoMes = nomeMeses[mes] || mes;
-                    htmlPagas += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
-                    
+                    const nomeDoMes = nomeMeses[mes] || mes; htmlPagas += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
                     agrupadoPagas[ano][mes].forEach(d => {
                         const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
                         htmlPagas += `
@@ -1472,17 +1437,13 @@
                                 <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
                                 <span style="font-size: 12px; color: #888;">Data Fatura: ${d.data}</span>
                                 <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee; color: #666;">${d.descricao}</div>
-                                
                                 <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
                                     <button onclick="editarDespesa('${d.id}')" style="background: #4285F4; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 11px; transition: 0.3s;">✏️ EDITAR</button>
                                     <button onclick="excluirDespesa('${d.id}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 11px; transition: 0.3s;">🗑️ EXCLUIR</button>
                                 </div>
                             </div>`;
-                    });
-                    
-                    htmlPagas += `</div></details>`;
-                });
-                htmlPagas += `</div></details>`;
+                    }); htmlPagas += `</div></details>`;
+                }); htmlPagas += `</div></details>`;
             });
 
             document.getElementById('total-gasto-display').innerHTML = `
@@ -1495,21 +1456,108 @@
                 </div>
             `;
             
-            divTotal.style.display = 'block';
-            if (btnExportar) btnExportar.style.display = 'block';
-            
-            divLista.innerHTML = "";
-            if (htmlPendentes !== "") {
-                divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 5px;">⚠️ Contas Pendentes</h4>` + htmlPendentes;
-            }
-            if (htmlPagas !== "") {
-                divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">✅ Histórico de Contas Pagas</h4>` + htmlPagas;
-            }
+            divTotal.style.display = 'block'; if (btnExportar) btnExportar.style.display = 'block'; divLista.innerHTML = "";
+            if (htmlPendentes !== "") divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 5px;">⚠️ Contas Pendentes</h4>` + htmlPendentes;
+            if (htmlPagas !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">✅ Histórico de Contas Pagas</h4>` + htmlPagas;
 
-        } catch (e) {
-            console.error("Erro busca despesa", e);
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`;
+        } catch (e) { divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`; }
+    };
+
+    window.excluirDespesa = async function(id) {
+        Swal.fire({ title: 'Apagar?', text: "Remover permanentemente?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d9534f', confirmButtonText: 'Sim, apagar!' }).then(async (result) => {
+            if (result.isConfirmed) { try { await deleteDoc(doc(db, "despesas_obras", id)); Swal.fire('Apagado!', 'Removido.', 'success'); buscarDespesasObra(); carregarFiltrosDespesas(); } catch (e) { Swal.fire('Erro', 'Não foi possível apagar.', 'error'); } }
+        });
+    };
+
+    window.salvarTerceiro = async function() {
+        const nome = document.getElementById('t-nome').value.trim();
+        const cpf = document.getElementById('t-cpf').value.trim();
+        const tel = document.getElementById('t-tel').value.trim();
+        const obra = document.getElementById('t-obra').value.trim();
+        const valor = document.getElementById('t-valor').value;
+        const desc = document.getElementById('t-desc').value.trim();
+        const empresaLogada = localStorage.getItem('empresaGestor'); 
+        
+        if (!nome || !obra || !valor) return Swal.fire('Atenção', 'Preencha Nome, Obra e Valor!', 'warning');
+        
+        const btn = document.getElementById('btnSalvarTerceiro'); 
+        btn.innerText = "⏳ A GUARDAR..."; btn.disabled = true;
+        
+        const dataObj = new Date(); 
+        const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
+        
+        try {
+            await addDoc(collection(db, "pagamentos_terceiros"), { 
+                empresa_id: empresaLogada, 
+                nome: nome, nome_lower: nome.toLowerCase(), 
+                cpf: cpf, tel: tel,
+                obra: obra, obra_lower: obra.toLowerCase(), 
+                valor_string: valor, valor_numero: parseMoedaLocal(valor), 
+                descricao: desc, 
+                data: dataAtual, timestamp: dataObj.getTime() 
+            });
+            Swal.fire('Sucesso!', 'Pagamento a terceiro registado.', 'success'); 
+            document.getElementById('t-nome').value = ''; document.getElementById('t-cpf').value = ''; 
+            document.getElementById('t-tel').value = ''; document.getElementById('t-obra').value = ''; 
+            document.getElementById('t-valor').value = ''; document.getElementById('t-desc').value = ''; 
+        } catch (e) { Swal.fire('Falha Técnica', 'Não foi possível salvar.', 'error'); } finally { 
+            btn.innerText = "SALVAR PAGAMENTO"; btn.disabled = false; 
         }
+    };
+
+    window.buscarTerceiros = async function() {
+        const termoBusca = document.getElementById('busca-terceiro').value.trim().toLowerCase(); 
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        
+        if (!termoBusca) return Swal.fire('Atenção', 'Digite o nome da obra ou do terceiro.', 'warning');
+
+        const divLista = document.getElementById('lista-terceiros-resultados'); divLista.innerHTML = "A procurar..."; 
+
+        try {
+            const q = query(collection(db, "pagamentos_terceiros"), where("empresa_id", "==", empresaLogada)); 
+            const querySnapshot = await getDocs(q);
+            
+            let htmlResultados = ""; let encontrou = false; let total = 0;
+            let arrayResultados = []; 
+            querySnapshot.forEach(doc => arrayResultados.push({id: doc.id, ...doc.data()})); 
+            arrayResultados.sort((a, b) => b.timestamp - a.timestamp);
+
+            arrayResultados.forEach((d) => {
+                const nomeBusca = (d.nome_lower || d.nome || "").toLowerCase();
+                const obraBusca = (d.obra_lower || d.obra || "").toLowerCase();
+
+                if (obraBusca.includes(termoBusca) || nomeBusca.includes(termoBusca)) {
+                    encontrou = true; total += (d.valor_numero || 0);
+                    
+                    htmlResultados += `
+                        <div class="resultado-item" style="border-left-color: #1a2a43;">
+                            <b style="color: #1a2a43; font-size: 16px;">R$ ${d.valor_string}</b> <br>
+                            <span style="font-size: 13px; color: #555;"><b>Profissional:</b> ${d.nome} (CPF: ${d.cpf || 'N/A'})</span><br>
+                            <span style="font-size: 13px; color: #555;"><b>Contato:</b> ${d.tel || 'N/A'}</span><br>
+                            <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra}</span><br>
+                            <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
+                            <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
+                                <button onclick="excluirTerceiro('${d.id}')" style="background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px;">🗑️ APAGAR</button>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if (!encontrou) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registo encontrado.</p>`; return; }
+            divLista.innerHTML = `<div style="text-align:center; margin-bottom: 15px; padding: 10px; background: #eef2f5; border-radius: 10px;">Total Gasto nesta busca: <b style="color:#1a2a43; font-size:16px;">${formatarMoeda(total)}</b></div>` + htmlResultados;
+
+        } catch (e) { divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar dados.</p>`; }
+    };
+
+    window.excluirTerceiro = async function(id) {
+        Swal.fire({ title: 'Apagar?', text: "Remover permanentemente este registo?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d9534f', confirmButtonText: 'Sim, apagar!' }).then(async (result) => {
+            if (result.isConfirmed) { 
+                try { await deleteDoc(doc(db, "pagamentos_terceiros", id)); Swal.fire('Apagado!', 'Removido.', 'success'); buscarTerceiros(); 
+                } catch (e) { Swal.fire('Erro', 'Não foi possível apagar.', 'error'); } 
+            }
+        });
     };
 
     window.exportarPDF = function(tipo) {
