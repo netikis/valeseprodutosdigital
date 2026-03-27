@@ -1560,13 +1560,12 @@ window.carregarFiltrosDespesas = async function() {
         });
     };
 
-    window.exportarPDF = function(tipo) {
+window.exportarPDF = function(tipo) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4'); 
         
         let title = '';
         let dados = [];
-        
         let empresaAtualNome = localStorage.getItem('empresaGestor') || "Empresa";
 
         if (tipo === 'vales') {
@@ -1584,130 +1583,130 @@ window.carregarFiltrosDespesas = async function() {
             return Swal.fire('Erro', 'Faça uma busca primeiro antes de exportar o PDF.', 'error');
         }
 
+        // 1. CABEÇALHO EXECUTIVO (Fundo Azul Marinho)
+        doc.setFillColor(26, 42, 67); 
+        doc.rect(0, 0, 297, 25, 'F');
+        
+        doc.setTextColor(255, 255, 255);
         doc.setFontSize(16);
-        doc.text(title, 14, 20);
+        doc.setFont("helvetica", "bold");
+        doc.text(title.toUpperCase(), 14, 12);
+        
+        doc.setTextColor(200, 200, 200);
         doc.setFontSize(10);
-        doc.text(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 28);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}  |  Portal do Gestor`, 14, 19);
+
+        let startY = 35;
+
+        // 2. DASHBOARD / CARTÕES DE RESUMO (Apenas para Despesas)
+        if (tipo === 'despesas') {
+            let totalPago = 0, totalPendente = 0;
+            dados.forEach(d => {
+                let v = parseFloat(d.valor_numero) || 0;
+                if (d.status === 'pago') totalPago += v;
+                else totalPendente += v;
+            });
+            let totalGeral = totalPago + totalPendente;
+
+            doc.setTextColor(51, 51, 51);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("RESUMO DA BUSCA:", 14, 33);
+
+            // Bloco PAGO (Verde)
+            doc.setFillColor(40, 167, 69);
+            doc.rect(14, 36, 60, 12, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(`PAGO: R$ ${totalPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 18, 44);
+
+            // Bloco PENDENTE (Vermelho)
+            doc.setFillColor(217, 83, 79);
+            doc.rect(78, 36, 60, 12, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(`PENDENTE: R$ ${totalPendente.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 82, 44);
+
+            // Bloco TOTAL (Azul Marinho Claro)
+            doc.setFillColor(238, 242, 245);
+            doc.rect(142, 36, 60, 12, 'F');
+            doc.setTextColor(26, 42, 67);
+            doc.text(`TOTAL: R$ ${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 146, 44);
+
+            startY = 55; // Empurra a tabela para baixo
+        }
 
         let head = []; 
         let body = [];
 
+        // 3. PREENCHIMENTO DA TABELA
         if (tipo === 'vales') {
             head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Valor (R$)', 'Tipo', 'Descrição', 'Assinatura']];
-            
             dados.forEach(row => {
                 const { ano, mes, dia } = separarDataSegura(row.data_criacao || row.data);
                 const mesNome = nomeMeses[mes] || mes;
-                const dataHora = `${dia}/${mes}/${ano}\n${row.hora_criacao || ''}`;
-                
-                body.push([ 
-                    ano, 
-                    mesNome, 
-                    dataHora, 
-                    row.nome, 
-                    `R$ ${row.valor}`, 
-                    row.tipo, 
-                    row.descricao, 
-                    row.assinatura || '' 
-                ]);
+                body.push([ ano, mesNome, `${dia}/${mes}/${ano}\n${row.hora_criacao || ''}`, row.nome, `R$ ${row.valor}`, row.tipo, row.descricao, row.assinatura || '' ]);
             });
-
-            doc.autoTable({
-                startY: 35, 
-                head: head, 
-                body: body, 
-                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
-                columnStyles: { 7: { cellWidth: 40, minCellHeight: 25 } },
-                didParseCell: function(data) { 
-                    if (data.column.index === 7 && data.cell.section === 'body') { 
-                        data.cell.customImg = data.cell.raw; 
-                        data.cell.text = ''; 
-                    } 
-                },
-                didDrawCell: function(data) { 
-                    if (data.column.index === 7 && data.cell.section === 'body') { 
-                        let img = data.cell.customImg; 
-                        if (img && img.startsWith('data:image')) { 
-                            doc.addImage(img, 'PNG', data.cell.x + 2, data.cell.y + 2, 36, data.cell.height - 4); 
-                        } 
-                    } 
-                }
-            });
+            gerarTabela(doc, head, body, startY, 7);
 
         } else if (tipo === 'ponto') {
             head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Tipo', 'Obra/Local', 'Coodenadas GPS', 'Selfie']];
-            
             dados.forEach(row => {
                 const { ano, mes, dia } = separarDataSegura(row.data);
                 const mesNome = nomeMeses[mes] || mes;
-                const dataHora = `${dia}/${mes}/${ano}\n${row.hora || ''}`;
+                body.push([ ano, mesNome, `${dia}/${mes}/${ano}\n${row.hora || ''}`, row.nome, row.tipo, row.obra, `${row.latitude}\n${row.longitude}`, row.foto || '' ]);
+            });
+            gerarTabela(doc, head, body, startY, 7);
+
+        } else if (tipo === 'despesas') {
+            head = [['Status', 'Vencimento', 'Obra / Local', 'Fornecedor', 'Nota Fiscal', 'Descrição', 'Valor (R$)', 'Recibo']];
+            dados.forEach(row => {
+                function formatarVenc(v) { if(!v) return '-'; let p = v.split('-'); return p.length===3 ? `${p}/${p}/${p}` : v; }
+                let statusTexto = row.status === 'pago' ? `PAGO EM\n${row.data_pagamento||''}` : 'PENDENTE';
                 
                 body.push([ 
-                    ano, 
-                    mesNome, 
-                    dataHora, 
-                    row.nome, 
-                    row.tipo, 
-                    row.obra, 
-                    `${row.latitude}\n${row.longitude}`, 
-                    row.foto || '' 
+                    statusTexto, formatarVenc(row.data_vencimento), row.obra_nome || '', row.loja_nome || '', 
+                    row.nota_fiscal || '-', row.descricao || '', `R$ ${row.valor_string || '0,00'}`, row.foto_recibo || '' 
                 ]);
             });
+            gerarTabela(doc, head, body, startY, 7);
+        }
 
-            doc.autoTable({
-                startY: 35, 
-                head: head, 
-                body: body, 
-                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
-                columnStyles: { 7: { cellWidth: 35, minCellHeight: 25 } },
+        // Função interna blindada contra erros de cópia (usando HEX colors)
+        function gerarTabela(documento, cabecalho, corpo, eixoY, imgIndex) {
+            documento.autoTable({
+                startY: eixoY, 
+                head: cabecalho, 
+                body: corpo, 
+                theme: 'striped',
+                styles: { fontSize: 8, cellPadding: 3, valign: 'middle', textColor: '#333333' }, 
+                headStyles: { fillColor: '#1a2a43', textColor: '#ffffff', fontStyle: 'bold' }, 
+                alternateRowStyles: { fillColor: '#f5f8fa' }, 
+                columnStyles: { [imgIndex]: { cellWidth: 35, minCellHeight: 25, halign: 'center' } },
+                
                 didParseCell: function(data) { 
-                    if (data.column.index === 7 && data.cell.section === 'body') { 
-                        data.cell.customImg = data.cell.raw; 
-                        data.cell.text = ''; 
+                    if (data.column.index === imgIndex && data.cell.section === 'body') { 
+                        data.cell.customImg = data.cell.raw; data.cell.text = ''; 
                     } 
+                    if(tipo === 'despesas' && data.column.index === 0 && data.cell.section === 'body') {
+                        if(data.cell.raw.includes('PAGO')) data.cell.styles.textColor = '#28a745';
+                        else data.cell.styles.textColor = '#d9534f';
+                        data.cell.styles.fontStyle = 'bold';
+                    }
                 },
                 didDrawCell: function(data) { 
-                    if (data.column.index === 7 && data.cell.section === 'body') { 
+                    if (data.column.index === imgIndex && data.cell.section === 'body') { 
                         let img = data.cell.customImg; 
                         if (img && img.startsWith('data:image')) { 
-                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4); 
+                            let isAssinatura = tipo === 'vales';
+                            documento.addImage(img, isAssinatura ? 'PNG' : 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4); 
                         } 
-                    } 
-                }
-            });
-        } else if (tipo === 'despesas') {
-            head = [['Data', 'Obra / Local', 'Fornecedor', 'Descrição', 'Valor (R$)', 'Fatura / Recibo']];
-            
-            dados.forEach(row => {
-                body.push([ 
-                    row.data || '', 
-                    row.obra_nome || '', 
-                    row.loja_nome || '', 
-                    row.descricao || '', 
-                    `R$ ${row.valor_string || '0,00'}`, 
-                    row.foto_recibo || '' 
-                ]);
-            });
-
-            doc.autoTable({
-                startY: 35, 
-                head: head, 
-                body: body, 
-                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' }, 
-                columnStyles: { 5: { cellWidth: 35, minCellHeight: 25 } },
-                didParseCell: function(data) { 
-                    if (data.column.index === 5 && data.cell.section === 'body') { 
-                        data.cell.customImg = data.cell.raw; 
-                        data.cell.text = ''; 
                     } 
                 },
-                didDrawCell: function(data) { 
-                    if (data.column.index === 5 && data.cell.section === 'body') { 
-                        let img = data.cell.customImg; 
-                        if (img && img.startsWith('data:image')) { 
-                            doc.addImage(img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 31, data.cell.height - 4); 
-                        } 
-                    } 
+                didDrawPage: function (data) {
+                    let str = 'Página ' + documento.internal.getNumberOfPages();
+                    documento.setFontSize(8);
+                    documento.setTextColor(150);
+                    documento.text(str, data.settings.margin.left, documento.internal.pageSize.height - 10);
                 }
             });
         }
