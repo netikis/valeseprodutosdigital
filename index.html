@@ -762,6 +762,8 @@
 
                 <label>Nome da Loja ou Fornecedor</label>
                 <input type="text" id="d-loja" placeholder="Onde foi comprado?">
+                <label>Número da Nota Fiscal / Recibo</label>
+                <input type="text" id="d-nf" placeholder="Ex: 123456 (Opcional)">
 
                 <label>Valor da Fatura (R$)</label>
                 <input type="text" id="d-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
@@ -1147,6 +1149,7 @@
     window.salvarDespesaObra = async function() {
         const obra = document.getElementById('d-obra').value.trim();
         const loja = document.getElementById('d-loja').value.trim();
+        const nf = document.getElementById('d-nf') ? document.getElementById('d-nf').value.trim() : "";
         const valor = document.getElementById('d-valor').value;
         const desc = document.getElementById('d-desc').value;
         const fotoBase64 = document.getElementById('d-anexo-base64').value;
@@ -1173,6 +1176,7 @@
                 obra_lower: obra.toLowerCase(),
                 loja_nome: loja,
                 loja_lower: loja.toLowerCase(),
+                nota_fiscal: nf,
                 valor_string: valor,
                 valor_numero: parseMoedaLocal(valor),
                 descricao: desc,
@@ -1185,6 +1189,7 @@
             
             document.getElementById('d-obra').value = '';
             document.getElementById('d-loja').value = '';
+            
             document.getElementById('d-valor').value = '';
             document.getElementById('d-desc').value = '';
             document.getElementById('d-anexo').value = '';
@@ -1268,6 +1273,97 @@
         });
     };
 
+    window.marcarComoPago = async function(id) {
+        Swal.fire({
+            title: 'Marcar como Pago?',
+            text: 'Esta despesa será arquivada no histórico de contas pagas.',
+            icon: 'question',
+            showCancelButton: true, confirmButtonColor: '#28a745', cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, já foi pago!', cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const docRef = doc(db, "despesas_obras", id);
+                    const hoje = new Date();
+                    const dia = String(hoje.getDate()).padStart(2, '0');
+                    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                    const ano = hoje.getFullYear();
+                    const dataSegura = `${dia}/${mes}/${ano}`;
+
+                    await updateDoc(docRef, { status: "pago", data_pagamento: dataSegura });
+                    Swal.fire('Sucesso!', 'A despesa foi marcada como paga.', 'success');
+                    buscarDespesasObra(); 
+                } catch (e) { Swal.fire('Erro', 'Não foi possível atualizar o estado.', 'error'); }
+            }
+        });
+    };
+
+    window.editarDespesa = function(id) {
+        const despesa = window.dadosExportacaoDespesas.find(d => d.id === id);
+        if(!despesa) return;
+
+        Swal.fire({
+            title: '✏️ Editar Despesa',
+            html: `
+                <div style="text-align: left; font-size: 13px;">
+                    <label style="margin-top: 10px;">Obra / Local:</label>
+                    <input id="edit-obra" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.obra_nome || ''}">
+                    
+                    <label style="margin-top: 10px;">Loja / Fornecedor:</label>
+                    <input id="edit-loja" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.loja_nome || ''}">
+                    
+                    <label style="margin-top: 10px;">Nota Fiscal:</label>
+                    <input id="edit-nf" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.nota_fiscal || ''}">
+                    
+                    <label style="margin-top: 10px;">Valor (R$):</label>
+                    <input id="edit-valor" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.valor_string || ''}" oninput="mascaraMoeda(this)">
+                    
+                    <label style="margin-top: 10px;">Data (DD/MM/AAAA):</label>
+                    <input id="edit-data" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${despesa.data_pagamento || despesa.data || ''}">
+                    
+                    <label style="margin-top: 10px;">Descrição / Materiais:</label>
+                    <textarea id="edit-desc" class="swal2-textarea" style="margin: 0; width: 100%; font-size: 14px; height: 80px;">${despesa.descricao || ''}</textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#1a2a43',
+            cancelButtonColor: '#d9534f',
+            confirmButtonText: 'SALVAR',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                return {
+                    obra_nome: document.getElementById('edit-obra').value.trim(),
+                    obra_lower: document.getElementById('edit-obra').value.trim().toLowerCase(),
+                    loja_nome: document.getElementById('edit-loja').value.trim(),
+                    loja_lower: document.getElementById('edit-loja').value.trim().toLowerCase(),
+                    nota_fiscal: document.getElementById('edit-nf').value.trim(),
+                    valor_string: document.getElementById('edit-valor').value,
+                    valor_numero: parseMoedaLocal(document.getElementById('edit-valor').value),
+                    data_editada: document.getElementById('edit-data').value.trim(),
+                    descricao: document.getElementById('edit-desc').value.trim()
+                }
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const atualizacao = result.value;
+                    if(despesa.status === 'pago') {
+                        atualizacao.data_pagamento = atualizacao.data_editada;
+                    } else {
+                        atualizacao.data = atualizacao.data_editada;
+                    }
+                    delete atualizacao.data_editada;
+
+                    await updateDoc(doc(db, "despesas_obras", id), atualizacao);
+                    Swal.fire('Atualizado!', 'As informações foram corrigidas.', 'success');
+                    buscarDespesasObra();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível editar o item.', 'error');
+                }
+            }
+        });
+    };
+
     window.buscarDespesasObra = async function() {
         const termoBusca = document.getElementById('busca-obra').value.trim().toLowerCase();
         const empresaLogada = localStorage.getItem('empresaGestor');
@@ -1290,34 +1386,39 @@
             const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
 
-            let htmlFinal = "";
-            let somaTotal = 0;
+            let htmlPendentes = "";
+            let htmlPagas = "";
+            let somaPendentes = 0;
+            let somaPagas = 0;
             let encontrou = false;
             
             let despesasArray = [];
             querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
             despesasArray.sort((a, b) => b.timestamp - a.timestamp);
 
+            let pendentesArray = [];
+            let agrupadoPagas = {};
+
             despesasArray.forEach((d) => {
                 if (d.obra_lower.includes(termoBusca) || d.loja_lower.includes(termoBusca)) {
                     encontrou = true;
-                    somaTotal += (d.valor_numero || 0);
-                    
                     window.dadosExportacaoDespesas.push(d);
 
-                    const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;" title="Ver Fatura">` : '';
+                    if (d.status === "pendente" || !d.status) {
+                        somaPendentes += (d.valor_numero || 0);
+                        pendentesArray.push(d);
+                    } else if (d.status === "pago") {
+                        somaPagas += (d.valor_numero || 0);
+                        
+                        // CORREÇÃO: Usa a função oficial do sistema para extrair as datas
+                        const { ano, mes, dia } = separarDataSegura(d.data_pagamento || d.data);
 
-                    htmlFinal += `
-                        <div class="resultado-item" style="border-left-color: #d9534f;">
-                            ${fotoHtml}
-                            <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <br>
-                            <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
-                            <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
-                            <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
-                            <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
-                            
-                            <button onclick="excluirDespesa('${d.id}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 12px; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ MARCAR COMO PAGO / APAGAR</button>
-                        </div>`;
+                        if (!agrupadoPagas[ano]) agrupadoPagas[ano] = {}; 
+                        if (!agrupadoPagas[ano][mes]) agrupadoPagas[ano][mes] = [];
+                        
+                        d.diaFormatado = dia; 
+                        agrupadoPagas[ano][mes].push(d);
+                    }
                 }
             });
 
@@ -1326,17 +1427,90 @@
                 return;
             }
 
-            document.getElementById('total-gasto-display').innerText = formatarMoeda(somaTotal);
+            pendentesArray.forEach(d => {
+                const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
+                htmlPendentes += `
+                    <div class="resultado-item" style="border-left-color: #d9534f;">
+                        ${fotoHtml}
+                        <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">AGUARDA PAGAMENTO</span><br>
+                        <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
+                        <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
+                        <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
+                        <span style="font-size: 12px; color: #888;">Data: ${d.data}</span>
+                        <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
+                            <button onclick="marcarComoPago('${d.id}')" style="background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">✅ MARCAR PAGO</button>
+                            <button onclick="editarDespesa('${d.id}')" style="background: #4285F4; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">✏️ EDITAR</button>
+                            <button onclick="excluirDespesa('${d.id}')" style="background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ EXCLUIR</button>
+                        </div>
+                    </div>`;
+            });
+
+            let chavesAno = Object.keys(agrupadoPagas).sort((a, b) => { 
+                if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); 
+            });
+
+            chavesAno.forEach(ano => {
+                htmlPagas += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
+                let chavesMes = Object.keys(agrupadoPagas[ano]).sort((a, b) => { 
+                    if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); 
+                });
+                
+                chavesMes.forEach(mes => {
+                    const nomeDoMes = nomeMeses[mes] || mes;
+                    htmlPagas += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
+                    
+                    agrupadoPagas[ano][mes].forEach(d => {
+                        const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
+                        htmlPagas += `
+                            <div class="resultado-item" style="border-left-color: #28a745; opacity: 0.85; background: #f4fdf6;">
+                                ${fotoHtml}
+                                <b style="color: #28a745; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">PAGO EM: ${d.data_pagamento || 'N/A'}</span><br>
+                                <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
+                                <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
+                                <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
+                                <span style="font-size: 12px; color: #888;">Data Fatura: ${d.data}</span>
+                                <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee; color: #666;">${d.descricao}</div>
+                                
+                                <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
+                                    <button onclick="editarDespesa('${d.id}')" style="background: #4285F4; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 11px; transition: 0.3s;">✏️ EDITAR</button>
+                                    <button onclick="excluirDespesa('${d.id}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 11px; transition: 0.3s;">🗑️ EXCLUIR</button>
+                                </div>
+                            </div>`;
+                    });
+                    
+                    htmlPagas += `</div></details>`;
+                });
+                htmlPagas += `</div></details>`;
+            });
+
+            document.getElementById('total-gasto-display').innerHTML = `
+                <div style="display:flex; justify-content:space-around; text-align:center;">
+                    <div><span style="font-size:12px; color:#856404; font-weight:bold;">A Pagar (Pendente)</span><br><b style="color:#d9534f; font-size: 18px;">${formatarMoeda(somaPendentes)}</b></div>
+                    <div><span style="font-size:12px; color:#155724; font-weight:bold;">Já Pago (Histórico)</span><br><b style="color:#28a745; font-size: 18px;">${formatarMoeda(somaPagas)}</b></div>
+                </div>
+                <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px; text-align:center;">
+                    <span style="font-size:13px; color:#555;">Total Global da Obra/Loja:</span> <b style="font-size: 16px; color: var(--dark-navy);">${formatarMoeda(somaPendentes + somaPagas)}</b>
+                </div>
+            `;
+            
             divTotal.style.display = 'block';
             if (btnExportar) btnExportar.style.display = 'block';
-            divLista.innerHTML = htmlFinal;
+            
+            divLista.innerHTML = "";
+            if (htmlPendentes !== "") {
+                divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 5px;">⚠️ Contas Pendentes</h4>` + htmlPendentes;
+            }
+            if (htmlPagas !== "") {
+                divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">✅ Histórico de Contas Pagas</h4>` + htmlPagas;
+            }
 
         } catch (e) {
             console.error("Erro busca despesa", e);
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas. Verifique as Regras de Leitura no Firebase.</p>`;
+            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`;
         }
     };
-
 
     window.exportarPDF = function(tipo) {
         const { jsPDF } = window.jspdf;
@@ -2417,81 +2591,69 @@
         }
     };
 
-window.gerarEnviarPDF = async function(id) {
-    const dados = window.valesEncontrados[id]; 
-    const empresaLogada = dados.empresa_id || "Empresa";
-    
-    Swal.fire({ 
-        title: 'Gerando Documento...', 
-        text: 'Aguarde...', 
-        allowOutsideClick: false 
-    }); 
-    Swal.showLoading();
-
-    try {
-        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
+    window.gerarEnviarPDF = async function(id) {
+        const dados = window.valesEncontrados[id]; 
+        const empresaLogada = dados.empresa_id || "Empresa";
         
+        Swal.fire({ 
+            title: 'Gerando Documento...', 
+            text: 'Aguarde', 
+            allowOutsideClick: false 
+        }); 
+        Swal.showLoading();
+        
+        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
         document.getElementById('pdf-empresa-nome').innerText = empresaLogada; 
         document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; 
         document.getElementById('pdf-assinatura').src = dados.assinatura; 
         document.getElementById('pdf-nome-ass').innerText = dados.nome;
 
-        await new Promise(r => setTimeout(r, 500));
+        try {
+            await new Promise(r => setTimeout(r, 800)); 
+            
+            const { jsPDF } = window.jspdf; 
+            const pdf = new jsPDF('p', 'mm', 'a4'); 
+            const element = document.getElementById('area-pdf-escondida');
+            
+            const canvasImg = await html2canvas(element, { scale: 2, useCORS: true }); 
+            const imgData = canvasImg.toDataURL('image/jpeg');
+            const pdfWidth = pdf.internal.pageSize.getWidth(); 
+            const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const nomeDoArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`; 
+            const file = new File([pdf.output('blob')], nomeDoArquivo, { type: "application/pdf" });
+            const msg = `*${empresaLogada}*\n\nOlá ${dados.nome}, anexo a sua via do recibo.`;
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-
-        const element = document.getElementById('area-pdf-escondida');
-
-        element.style.backgroundColor = "#ffffff";
-
-        const canvas = await html2canvas(element, {
-            scale: 3,
-            useCORS: true,
-            logging: false
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
+            let sucessoCompartilhamento = false;
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { 
+                    await navigator.share({ files: [file], title: 'Recibo', text: msg }); 
+                    sucessoCompartilhamento = true; 
+                    Swal.close(); 
+                } catch(e) { 
+                    if (e.name !== 'AbortError') {
+                        console.error("Bloqueado", e); 
+                    } else { 
+                        Swal.close(); 
+                        return; 
+                    } 
+                }
+            }
+            
+            if (!sucessoCompartilhamento) { 
+                pdf.save(nomeDoArquivo); 
+                Swal.fire('PDF Descarregado!', 'Guardado nas Transferências.', 'success').then(() => { 
+                    window.location.href = `https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`; 
+                }); 
+            }
+        } catch(e) { 
+            Swal.fire('Erro', 'Falha no PDF.', 'error'); 
         }
-
-        const nomeArquivo = `Recibo_${dados.nome.replace(/\s+/g, '_')}.pdf`;
-
-        // 🔥 DOWNLOAD GARANTIDO (FUNCIONA NO PC)
-        pdf.save(nomeArquivo);
-
-        Swal.fire('PDF Gerado!', 'Arquivo baixado com sucesso.', 'success');
-
-        // 🔹 WhatsApp separado (não interfere no download)
-        const msg = `*${empresaLogada}*\n\nOlá ${dados.nome}, aqui está o seu recibo.`;
-
-        setTimeout(() => {
-            window.open(`https://api.whatsapp.com/send?phone=55${dados.tel}&text=${encodeURIComponent(msg)}`, '_blank');
-        }, 1000);
-
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Erro', 'Falha ao gerar PDF.', 'error');
-    }
-};
+    };
 
     let signaturePad;
     
