@@ -1218,33 +1218,44 @@
         "10": "Outubro", "11": "Novembro", "12": "Dezembro" 
     };
 
-    function separarDataSegura(dataString) {
-        try {
-            if (!dataString) {
-                return { ano: 'Outros', mes: 'Outros', dia: '??' };
-            }
-
-            let apenasData = String(dataString).trim().split(' ');
-            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
-            let partes = textoLimpo.split(/[\/\-]/);
-
-            if (partes.length >= 3) {
-                let p1 = partes; 
-                let p2 = partes; 
-                let p3 = partes;
-                let ano, mes, dia;
-
-                if (p3.length >= 4) { ano = p3.substring(0, 4); mes = p2; dia = p1; } 
-                else if (p1.length >= 4) { ano = p1.substring(0, 4); mes = p2; dia = p3; } 
-                else { ano = "20" + p3; mes = p2; dia = p1; }
-
-                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
-            }
-            return { ano: 'ano', mes: 'mes', dia: String(dataString) };
-        } catch(e) { 
-            return { ano: 'ano', mes: 'mes', dia: '??' }; 
+      function separarDataSegura(dataString) {
+        try {
+            if (!dataString) {
+                return { ano: 'Outros', mes: 'Outros', dia: '??' };
+            }
+            
+            let apenasData = String(dataString).trim().split(' ')[0];
+            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
+            let partes = textoLimpo.split(/[\/\-]/);
+            
+            if (partes.length >= 3) {
+                let p1 = partes[0]; 
+                let p2 = partes[1]; 
+                let p3 = partes[2];
+                let ano, mes, dia;
+                
+                if (p3.length >= 4) { 
+                    ano = p3.substring(0, 4); 
+                    mes = p2; 
+                    dia = p1; 
+                } else if (p1.length >= 4) { 
+                    ano = p1.substring(0, 4); 
+                    mes = p2; 
+                    dia = p3; 
+                } else { 
+                    ano = "20" + p3; 
+                    mes = p2; 
+                    dia = p1; 
+                }
+                
+                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
+            }
+            return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
+        } catch(e) { 
+            return { ano: 'Outros', mes: 'Outros', dia: '??' }; 
         }
-    }
+    }
+
 
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
@@ -2526,9 +2537,9 @@ window.exportarPDF = function(tipo) {
                 });
                 
                 chavesMes.forEach(mes => {
-                    const nomeDoMes = nomeMeses[mes] || mes;
-                    htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
-                    
+                   const nomeDoMes = nomeMeses[mes] || mes;
+                   htmlFinal += `<details class="pasta-mes" open><summary>${nomeDoMes.toUpperCase()}</summary>...`;
+
                     agrupado[ano][mes].sort((a, b) => { 
                         return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(dados => {
