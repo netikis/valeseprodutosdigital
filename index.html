@@ -1219,26 +1219,32 @@
     };
 
     function separarDataSegura(dataString) {
-        try {
-            if (!dataString) {
-                return { ano: 'Outros', mes: 'Outros', dia: '??' };
-            }
+        try {
+            if (!dataString) {
+                return { ano: 'Outros', mes: 'Outros', dia: '??' };
+            }
+
             let apenasData = String(dataString).trim().split(' ');
-            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
-            let partes = textoLimpo.split(/[\/\-]/);
-            if (partes.length >= 3) {
-                let p1 = partes; 
-                let p2 = partes; 
-                let p3 = partes;
-                let ano, mes, dia;
-                if (p3.length >= 4) { ano = p3.substring(0, 4); mes = p2; dia = p1; } 
-                else if (p1.length >= 4) { ano = p1.substring(0, 4); mes = p2; dia = p3; } 
-                else { ano = "20" + p3; mes = p2; dia = p1; }
-                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
-            }
-            return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
-        } catch(e) { return { ano: 'Outros', mes: 'Outros', dia: '??' }; }
-    }
+            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
+            let partes = textoLimpo.split(/[\/\-]/);
+
+            if (partes.length >= 3) {
+                let p1 = partes; 
+                let p2 = partes; 
+                let p3 = partes;
+                let ano, mes, dia;
+
+                if (p3.length >= 4) { ano = p3.substring(0, 4); mes = p2; dia = p1; } 
+                else if (p1.length >= 4) { ano = p1.substring(0, 4); mes = p2; dia = p3; } 
+                else { ano = "20" + p3; mes = p2; dia = p1; }
+
+                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
+            }
+            return { ano: 'ano', mes: 'mes', dia: String(dataString) };
+        } catch(e) { 
+            return { ano: 'ano', mes: 'mes', dia: '??' }; 
+        }
+    }
 
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
