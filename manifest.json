@@ -1,0 +1,22 @@
+{
+  "name": "Sistema de Gestão - FH Construções",
+  "short_name": "Gestão FH",
+  "description": "Sistema de Gestão, Ponto Digital e Vales",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#1a2a43",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
