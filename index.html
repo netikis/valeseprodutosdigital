@@ -1114,19 +1114,29 @@ function atualizarLogoInterface(nomeEmpresa) {
     }
 
     // --- ROTAS INICIAIS ---
+    // Faz o sistema memorizar que este telemóvel é para bater ponto
+    if (isPonto) {
+        localStorage.setItem('modoPonto', 'true');
+        if (empresaPontoURL) localStorage.setItem('empresaPonto', empresaPontoURL);
+    }
+
+    const idLogado = localStorage.getItem('funcLogadoId');
+    const querPonto = isPonto || localStorage.getItem('modoPonto');
+
     if (valeId) {
         document.title = "ASSINATURA"; 
         document.getElementById('tela-funcionario').style.display = 'block';
         carregarValeParaAssinatura(valeId);
-    } else if (isPonto) {
+    } else if (querPonto || idLogado) {
         document.title = "PONTO DIGITAL"; 
         
-        if (empresaPontoURL) {
-            document.getElementById('login-nome-empresa').innerText = empresaPontoURL;
-            document.getElementById('relogio-nome-empresa').innerText = empresaPontoURL;
+        const empresaExibicao = empresaPontoURL || localStorage.getItem('empresaPonto') || localStorage.getItem('funcLogadoEmpresa');
+
+        if (empresaExibicao) {
+            document.getElementById('login-nome-empresa').innerText = empresaExibicao;
+            document.getElementById('relogio-nome-empresa').innerText = empresaExibicao;
         }
 
-        const idLogado = localStorage.getItem('funcLogadoId');
         if (idLogado) {
             document.getElementById('tela-relogio').style.display = 'block';
             document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
