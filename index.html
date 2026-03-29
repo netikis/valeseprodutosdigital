@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistema de Gestão - FH Construções</title>
     
+    <link rel="manifest" href="./manifest.json">
+    
     <link rel="apple-touch-icon" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -551,6 +553,19 @@
 </head>
 <body>
 
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registado com sucesso!', registration.scope);
+          }, err => {
+            console.log('Falha ao registar o ServiceWorker:', err);
+          });
+      });
+    }
+</script>
+
 <div id="tela-bloqueio" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a2a43; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 20px; text-align: center; box-sizing: border-box;">
     <h1 style="color: #d9534f; font-size: 32px; margin-bottom: 10px;">⚠️ SISTEMA SUSPENSO</h1>
     <p style="font-size: 16px; line-height: 1.6; max-width: 400px; margin-bottom: 20px;">O acesso a este painel foi temporariamente bloqueado.</p>
@@ -916,7 +931,7 @@
 
     <label style="margin-top: 15px;">Confirmação de Identidade:</label>
     <button id="btn-iniciar-camera" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
-    <video id="video-selfie" autoplay playsinline></video>
+    <video id="video-selfie" autoplay playsinline muted></video>
     <canvas id="canvas-selfie" style="display: none;"></canvas>
     <img id="foto-tirada" src="" alt="Sua foto aparecerá aqui">
     <button id="btn-tirar-foto" class="btn-gold" style="display: none; margin-top: 10px;" onclick="tirarFoto()">Tirar Foto</button>
@@ -1160,14 +1175,14 @@ function atualizarLogoInterface(nomeEmpresa) {
                 return { ano: 'Outros', mes: 'Outros', dia: '??' };
             }
             
-            let apenasData = String(dataString).trim().split(' ')[0];
+            let apenasData = String(dataString).trim().split(' ');
             let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
             let partes = textoLimpo.split(/[\/\-]/);
             
             if (partes.length >= 3) {
-                let p1 = partes[0]; 
-                let p2 = partes[1]; 
-                let p3 = partes[2];
+                let p1 = partes; 
+                let p2 = partes; 
+                let p3 = partes;
                 let ano, mes, dia;
                 
                 if (p3.length >= 4) { 
@@ -1215,7 +1230,7 @@ function atualizarLogoInterface(nomeEmpresa) {
     }
 
     document.getElementById('d-anexo').addEventListener('change', function(e) {
-        const file = e.target.files[0];
+        const file = e.target.files;
         if (!file) return;
 
         const reader = new FileReader();
@@ -2323,83 +2338,103 @@ window.exportarPDF = function(tipo) {
     };
 
     window.baterPonto = function(tipo) {
-        const obra = document.getElementById('obra-atual').value; 
+        const obra = document.getElementById('obra-atual').value;
         const fotoBase64 = document.getElementById('foto-base64').value;
-        const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa'); 
-        
+        const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa');
+
         if (!obra) {
             return Swal.fire('Atenção', 'Deve informar em qual obra está!', 'warning');
         }
-        
+
         if (!fotoBase64) {
             return Swal.fire('Atenção', 'Tire a foto (selfie) antes de bater o ponto!', 'warning');
         }
 
-        Swal.fire({ 
-            title: 'Buscando GPS...', 
-            html: 'O telemóvel pedirá permissão, clique em <b>Permitir</b>.', 
-            allowOutsideClick: false, 
-            showConfirmButton: false 
+        Swal.fire({
+            title: 'Registrando Ponto...',
+            text: 'Obtendo a hora exata da batida...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
         });
-        
+
         if (!navigator.geolocation) {
-            return Swal.fire('Erro', 'Seu navegador não tem função de GPS.', 'error');
+            processarPontoFinal("Sem GPS", "Sem GPS");
+            return;
         }
 
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const lat = position.coords.latitude; 
-                const lng = position.coords.longitude;
-                const funcId = localStorage.getItem('funcLogadoId'); 
-                const funcNome = localStorage.getItem('funcLogadoNome');
-                
-                const dataObj = new Date();
-                const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
-                const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
-                const anoStr = dataObj.getFullYear(); 
-                
-                const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
-                const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
-                
-                const payloadPonto = { 
-                    empresa_id: empresaDoFuncionario, 
-                    funcionario_id: funcId, 
-                    nome: funcNome, 
-                    tipo: tipo, 
-                    obra: obra, 
-                    data: dataAtual, 
-                    hora: horaAtual, 
-                    latitude: lat, 
-                    longitude: lng, 
-                    foto: fotoBase64, 
-                    timestamp: dataObj.getTime() 
-                };
-
-                if (navigator.onLine) {
-                    try { 
-                        await addDoc(collection(db, "ponto_registros"), payloadPonto); 
-                        Swal.fire('Sucesso!', `${tipo} registada.`, 'success'); 
-                    } catch(e) { 
-                        Swal.fire('Erro', 'Problema ao guardar na base de dados.', 'error'); 
-                    }
-                } else {
-                    const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]'); 
-                    offlineData.push(payloadPonto); 
-                    localStorage.setItem('pontos_offline', JSON.stringify(offlineData));
-                    Swal.fire('Ponto Guardado no Telemóvel!', `Está sem internet. A ${tipo} foi guardada e será enviada sozinha depois.`, 'info');
-                }
-                
-                document.getElementById('obra-atual').value = ''; 
-                document.getElementById('foto-base64').value = ''; 
-                document.getElementById('foto-tirada').style.display = 'none'; 
-                document.getElementById('btn-iniciar-camera').style.display = 'block'; 
-                document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
+            (position) => {
+                processarPontoFinal(position.coords.latitude, position.coords.longitude);
             },
-            (error) => { 
-                Swal.fire('Falha no GPS', 'Erro ao buscar o satélite. Vá para um lugar aberto ou liberte a permissão.', 'error'); 
+            (error) => {
+                console.warn("Sinal de GPS fraco ou negado. Ponto será registrado sem localização exata.");
+                processarPontoFinal("Localização não obtida", "Localização não obtida");
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
+
+        async function processarPontoFinal(lat, lng) {
+            const funcId = localStorage.getItem('funcLogadoId');
+            const funcNome = localStorage.getItem('funcLogadoNome');
+
+            // TRAVA A HORA EXATA EM QUE O BOTÃO FOI CLICADO
+            const dataObj = new Date();
+            const diaStr = String(dataObj.getDate()).padStart(2, '0');
+            const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const anoStr = dataObj.getFullYear();
+            const dataAtual = `${diaStr}/${mesStr}/${anoStr}`;
+            const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+
+            const payloadPonto = {
+                empresa_id: empresaDoFuncionario,
+                funcionario_id: funcId,
+                nome: funcNome,
+                tipo: tipo,
+                obra: obra,
+                data: dataAtual,
+                hora: horaAtual,
+                latitude: lat,
+                longitude: lng,
+                foto: fotoBase64,
+                timestamp: dataObj.getTime()
+            };
+
+            if (navigator.onLine) {
+                try {
+                    await addDoc(collection(db, "ponto_registros"), payloadPonto);
+                    Swal.fire('Sucesso!', `Ponto de ${tipo} registrado às ${horaAtual}.`, 'success');
+                } catch(e) {
+                    salvarNoCelular(payloadPonto);
+                }
+            } else {
+                salvarNoCelular(payloadPonto);
+            }
+
+            // Limpa a tela
+            document.getElementById('obra-atual').value = '';
+            document.getElementById('foto-base64').value = '';
+            document.getElementById('foto-tirada').style.display = 'none';
+            document.getElementById('video-selfie').style.display = 'none';
+            document.getElementById('btn-iniciar-camera').style.display = 'block';
+            document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
+            
+            // Para a câmera
+            if (streamCamera) {
+                streamCamera.getTracks().forEach(track => track.stop());
+                streamCamera = null;
+            }
+        }
+
+        function salvarNoCelular(payloadPonto) {
+            const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
+            offlineData.push(payloadPonto);
+            localStorage.setItem('pontos_offline', JSON.stringify(offlineData));
+            Swal.fire(
+                'Ponto Guardado Offline! 📶❌',
+                `Sem internet. O seu ponto de ${payloadPonto.tipo} foi travado com o horário exato:<br><br><b style="font-size:18px; color:#d9534f;">${payloadPonto.data} às ${payloadPonto.hora}</b><br><br>Será enviado quando conectar a uma rede.`,
+                'info'
+            );
+        }
     };
 
     window.abrirFoto = function(imgBase64) {
