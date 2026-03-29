@@ -572,6 +572,17 @@
     <p style="font-size: 14px; color: #aaa;">Por favor, entre em contato com o administrador do sistema para regularizar a situação.</p>
 </div>
 
+<div class="main-card login-card" id="tela-escolha-inicial" style="display: none; text-align: center;">
+    <div class="header-logo">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="Logo" class="logo-img">
+        <div class="title-top">Bem-vindo</div>
+    </div>
+    <p style="font-size: 14px; color: #555; margin-bottom: 25px;">Selecione o seu tipo de acesso para continuar:</p>
+
+    <button class="btn-enviar" onclick="escolherGestao()">👔 GESTÃO RH / GESTOR</button>
+    <button class="btn-gold" onclick="escolherFuncionario()" style="background: #28a745; color: white;">📍 SOU FUNCIONÁRIO - BATER PONTO</button>
+</div>
+
 <div class="main-card login-card" id="tela-selecao-empresa" style="display: none;">
     <div class="header-logo">
         <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="Logo" class="logo-img">
@@ -583,6 +594,23 @@
     <button class="btn-empresa-select" onclick="entrarEmpresa('OLIVEIRA DANTAS')">🏢 OLIVEIRA DANTAS</button>
     <button class="btn-empresa-select" onclick="entrarEmpresa('MANUTENÇÃO')">🛠️ MANUTENÇÃO</button>
     <button class="btn-empresa-select" onclick="entrarEmpresa('PEDIU - CHEGOU')">📦 PEDIU - CHEGOU</button>
+    
+    <button class="btn-logout" onclick="voltarTelaInicial()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Voltar</button>
+</div>
+
+<div class="main-card login-card" id="tela-selecao-empresa-funcionario" style="display: none;">
+    <div class="header-logo">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" alt="Logo" class="logo-img">
+        <div class="title-top">Ponto Eletrónico</div>
+    </div>
+    <p style="text-align: center; font-size: 14px; color: #555; margin-bottom: 20px;">Em qual empresa você está registrado?</p>
+
+    <button class="btn-empresa-select" onclick="entrarEmpresaFuncionario('FH CONSTRUÇÕES CIVIS')">🏢 FH CONSTRUÇÕES CIVIS</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresaFuncionario('OLIVEIRA DANTAS')">🏢 OLIVEIRA DANTAS</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresaFuncionario('MANUTENÇÃO')">🛠️ MANUTENÇÃO</button>
+    <button class="btn-empresa-select" onclick="entrarEmpresaFuncionario('PEDIU - CHEGOU')">📦 PEDIU - CHEGOU</button>
+    
+    <button class="btn-logout" onclick="voltarTelaInicial()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Voltar</button>
 </div>
 
 <div class="main-card" id="tela-patrao" style="display: none;">
@@ -686,8 +714,8 @@
 
     <div id="aba-ponto" class="view-section">
         <div style="background: #eef2f5; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Envie este link para os funcionários baterem o ponto no telemóvel deles:</p>
-            <button class="btn-gold" id="btnLinkPonto" style="margin: 0; padding: 10px; font-size: 13px;">Copiar Link do Relógio de Ponto</button>
+            <p style="font-size: 12px; margin: 0 0 10px 0; color: #555;">Este é o link oficial do sistema que a equipa deve usar:</p>
+            <button class="btn-gold" id="btnLinkPonto" style="margin: 0; padding: 10px; font-size: 13px;">Copiar Link do Sistema</button>
         </div>
 
         <label>Consultar Ponto do Funcionário:</label>
@@ -911,6 +939,8 @@
     <button class="btn-enviar" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
     
     <button class="btn-logout" style="margin-top: 15px; background: transparent; color: var(--dark-navy); text-decoration: underline; box-shadow: none;" onclick="esqueciSenha()">Esqueci a minha senha</button>
+    
+    <button class="btn-logout" onclick="voltarTelaInicial()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Voltar ao Início</button>
 </div>
 
 <div class="main-card" id="tela-relogio" style="display: none;">
@@ -984,20 +1014,22 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
     const LOGOS_EMPRESAS = {
-    "FH CONSTRUÇÕES CIVIS": "https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg",
-    "MANUTENÇÃO": "https://image2url.com/r2/default/images/1774579047667-4e0abef4-e2c7-4472-8d55-7ea75061c935.jpeg",
-    "OLIVEIRA DANTAS": "https://image2url.com/r2/default/images/1774579115875-510042b0-4e68-48a7-815f-aaa204278ab3.jpeg",
-    "PEDIU - CHEGOU": "https://image2url.com/r2/default/images/1774579143476-6e6d82b6-be5e-4e87-bf1f-0ab61d9e32bf.jpeg"
-};
-function atualizarLogoInterface(nomeEmpresa) {
-    const urlLogo = LOGOS_EMPRESAS[nomeEmpresa];
-    if (urlLogo) {
-        document.querySelectorAll('.logo-img').forEach(img => {
-            img.src = urlLogo;
-        });
-    }
-}
+        "FH CONSTRUÇÕES CIVIS": "https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg",
+        "MANUTENÇÃO": "https://image2url.com/r2/default/images/1774579047667-4e0abef4-e2c7-4472-8d55-7ea75061c935.jpeg",
+        "OLIVEIRA DANTAS": "https://image2url.com/r2/default/images/1774579115875-510042b0-4e68-48a7-815f-aaa204278ab3.jpeg",
+        "PEDIU - CHEGOU": "https://image2url.com/r2/default/images/1774579143476-6e6d82b6-be5e-4e87-bf1f-0ab61d9e32bf.jpeg"
+    };
+
+    window.atualizarLogoInterface = function(nomeEmpresa) {
+        const urlLogo = LOGOS_EMPRESAS[nomeEmpresa];
+        if (urlLogo) {
+            document.querySelectorAll('.logo-img').forEach(img => {
+                img.src = urlLogo;
+            });
+        }
+    };
 
     const firebaseConfig = {
         apiKey: "AIzaSyBKlQXW4JRrPxv_NcoG8Jq2-7KZZALrTuU",
@@ -1025,19 +1057,83 @@ function atualizarLogoInterface(nomeEmpresa) {
     }
     verificarStatusSistema();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const valeId = urlParams.get('id');
-    const isPonto = urlParams.get('ponto');
-    const empresaPontoURL = urlParams.get('empresa');
-
     window.listaFuncionarios = {};
     window.dadosExportacaoVales = [];
     window.dadosExportacaoPonto = [];
     window.dadosExportacaoDespesas = [];
 
+    // --- FUNÇÕES DE NAVEGAÇÃO INICIAL ---
+    window.escolherGestao = function() {
+        document.getElementById('tela-escolha-inicial').style.display = 'none';
+        document.getElementById('tela-selecao-empresa').style.display = 'block';
+    };
+
+    window.escolherFuncionario = function() {
+        document.getElementById('tela-escolha-inicial').style.display = 'none';
+        document.getElementById('tela-selecao-empresa-funcionario').style.display = 'block';
+    };
+
+    window.voltarTelaInicial = function() {
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        document.getElementById('tela-escolha-inicial').style.display = 'block';
+        atualizarLogoInterface("FH CONSTRUÇÕES CIVIS"); // Reseta a logo
+    };
+
+    window.entrarEmpresaFuncionario = function(nomeEmpresa) {
+        localStorage.setItem('empresaTemporariaFuncionario', nomeEmpresa);
+        atualizarLogoInterface(nomeEmpresa);
+        
+        document.getElementById('tela-selecao-empresa-funcionario').style.display = 'none';
+        document.getElementById('login-nome-empresa').innerText = nomeEmpresa;
+        document.getElementById('tela-login').style.display = 'block';
+    };
+
+    // --- ROTAS INICIAIS REFORMULADAS ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const valeId = urlParams.get('id');
+
+    const idLogado = localStorage.getItem('funcLogadoId');
+    const temSessaoGestor = localStorage.getItem('empresaGestor');
+
+    if (valeId) {
+        document.title = "ASSINATURA"; 
+        document.getElementById('tela-funcionario').style.display = 'block';
+        carregarValeParaAssinatura(valeId);
+    } else if (idLogado) {
+        document.title = "PONTO DIGITAL"; 
+        document.getElementById('tela-relogio').style.display = 'block';
+        document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
+        
+        const empFunc = localStorage.getItem('funcLogadoEmpresa');
+        if (empFunc) {
+            document.getElementById('relogio-nome-empresa').innerText = empFunc;
+            atualizarLogoInterface(empFunc);
+        }
+
+        if(!navigator.onLine) {
+            document.getElementById('alerta-offline').style.display = 'block';
+        }
+        sincronizarPontoOffline();
+    } else if (temSessaoGestor) {
+        document.title = "PORTAL GESTOR"; 
+        iniciarPainelGestor();
+    } else {
+        document.title = "BEM-VINDO"; 
+        document.getElementById('tela-escolha-inicial').style.display = 'block';
+    }
+
+    // --- EVENTOS OFFLINE/ONLINE ---
+    window.addEventListener('offline', () => { 
+        document.getElementById('alerta-offline').style.display = 'block'; 
+    });
+    
+    window.addEventListener('online', () => { 
+        document.getElementById('alerta-offline').style.display = 'none'; 
+        sincronizarPontoOffline(); 
+    });
+
     // --- LÓGICA DE LOGIN MULTI-TENANT (GESTOR) ---
- window.entrarEmpresa = async function(nomeEmpresa) {
-        // Pede a senha ao usuário antes de fazer qualquer coisa
+    window.entrarEmpresa = async function(nomeEmpresa) {
         const { value: senhaDigitada } = await Swal.fire({
             title: '🔐 Acesso Restrito',
             text: `Digite a senha para acessar o painel da ${nomeEmpresa}`,
@@ -1050,7 +1146,7 @@ function atualizarLogoInterface(nomeEmpresa) {
             cancelButtonColor: '#d9534f'
         });
 
-        if (!senhaDigitada) return; // Se ele cancelar ou não digitar nada, para aqui.
+        if (!senhaDigitada) return; 
 
         Swal.fire({
             title: 'A verificar...',
@@ -1060,15 +1156,12 @@ function atualizarLogoInterface(nomeEmpresa) {
         });
 
         try {
-            // Vai ao Firebase procurar a empresa e verificar a senha
             const q = query(collection(db, "empresas"), where("nome", "==", nomeEmpresa));
             const querySnapshot = await getDocs(q);
 
             let acessoLiberado = false;
 
             if (querySnapshot.empty) {
-                // Se não encontrar a empresa na coleção "empresas", significa que ainda não foi cadastrada lá.
-                // Como proteção inicial, se não houver senha no sistema, não deixa entrar.
                 Swal.fire('Erro', 'Esta empresa não tem uma senha cadastrada no sistema de segurança. Peça ao administrador para configurar.', 'error');
                 return;
             }
@@ -1081,7 +1174,6 @@ function atualizarLogoInterface(nomeEmpresa) {
             });
 
             if (acessoLiberado) {
-                // Se a senha bater com a do Firebase, o cadeado abre e a pessoa entra.
                 Swal.close();
                 localStorage.setItem('empresaGestor', nomeEmpresa);
                 iniciarPainelGestor();
@@ -1101,10 +1193,10 @@ function atualizarLogoInterface(nomeEmpresa) {
     };
 
     function iniciarPainelGestor() {
-    const empresaLogada = localStorage.getItem('empresaGestor');
-   atualizarLogoInterface(empresaLogada); 
-    document.getElementById('tela-selecao-empresa').style.display = 'none';
-    document.getElementById('tela-patrao').style.display = 'block';
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        atualizarLogoInterface(empresaLogada); 
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        document.getElementById('tela-patrao').style.display = 'block';
         document.getElementById('nome-empresa-painel').innerText = "🏢 " + empresaLogada;
         
         carregarListaDeFuncionarios();
@@ -1112,59 +1204,6 @@ function atualizarLogoInterface(nomeEmpresa) {
         document.getElementById('folha-mes').value = mesAtual;
         document.getElementById('backup-mes').value = mesAtual;
     }
-
-    // --- ROTAS INICIAIS ---
-    // Faz o sistema memorizar que este telemóvel é para bater ponto
-    if (isPonto) {
-        localStorage.setItem('modoPonto', 'true');
-        if (empresaPontoURL) localStorage.setItem('empresaPonto', empresaPontoURL);
-    }
-
-    const idLogado = localStorage.getItem('funcLogadoId');
-    const querPonto = isPonto || localStorage.getItem('modoPonto');
-
-    if (valeId) {
-        document.title = "ASSINATURA"; 
-        document.getElementById('tela-funcionario').style.display = 'block';
-        carregarValeParaAssinatura(valeId);
-    } else if (querPonto || idLogado) {
-        document.title = "PONTO DIGITAL"; 
-        
-        const empresaExibicao = empresaPontoURL || localStorage.getItem('empresaPonto') || localStorage.getItem('funcLogadoEmpresa');
-
-        if (empresaExibicao) {
-            document.getElementById('login-nome-empresa').innerText = empresaExibicao;
-            document.getElementById('relogio-nome-empresa').innerText = empresaExibicao;
-        }
-
-        if (idLogado) {
-            document.getElementById('tela-relogio').style.display = 'block';
-            document.getElementById('nome-logado').innerText = localStorage.getItem('funcLogadoNome');
-            if(!navigator.onLine) {
-                document.getElementById('alerta-offline').style.display = 'block';
-            }
-            sincronizarPontoOffline();
-        } else {
-            document.getElementById('tela-login').style.display = 'block';
-        }
-    } else {
-        document.title = "PORTAL GESTOR"; 
-        const temSessaoGestor = localStorage.getItem('empresaGestor');
-        if (temSessaoGestor) {
-            iniciarPainelGestor();
-        } else {
-            document.getElementById('tela-selecao-empresa').style.display = 'block';
-        }
-    }
-
-    window.addEventListener('offline', () => { 
-        document.getElementById('alerta-offline').style.display = 'block'; 
-    });
-    
-    window.addEventListener('online', () => { 
-        document.getElementById('alerta-offline').style.display = 'none'; 
-        sincronizarPontoOffline(); 
-    });
 
     const nomeMeses = { 
         "01": "Janeiro", "1": "Janeiro", 
@@ -1184,45 +1223,26 @@ function atualizarLogoInterface(nomeEmpresa) {
             if (!dataString) {
                 return { ano: 'Outros', mes: 'Outros', dia: '??' };
             }
-            
             let apenasData = String(dataString).trim().split(' ');
             let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
             let partes = textoLimpo.split(/[\/\-]/);
-            
             if (partes.length >= 3) {
                 let p1 = partes; 
                 let p2 = partes; 
                 let p3 = partes;
                 let ano, mes, dia;
-                
-                if (p3.length >= 4) { 
-                    ano = p3.substring(0, 4); 
-                    mes = p2; 
-                    dia = p1; 
-                } else if (p1.length >= 4) { 
-                    ano = p1.substring(0, 4); 
-                    mes = p2; 
-                    dia = p3; 
-                } else { 
-                    ano = "20" + p3; 
-                    mes = p2; 
-                    dia = p1; 
-                }
-                
+                if (p3.length >= 4) { ano = p3.substring(0, 4); mes = p2; dia = p1; } 
+                else if (p1.length >= 4) { ano = p1.substring(0, 4); mes = p2; dia = p3; } 
+                else { ano = "20" + p3; mes = p2; dia = p1; }
                 return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
             }
             return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
-        } catch(e) { 
-            return { ano: 'Outros', mes: 'Outros', dia: '??' }; 
-        }
+        } catch(e) { return { ano: 'Outros', mes: 'Outros', dia: '??' }; }
     }
 
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
-        if (value === "") { 
-            input.value = ""; 
-            return; 
-        }
+        if (value === "") { input.value = ""; return; }
         value = (value / 100).toFixed(2) + '';
         value = value.replace('.', ',');
         value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
@@ -1463,7 +1483,6 @@ window.carregarFiltrosDespesas = async function() {
             let pendentesArray = []; let agrupadoPagas = {};
 
             despesasArray.forEach((d) => {
-                // ESCUDO DE PROTEÇÃO PARA AS DESPESAS ANTIGAS APARECEREM NOVAMENTE
                 const nomeDaObraParaBusca = (d.obra_lower || d.obra_nome || "").toLowerCase();
                 const nomeDaLojaParaBusca = (d.loja_lower || d.loja_nome || "").toLowerCase();
 
@@ -1677,7 +1696,6 @@ window.exportarPDF = function(tipo) {
             return Swal.fire('Erro', 'Faça uma busca primeiro antes de exportar o PDF.', 'error');
         }
 
-        // 1. CABEÇALHO EXECUTIVO (Fundo Azul Marinho)
         doc.setFillColor(26, 42, 67); 
         doc.rect(0, 0, 297, 25, 'F');
         
@@ -1693,7 +1711,6 @@ window.exportarPDF = function(tipo) {
 
         let startY = 35;
 
-        // 2. DASHBOARD / CARTÕES DE RESUMO (Apenas para Despesas)
         if (tipo === 'despesas') {
             let totalPago = 0, totalPendente = 0;
             dados.forEach(d => {
@@ -1708,31 +1725,27 @@ window.exportarPDF = function(tipo) {
             doc.setFont("helvetica", "bold");
             doc.text("RESUMO DA BUSCA:", 14, 33);
 
-            // Bloco PAGO (Verde)
             doc.setFillColor(40, 167, 69);
             doc.rect(14, 36, 60, 12, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text(`PAGO: R$ ${totalPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 18, 44);
 
-            // Bloco PENDENTE (Vermelho)
             doc.setFillColor(217, 83, 79);
             doc.rect(78, 36, 60, 12, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text(`PENDENTE: R$ ${totalPendente.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 82, 44);
 
-            // Bloco TOTAL (Azul Marinho Claro)
             doc.setFillColor(238, 242, 245);
             doc.rect(142, 36, 60, 12, 'F');
             doc.setTextColor(26, 42, 67);
             doc.text(`TOTAL: R$ ${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 146, 44);
 
-            startY = 55; // Empurra a tabela para baixo
+            startY = 55; 
         }
 
         let head = []; 
         let body = [];
 
-        // 3. PREENCHIMENTO DA TABELA
         if (tipo === 'vales') {
             head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Valor (R$)', 'Tipo', 'Descrição', 'Assinatura']];
             dados.forEach(row => {
@@ -1765,7 +1778,6 @@ window.exportarPDF = function(tipo) {
             gerarTabela(doc, head, body, startY, 7);
         }
 
-        // Função interna blindada contra erros de cópia (usando HEX colors)
         function gerarTabela(documento, cabecalho, corpo, eixoY, imgIndex) {
             documento.autoTable({
                 startY: eixoY, 
@@ -1808,8 +1820,6 @@ window.exportarPDF = function(tipo) {
         doc.save(`relatorio_${tipo}_${empresaAtualNome}.pdf`.replace(/\s+/g, '_'));
     };
 
-    // --- NOVO MÓDULO: BACKUP E LIMPEZA DA NUVEM ---
-
     window.fazerBackupMes = async function() {
         const mesSelected = document.getElementById('backup-mes').value;
         const anoSelected = document.getElementById('backup-ano').value;
@@ -1819,7 +1829,6 @@ window.exportarPDF = function(tipo) {
         Swal.showLoading();
 
         try {
-            // Busca Vales
             const qVales = query(collection(db, "vales_sistema"), where("empresa_id", "==", empresaLogada));
             const snapVales = await getDocs(qVales);
             let valesHTML = "";
@@ -1835,7 +1844,6 @@ window.exportarPDF = function(tipo) {
                 }
             });
 
-            // Busca Ponto
             const qPonto = query(collection(db, "ponto_registros"), where("empresa_id", "==", empresaLogada));
             const snapPonto = await getDocs(qPonto);
             let pontoHTML = "";
@@ -1852,7 +1860,6 @@ window.exportarPDF = function(tipo) {
                 }
             });
 
-            // Busca Despesas
             const qDespesas = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const snapDespesas = await getDocs(qDespesas);
             let despesasHTML = "";
@@ -1873,7 +1880,6 @@ window.exportarPDF = function(tipo) {
                 return Swal.fire('Aviso', 'Não há dados registrados neste mês para fazer backup.', 'info');
             }
 
-            // Constrói o HTML final do Backup
             let backupContent = `
                 <html>
                 <head><meta charset="utf-8"><title>Backup - ${empresaLogada} - ${mesSelected}/${anoSelected}</title></head>
@@ -1893,7 +1899,6 @@ window.exportarPDF = function(tipo) {
                 </html>
             `;
 
-            // Faz o Download do arquivo HTML para abrir Offline
             const blob = new Blob([backupContent], { type: 'text/html' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -1929,7 +1934,6 @@ window.exportarPDF = function(tipo) {
                 try {
                     let deletados = 0;
 
-                    // Apaga Vales
                     const qVales = query(collection(db, "vales_sistema"), where("empresa_id", "==", empresaLogada));
                     const snapVales = await getDocs(qVales);
                     for (const docSnap of snapVales.docs) {
@@ -1940,7 +1944,6 @@ window.exportarPDF = function(tipo) {
                         }
                     }
 
-                    // Apaga Ponto
                     const qPonto = query(collection(db, "ponto_registros"), where("empresa_id", "==", empresaLogada));
                     const snapPonto = await getDocs(qPonto);
                     for (const docSnap of snapPonto.docs) {
@@ -1951,7 +1954,6 @@ window.exportarPDF = function(tipo) {
                         }
                     }
 
-                    // Apaga Despesas
                     const qDespesas = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
                     const snapDespesas = await getDocs(qDespesas);
                     for (const docSnap of snapDespesas.docs) {
@@ -2031,15 +2033,14 @@ window.exportarPDF = function(tipo) {
     window.fazerLogin = async function() {
         const cpf = document.getElementById('login-cpf').value; 
         const senha = document.getElementById('login-senha').value;
-        const urlParams = new URLSearchParams(window.location.search);
-        const empresaDaURL = urlParams.get('empresa');
+        const empresaEscolhida = localStorage.getItem('empresaTemporariaFuncionario');
         
         if (!cpf || !senha) {
             return Swal.fire('Atenção', 'Preencha o CPF e a Senha!', 'warning');
         }
         
-        if (!empresaDaURL) {
-            return Swal.fire('Atenção', 'Link de ponto inválido (Falta a Empresa). Peça um novo link ao patrão.', 'error');
+        if (!empresaEscolhida) {
+            return Swal.fire('Atenção', 'Empresa não selecionada. Volte ao início.', 'error');
         }
         
         Swal.fire({
@@ -2049,7 +2050,7 @@ window.exportarPDF = function(tipo) {
         Swal.showLoading();
         
         try {
-            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf), where("empresa_id", "==", empresaDaURL)); 
+            const q = query(collection(db, "funcionarios"), where("cpf", "==", cpf), where("empresa_id", "==", empresaEscolhida)); 
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) {
@@ -2068,7 +2069,7 @@ window.exportarPDF = function(tipo) {
                 await updateDoc(doc(db, "funcionarios", funcId), { senha: senha });
                 localStorage.setItem('funcLogadoId', funcId); 
                 localStorage.setItem('funcLogadoNome', funcData.nome);
-                localStorage.setItem('funcLogadoEmpresa', empresaDaURL); 
+                localStorage.setItem('funcLogadoEmpresa', empresaEscolhida); 
                 
                 Swal.fire('Senha Criada!', 'O seu utilizador foi ativado com sucesso.', 'success').then(() => {
                     location.reload();
@@ -2079,7 +2080,7 @@ window.exportarPDF = function(tipo) {
                 } else { 
                     localStorage.setItem('funcLogadoId', funcId); 
                     localStorage.setItem('funcLogadoNome', funcData.nome); 
-                    localStorage.setItem('funcLogadoEmpresa', empresaDaURL);
+                    localStorage.setItem('funcLogadoEmpresa', empresaEscolhida);
                     location.reload(); 
                 }
             }
@@ -2341,10 +2342,9 @@ window.exportarPDF = function(tipo) {
     }
 
     document.getElementById('btnLinkPonto').onclick = function() {
-        const empresaLogada = localStorage.getItem('empresaGestor');
-        const linkPonto = `${window.location.origin}${window.location.pathname}?ponto=true&empresa=${encodeURIComponent(empresaLogada)}`;
+        const linkPonto = `${window.location.origin}${window.location.pathname}`;
         navigator.clipboard.writeText(linkPonto);
-        Swal.fire('Link Copiado!', 'Envie este link para a equipe. Ele já tem a configuração da sua empresa.', 'success');
+        Swal.fire('Link Copiado!', 'O funcionário só precisa entrar no link e escolher a opção "SOU FUNCIONÁRIO".', 'success');
     };
 
     window.baterPonto = function(tipo) {
@@ -2551,207 +2551,6 @@ window.exportarPDF = function(tipo) {
         }
     };
 
-    document.getElementById('btnCadastrarFunc').onclick = async function() {
-        const nome = document.getElementById('c-nome').value; 
-        const cpf = document.getElementById('c-cpf').value; 
-        const tel = document.getElementById('c-tel').value;
-        const salario = document.getElementById('c-salario').value; 
-        const horaEntrada = document.getElementById('c-entrada').value; 
-        const horaSaida = document.getElementById('c-saida').value;
-        const empresaLogada = localStorage.getItem('empresaGestor'); 
-        
-        if (!nome || !tel || !cpf) {
-            return Swal.fire('Atenção', 'Preencha Nome, CPF e WhatsApp', 'warning');
-        }
-        
-        const btn = document.getElementById('btnCadastrarFunc'); 
-        btn.innerText = "⏳ A GUARDAR..."; 
-        btn.disabled = true;
-        
-        try {
-            await addDoc(collection(db, "funcionarios"), { 
-                empresa_id: empresaLogada, 
-                nome: nome, 
-                tel: tel, 
-                cpf: cpf, 
-                senha: "", 
-                salario: salario, 
-                hora_entrada: horaEntrada, 
-                hora_saida: horaSaida 
-            });
-            
-            Swal.fire('Sucesso!', 'Funcionário cadastrado.', 'success');
-            
-            document.getElementById('c-nome').value = ''; 
-            document.getElementById('c-cpf').value = ''; 
-            document.getElementById('c-tel').value = ''; 
-            document.getElementById('c-salario').value = '';
-            
-            carregarListaDeFuncionarios();
-            
-        } catch(e) { 
-            Swal.fire('Erro', 'Falha ao guardar.', 'error'); 
-        } finally { 
-            btn.innerText = "SALVAR FUNCIONÁRIO"; 
-            btn.disabled = false; 
-        }
-    };
-
-    document.getElementById('btnGerarLink').onclick = async function() {
-        const funcId = document.getElementById('p-func-select').value; 
-        const valorLimpo = document.getElementById('p-valor').value; 
-        const tipo = document.getElementById('p-tipo').value; 
-        const desc = document.getElementById('p-desc').value || 'Não informada';
-        const empresaLogada = localStorage.getItem('empresaGestor'); 
-        
-        if (!funcId || !valorLimpo) {
-            return Swal.fire('Atenção', 'Preencha tudo!', 'warning');
-        }
-        
-        const btn = document.getElementById('btnGerarLink'); 
-        btn.innerText = "⏳ A GERAR..."; 
-        btn.disabled = true;
-        
-        const funcionario = window.listaFuncionarios[funcId]; 
-        const dataObj = new Date(); 
-        
-        const diaStr = String(dataObj.getDate()).padStart(2, '0'); 
-        const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0'); 
-        const anoStr = dataObj.getFullYear();
-        
-        const dataAtual = `${diaStr}/${mesStr}/${anoStr}`; 
-        const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
-
-        let textoCompleto = tipo === 'Dinheiro' 
-        ? `Eu, <b>${funcionario.nome}</b>, recebi da empresa <b>${empresaLogada}</b> a quantia de <b>R$ ${valorLimpo}</b>, referente a <b>${desc}</b>.` 
-        : `Eu, <b>${funcionario.nome}</b>, adquiri da empresa <b>${empresaLogada}</b> o seguinte produto: <b>${desc}</b>, no valor total de <b>R$ ${valorLimpo}</b>.`;
-
-        try {
-            const docRef = await addDoc(collection(db, "vales_sistema"), { 
-                empresa_id: empresaLogada, 
-                funcionario_id: funcId, 
-                nome: funcionario.nome, 
-                tel: funcionario.tel, 
-                valor: valorLimpo, 
-                tipo: tipo, 
-                descricao: desc, 
-                texto: textoCompleto, 
-                data_criacao: dataAtual, 
-                hora_criacao: horaAtual, 
-                timestamp: dataObj.getTime(), 
-                status: "pendente", 
-                assinatura: null 
-            });
-            
-            const linkUnico = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            const msgZap = `*${empresaLogada}*\nOlá ${funcionario.nome}, o seu documento referente a (R$ ${valorLimpo}) foi gerado.\n\nAssine digitalmente:\n${linkUnico}`;
-            
-            Swal.fire('Link Gerado!', 'O WhatsApp será aberto.', 'success').then(() => { 
-                window.location.href = `https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgZap)}`; 
-                btn.innerText = "GERAR VALE E ENVIAR LINK"; 
-                btn.disabled = false; 
-            });
-            
-        } catch(e) { 
-            Swal.fire('Erro', 'Falha na geração.', 'error'); 
-            btn.innerText = "GERAR VALE E ENVIAR LINK"; 
-            btn.disabled = false; 
-        }
-    };
-
-    window.buscarVales = async function() {
-        const funcId = document.getElementById('b-func-select').value;
-        
-        if (!funcId) {
-            return Swal.fire('Atenção', 'Selecione.', 'warning');
-        }
-        
-        const divLista = document.getElementById('lista-resultados'); 
-        const btnExportar = document.getElementById('btnExportarVales');
-        
-        divLista.innerHTML = "A procurar..."; 
-        btnExportar.style.display = 'none'; 
-        window.dadosExportacaoVales = [];
-        
-        try {
-            const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
-            const querySnapshot = await getDocs(q);
-            
-            if (querySnapshot.empty) { 
-                divLista.innerHTML = `<p style="color:#d9534f; text-align:center; font-weight:bold;">Nenhum recibo assinado.</p>`; 
-                return; 
-            }
-            
-            window.valesEncontrados = {}; 
-            let agrupado = {};
-            
-            querySnapshot.forEach((docSnap) => {
-                const dados = docSnap.data(); 
-                window.valesEncontrados[docSnap.id] = dados; 
-                window.dadosExportacaoVales.push(dados); 
-                
-                const { ano, mes, dia } = separarDataSegura(dados.data_criacao || dados.data);
-                
-                if (!agrupado[ano]) {
-                    agrupado[ano] = {}; 
-                }
-                
-                if (!agrupado[ano][mes]) {
-                    agrupado[ano][mes] = [];
-                }
-                
-                agrupado[ano][mes].push({ id: docSnap.id, diaFormatado: dia, ...dados });
-            });
-
-            btnExportar.style.display = 'block'; 
-            let htmlFinal = "";
-            
-            let chavesAno = Object.keys(agrupado).sort((a, b) => { 
-                if (a === 'Outros') return 1; 
-                if (b === 'Outros') return -1; 
-                return Number(b) - Number(a); 
-            });
-
-            chavesAno.forEach(ano => {
-                htmlFinal += `<details class="pasta-ano" open><summary>Ano ${ano}</summary><div class="folder-content">`;
-                
-                let chavesMes = Object.keys(agrupado[ano]).sort((a, b) => { 
-                    if (a === 'Outros') return 1; 
-                    if (b === 'Outros') return -1; 
-                    return Number(b) - Number(a); 
-                });
-                
-                chavesMes.forEach(mes => {
-                    const nomeDoMes = nomeMeses[mes] || mes;
-                    htmlFinal += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
-                    
-                    agrupado[ano][mes].sort((a, b) => { 
-                        return (b.timestamp || 0) - (a.timestamp || 0); 
-                    }).forEach(vale => {
-                        const horaExibicao = vale.hora_criacao ? ` às ${vale.hora_criacao}` : "";
-                        const dataExibicao = vale.data_criacao || vale.data || vale.diaFormatado;
-                        
-                        htmlFinal += `
-                            <div class="resultado-item">
-                                <b style="color:var(--dark-navy);">Dia:</b> ${dataExibicao}${horaExibicao} <br>
-                                <b style="color:var(--dark-navy);">Valor:</b> R$ ${vale.valor} <br>
-                                <button class="btn-pdf" onclick="gerarEnviarPDF('${vale.id}')">📄 BAIXAR PDF OFICIAL</button>
-                            </div>`;
-                    });
-                    
-                    htmlFinal += `</div></details>`;
-                });
-                
-                htmlFinal += `</div></details>`;
-            });
-            
-            divLista.innerHTML = htmlFinal;
-            
-        } catch(e) { 
-            divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
-        }
-    };
-
     window.gerarEnviarPDF = async function(id) {
         const dados = window.valesEncontrados[id]; 
         const empresaLogada = dados.empresa_id || "Empresa";
@@ -2916,7 +2715,7 @@ window.exportarPDF = function(tipo) {
         }
     };
 
-    // BLOQUEIO ANTI-CÓPIA (Pega-Curioso)
+    // BLOQUEIO ANTI-CÓPIA
     document.addEventListener('contextmenu', event => event.preventDefault());
     
     document.onkeydown = function (e) { 
@@ -2926,14 +2725,6 @@ window.exportarPDF = function(tipo) {
             return false; 
         } 
     };
-
-// --- ADICIONE NO FINAL DO SCRIPT ---
-const urlParamsLogo = new URLSearchParams(window.location.search);
-const empresaURL = urlParamsLogo.get('empresa');
-if (empresaURL) {
-    atualizarLogoInterface(empresaURL);
-}
-// ----------------------------------
 </script>
 </body>
 </html>
