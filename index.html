@@ -20,6 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
     <style>
@@ -878,6 +879,16 @@
                     <p style="text-align: center; color: #888; font-size: 13px;">Selecione uma etiqueta acima ou digite para procurar.</p>
                 </div>
             </div>
+<details>
+            <summary style="background: #eef2f5;">📊 Resumo de Gastos (Obra x Fornecedor)</summary>
+            <div style="padding: 15px;">
+                <p style="font-size: 13px; color: #555; text-align: justify;">Esta tabela cruza os dados das Obras e Lojas. Ela soma tudo o que está pendente e o que já foi pago para cada fornecedor.</p>
+                <button class="btn-enviar" style="margin-top: 5px;" onclick="gerarResumoFornecedores()">GERAR TABELA DE RESUMO</button>
+                
+                <div id="tabela-resumo-fornecedores" style="margin-top: 20px; overflow-x: auto;">
+                    </div>
+            </div>
+        </details>
         </details>
     </div>
 
@@ -1595,13 +1606,150 @@ window.carregarFiltrosDespesas = async function() {
         } catch (e) { divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`; }
     };
 
-    window.excluirDespesa = async function(id) {
+        window.excluirDespesa = async function(id) {
         Swal.fire({ title: 'Apagar?', text: "Remover permanentemente?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d9534f', confirmButtonText: 'Sim, apagar!' }).then(async (result) => {
             if (result.isConfirmed) { try { await deleteDoc(doc(db, "despesas_obras", id)); Swal.fire('Apagado!', 'Removido.', 'success'); buscarDespesasObra(); carregarFiltrosDespesas(); } catch (e) { Swal.fire('Erro', 'Não foi possível apagar.', 'error'); } }
         });
     };
 
-    window.salvarTerceiro = async function() {
+        window.gerarResumoFornecedores = async function() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        const divTabela = document.getElementById('tabela-resumo-fornecedores');
+        
+        divTabela.innerHTML = '<p style="text-align: center; color: #888; font-size: 13px;">⏳ A calcular saldos e gerar gráficos...</p>';
+        
+        try {
+            const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                divTabela.innerHTML = '<p style="text-align: center; color: #d9534f; font-weight: bold;">Nenhuma despesa registada no sistema.</p>';
+                return;
+            }
+            
+            // Variáveis para Tabela e Gráfico
+            let resumo = {}; 
+            let grafFornecedores = {}; 
+            
+            querySnapshot.forEach(doc => {
+                const d = doc.data();
+                const obra = d.obra_nome ? d.obra_nome.toUpperCase() : 'NÃO INFORMADA';
+                const loja = d.loja_nome ? d.loja_nome.toUpperCase() : 'NÃO INFORMADO';
+                const valor = d.valor_numero || 0;
+                const status = d.status || 'pendente';
+                
+                // Estrutura para a tabela (Obra > Loja)
+                if (!resumo[obra]) resumo[obra] = {};
+                if (!resumo[obra][loja]) resumo[obra][loja] = { pendente: 0, pago: 0 };
+                // Estrutura para o gráfico (Apenas Loja)
+                if (!grafFornecedores[loja]) grafFornecedores[loja] = { pendente: 0, pago: 0 };
+                
+                if (status === 'pago') {
+                    resumo[obra][loja].pago += valor;
+                    grafFornecedores[loja].pago += valor;
+                } else {
+                    resumo[obra][loja].pendente += valor;
+                    grafFornecedores[loja].pendente += valor;
+                }
+            });
+            
+            // Montar o Gráfico (Canvas) e a Tabela
+            let html = `
+            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e0e6ed; margin-bottom: 20px;">
+                <h4 style="text-align: center; color: var(--dark-navy); margin-top: 0; margin-bottom: 15px;">📊 Dívida por Fornecedor (Todas as Obras)</h4>
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="graficoFornecedores"></canvas>
+                </div>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <thead>
+                    <tr style="background: var(--dark-navy); color: white; text-align: left;">
+                        <th style="padding: 12px; border: 1px solid #121e30;">🏢 Obra</th>
+                        <th style="padding: 12px; border: 1px solid #121e30;">🏪 Fornecedor</th>
+                        <th style="padding: 12px; border: 1px solid #121e30; text-align: right;">⚠️ A Pagar</th>
+                        <th style="padding: 12px; border: 1px solid #121e30; text-align: right;">✅ Já Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            let totalGeralPendente = 0;
+            let totalGeralPago = 0;
+            
+            // Preencher Tabela
+            Object.keys(resumo).sort().forEach(obra => {
+                Object.keys(resumo[obra]).sort().forEach(loja => {
+                    let valPendente = resumo[obra][loja].pendente;
+                    let valPago = resumo[obra][loja].pago;
+                    
+                    totalGeralPendente += valPendente;
+                    totalGeralPago += valPago;
+                    
+                    let corPendente = valPendente > 0 ? 'color: #d9534f; font-weight: bold;' : 'color: #aaa;';
+                    let corPago = valPago > 0 ? 'color: #28a745; font-weight: bold;' : 'color: #aaa;';
+                    
+                    html += `
+                    <tr style="border-bottom: 1px solid #e0e6ed;">
+                        <td style="padding: 12px; border: 1px solid #e0e6ed; color: var(--dark-navy); font-weight: 600;">${obra}</td>
+                        <td style="padding: 12px; border: 1px solid #e0e6ed;">${loja}</td>
+                        <td style="padding: 12px; border: 1px solid #e0e6ed; text-align: right; ${corPendente}">${formatarMoeda(valPendente)}</td>
+                        <td style="padding: 12px; border: 1px solid #e0e6ed; text-align: right; ${corPago}">${formatarMoeda(valPago)}</td>
+                    </tr>
+                    `;
+                });
+            });
+            
+            html += `
+                </tbody>
+                <tfoot style="background: #eef2f5; font-weight: bold;">
+                    <tr>
+                        <td colspan="2" style="padding: 12px; border: 1px solid #ccc; text-align: right;">TOTAL GERAL DE TODAS AS OBRAS:</td>
+                        <td style="padding: 12px; border: 1px solid #ccc; text-align: right; color: #d9534f;">${formatarMoeda(totalGeralPendente)}</td>
+                        <td style="padding: 12px; border: 1px solid #ccc; text-align: right; color: #28a745;">${formatarMoeda(totalGeralPago)}</td>
+                    </tr>
+                </tfoot>
+            </table>`;
+            
+            divTabela.innerHTML = html;
+            
+            // Renderizar o Gráfico após o HTML ser inserido
+            setTimeout(() => {
+                const ctx = document.getElementById('graficoFornecedores').getContext('2d');
+                if (window.graficoResumo) window.graficoResumo.destroy(); // Limpa gráfico antigo se existir
+                
+                window.graficoResumo = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(grafFornecedores),
+                        datasets: [
+                            { 
+                                label: '⚠️ A Pagar (R$)', 
+                                data: Object.values(grafFornecedores).map(v => v.pendente), 
+                                backgroundColor: '#d9534f' 
+                            },
+                            { 
+                                label: '✅ Já Pago (R$)', 
+                                data: Object.values(grafFornecedores).map(v => v.pago), 
+                                backgroundColor: '#28a745' 
+                            }
+                        ]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }, 100);
+            
+        } catch (error) {
+            console.error(error);
+            divTabela.innerHTML = '<p style="text-align: center; color: #d9534f;">Erro ao gerar o resumo. Tente novamente.</p>';
+        }
+    };
+        
+        window.salvarTerceiro = async function() {
         const nome = document.getElementById('t-nome').value.trim();
         const cpf = document.getElementById('t-cpf').value.trim();
         const tel = document.getElementById('t-tel').value.trim();
@@ -2292,7 +2440,7 @@ window.exportarPDF = function(tipo) {
         }
     };
 
-        document.getElementById('btnCadastrarFunc').onclick = async function() {
+       document.getElementById('btnCadastrarFunc').onclick = async function() {
         const nome = document.getElementById('c-nome').value.trim();
         const cpf = document.getElementById('c-cpf').value.trim();
         const salario = document.getElementById('c-salario').value.trim();
