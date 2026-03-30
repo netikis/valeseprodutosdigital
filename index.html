@@ -649,6 +649,8 @@
 
         <label>WhatsApp (com DDD)</label>
         <input type="number" id="c-tel" placeholder="Apenas números">
+        <label>Chave PIX</label>
+        <input type="text" id="c-pix" placeholder="CPF, Celular, Email ou Aleatória">
 
         <label style="margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Jornada de Trabalho Padrão</label>
         <div style="display: flex; gap: 10px;">
@@ -2155,7 +2157,7 @@ window.exportarPDF = function(tipo) {
                         <div>
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
-                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'}</span>
+                            <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'}</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
@@ -2290,6 +2292,58 @@ window.exportarPDF = function(tipo) {
         }
     };
 
+        document.getElementById('btnCadastrarFunc').onclick = async function() {
+        const nome = document.getElementById('c-nome').value.trim();
+        const cpf = document.getElementById('c-cpf').value.trim();
+        const salario = document.getElementById('c-salario').value.trim();
+        const tel = document.getElementById('c-tel').value.trim();
+        const pix = document.getElementById('c-pix') ? document.getElementById('c-pix').value.trim() : '';
+        const entrada = document.getElementById('c-entrada').value;
+        const saida = document.getElementById('c-saida').value;
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        if (!nome || !cpf) {
+            return Swal.fire('Atenção', 'Preencha pelo menos o Nome e o CPF!', 'warning');
+        }
+
+        const btn = document.getElementById('btnCadastrarFunc');
+        btn.innerText = "⏳ A SALVAR...";
+        btn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "funcionarios"), {
+                empresa_id: empresaLogada,
+                nome: nome,
+                cpf: cpf,
+                salario: salario,
+                tel: tel,
+                pix: pix,
+                hora_entrada: entrada,
+                hora_saida: saida,
+                senha: "" // Senha vazia para ele criar no 1º acesso
+            });
+            
+            Swal.fire('Sucesso!', 'Funcionário cadastrado na equipa.', 'success');
+            
+            // Limpa os campos
+            document.getElementById('c-nome').value = '';
+            document.getElementById('c-cpf').value = '';
+            document.getElementById('c-salario').value = '';
+            document.getElementById('c-tel').value = '';
+            if(document.getElementById('c-pix')) document.getElementById('c-pix').value = '';
+            
+            // Recarrega a lista na hora
+            carregarListaDeFuncionarios();
+            
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível cadastrar o funcionário.', 'error');
+        } finally {
+            btn.innerText = "SALVAR FUNCIONÁRIO";
+            btn.disabled = false;
+        }
+    };
+
      window.editarFuncionario = function(id) {
         const func = window.listaFuncionarios[id];
         if (!func) return;
@@ -2306,6 +2360,9 @@ window.exportarPDF = function(tipo) {
                     
                     <label style="margin-top: 10px;">Telefone:</label>
                     <input id="edit-f-tel" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.tel || ''}">
+                    
+                    <label style="margin-top: 10px;">Chave PIX:</label>
+                    <input id="edit-f-pix" type="text" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.pix || ''}">
                 </div>
             `,
             showCancelButton: true,
@@ -2317,7 +2374,8 @@ window.exportarPDF = function(tipo) {
                 return {
                     nome: document.getElementById('edit-f-nome').value.trim(),
                     salario: document.getElementById('edit-f-salario').value.trim(),
-                    tel: document.getElementById('edit-f-tel').value.trim()
+                    tel: document.getElementById('edit-f-tel').value.trim(),
+                    pix: document.getElementById('edit-f-pix').value.trim()
                 }
             }
         }).then(async (result) => {
