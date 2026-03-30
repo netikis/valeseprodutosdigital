@@ -2159,6 +2159,7 @@ window.exportarPDF = function(tipo) {
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
+                            <button style="background: #4285F4; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold;" onclick="editarFuncionario('${func.id}')">✏️ Editar</button>
                             <button class="btn-excluir" onclick="excluirFuncionario('${func.id}', '${func.nome}')">🗑️ Excluir</button>
                         </div>
                     </div>`;
@@ -2289,6 +2290,48 @@ window.exportarPDF = function(tipo) {
         }
     };
 
+     window.editarFuncionario = function(id) {
+        const func = window.listaFuncionarios[id];
+        if (!func) return;
+
+        Swal.fire({
+            title: '✏️ Editar Funcionário',
+            html: `
+                <div style="text-align: left; font-size: 13px;">
+                    <label style="margin-top: 10px;">Nome Completo:</label>
+                    <input id="edit-f-nome" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.nome || ''}">
+                    
+                    <label style="margin-top: 10px;">Salário (R$):</label>
+                    <input id="edit-f-salario" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.salario || ''}" oninput="mascaraMoeda(this)">
+                    
+                    <label style="margin-top: 10px;">Telefone:</label>
+                    <input id="edit-f-tel" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.tel || ''}">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#1a2a43',
+            cancelButtonColor: '#d9534f',
+            confirmButtonText: 'SALVAR',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                return {
+                    nome: document.getElementById('edit-f-nome').value.trim(),
+                    salario: document.getElementById('edit-f-salario').value.trim(),
+                    tel: document.getElementById('edit-f-tel').value.trim()
+                }
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await updateDoc(doc(db, "funcionarios", id), result.value);
+                    Swal.fire('Atualizado!', 'Os dados do funcionário foram alterados.', 'success');
+                    carregarListaDeFuncionarios();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível editar.', 'error');
+                }
+            }
+        });
+    };
     window.resetarSenhaFuncionario = async function(id, nome) {
         Swal.fire({
             title: 'Resetar Senha?', 
@@ -2500,6 +2543,7 @@ window.exportarPDF = function(tipo) {
             let agrupado = {};
             querySnapshot.forEach((doc) => {
                 const dados = doc.data(); 
+                dados.id = doc.id;
                 window.dadosExportacaoPonto.push(dados); 
                 
                 dados.linkMaps = "https://www.google.com/maps?q=" + dados.latitude + "," + dados.longitude;    
@@ -2550,8 +2594,9 @@ window.exportarPDF = function(tipo) {
                             <div class="resultado-item" style="border-left-color: ${cor}">
                                 ${fotoThumb}
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
-                                <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
+                               <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
                                 <button class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                                <button onclick="excluirPonto('${dados.id}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">🗑️ APAGAR PONTO</button>
                             </div>`;
                     });
                     
@@ -2566,6 +2611,28 @@ window.exportarPDF = function(tipo) {
         } catch(e) { 
             divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao organizar.</p>`; 
         }
+    };
+
+     window.excluirPonto = function(id) {
+        Swal.fire({
+            title: 'Excluir Ponto?',
+            text: "Certeza que deseja apagar este registo de ponto? Esta ação afeta a folha de pagamento.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, apagar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "ponto_registros", id));
+                    Swal.fire('Apagado!', 'O registo de ponto foi removido.', 'success');
+                    buscarPonto(); // Atualiza a lista na tela na hora
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível excluir o ponto.', 'error');
+                }
+            }
+        });
     };
 
     window.gerarEnviarPDF = async function(id) {
