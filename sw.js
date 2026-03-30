@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fh-gestao-v2';
+const CACHE_NAME = 'fh-gestao-v3';
 const urlsToCache = [
   './',
   './index.html',
