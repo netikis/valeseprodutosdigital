@@ -2502,7 +2502,7 @@ window.exportarPDF = function(tipo) {
                 const dados = doc.data(); 
                 window.dadosExportacaoPonto.push(dados); 
                 
-                dados.linkMaps = `https://maps.google.com/?q=...{dados.latitude},${dados.longitude}`;
+                dados.linkMaps = `https://www.google.com/maps/search/?api=1&query=${dados.latitude},${dados.longitude}`;
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
