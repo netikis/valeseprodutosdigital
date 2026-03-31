@@ -1487,7 +1487,7 @@ window.carregarFiltrosDespesas = async function() {
         });
     };
 
-    window.buscarDespesasObra = async function() {
+ window.buscarDespesasObra = async function() {
         const termoBusca = document.getElementById('busca-obra').value.trim().toLowerCase();
         const empresaLogada = localStorage.getItem('empresaGestor');
         
@@ -1506,8 +1506,9 @@ window.carregarFiltrosDespesas = async function() {
             const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaLogada));
             const querySnapshot = await getDocs(q);
 
-            let htmlPendentes = ""; let htmlPagas = "";
-            let somaPendentes = 0; let somaPagas = 0; let encontrou = false;
+            // Criamos variáveis separadas para Vencidas e A Vencer
+            let htmlVencidas = ""; let htmlAVencer = ""; let htmlPagas = "";
+            let somaVencidas = 0; let somaAVencer = 0; let somaPagas = 0; let encontrou = false;
             
             let despesasArray = [];
             querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
@@ -1523,7 +1524,6 @@ window.carregarFiltrosDespesas = async function() {
                     encontrou = true; window.dadosExportacaoDespesas.push(d);
 
                     if (d.status === "pendente" || !d.status) {
-                        somaPendentes += (d.valor_numero || 0);
                         pendentesArray.push(d);
                     } else if (d.status === "pago") {
                         somaPagas += (d.valor_numero || 0);
@@ -1546,16 +1546,39 @@ window.carregarFiltrosDespesas = async function() {
                 return dataVenc;
             }
 
+            // Capturamos a data de hoje (zerando as horas para comparar só o dia)
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+
             pendentesArray.forEach(d => {
                 const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
-                htmlPendentes += `
-                    <div class="resultado-item" style="border-left-color: #d9534f;">
+                
+                // Lógica para descobrir se a nota está vencida
+                let isVencida = false;
+                if (d.data_vencimento) {
+                    const partesVenc = d.data_vencimento.split('-');
+                    if (partesVenc.length === 3) {
+                        const dataVencObj = new Date(partesVenc, partesVenc - 1, partesVenc);
+                        if (dataVencObj < hoje) {
+                            isVencida = true;
+                        }
+                    }
+                }
+
+                // Ajusta as cores e textos dependendo se está vencida ou não
+                const corBorda = isVencida ? '#dc3545' : '#ffc107'; // Vermelho ou Amarelo
+                const corTexto = isVencida ? '#dc3545' : '#856404';
+                const badgeFundo = isVencida ? '#f8d7da' : '#fff3cd';
+                const textoBadge = isVencida ? '⚠️ VENCIDA' : '⏳ A VENCER';
+
+                const cardHtml = `
+                    <div class="resultado-item" style="border-left-color: ${corBorda};">
                         ${fotoHtml}
-                        <b style="color: #d9534f; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">PENDENTE</span><br>
+                        <b style="color: ${corBorda}; font-size: 16px;">R$ ${d.valor_string}</b> <span style="font-size: 10px; background: ${badgeFundo}; color: ${corTexto}; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold;">${textoBadge}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
-                        <span style="font-size: 13px; color: #d9534f;"><b>Vencimento:</b> ${formatarVencimento(d.data_vencimento)}</span><br>
+                        <span style="font-size: 13px; color: ${corTexto};"><b>Vencimento:</b> ${formatarVencimento(d.data_vencimento)}</span><br>
                         <span style="font-size: 12px; color: #888;">Inserido em: ${d.data}</span>
                         <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
                         <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
@@ -1564,6 +1587,14 @@ window.carregarFiltrosDespesas = async function() {
                             <button onclick="excluirDespesa('${d.id}')" style="background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 12px; transition: 0.3s;">🗑️ EXCLUIR</button>
                         </div>
                     </div>`;
+
+                if (isVencida) {
+                    somaVencidas += (d.valor_numero || 0);
+                    htmlVencidas += cardHtml;
+                } else {
+                    somaAVencer += (d.valor_numero || 0);
+                    htmlAVencer += cardHtml;
+                }
             });
 
             let chavesAno = Object.keys(agrupadoPagas).sort((a, b) => { if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); });
@@ -1592,18 +1623,23 @@ window.carregarFiltrosDespesas = async function() {
                 }); htmlPagas += `</div></details>`;
             });
 
+            // Atualiza o painel amarelo de resumo dividindo Vencido, a Vencer e Pago
             document.getElementById('total-gasto-display').innerHTML = `
                 <div style="display:flex; justify-content:space-around; text-align:center;">
-                    <div><span style="font-size:12px; color:#856404; font-weight:bold;">A Pagar (Pendente)</span><br><b style="color:#d9534f; font-size: 18px;">${formatarMoeda(somaPendentes)}</b></div>
-                    <div><span style="font-size:12px; color:#155724; font-weight:bold;">Já Pago (Histórico)</span><br><b style="color:#28a745; font-size: 18px;">${formatarMoeda(somaPagas)}</b></div>
+                    <div><span style="font-size:12px; color:#d9534f; font-weight:bold;">Atrasado</span><br><b style="color:#d9534f; font-size: 16px;">${formatarMoeda(somaVencidas)}</b></div>
+                    <div><span style="font-size:12px; color:#856404; font-weight:bold;">A Vencer</span><br><b style="color:#856404; font-size: 16px;">${formatarMoeda(somaAVencer)}</b></div>
+                    <div><span style="font-size:12px; color:#155724; font-weight:bold;">Já Pago</span><br><b style="color:#28a745; font-size: 16px;">${formatarMoeda(somaPagas)}</b></div>
                 </div>
                 <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px; text-align:center;">
-                    <span style="font-size:13px; color:#555;">Total Global da Obra/Loja:</span> <b style="font-size: 16px; color: var(--dark-navy);">${formatarMoeda(somaPendentes + somaPagas)}</b>
+                    <span style="font-size:13px; color:#555;">Total Global da Obra/Loja:</span> <b style="font-size: 16px; color: var(--dark-navy);">${formatarMoeda(somaVencidas + somaAVencer + somaPagas)}</b>
                 </div>
             `;
             
             divTotal.style.display = 'block'; if (btnExportar) btnExportar.style.display = 'block'; divLista.innerHTML = "";
-            if (htmlPendentes !== "") divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 5px;">⚠️ Contas Pendentes</h4>` + htmlPendentes;
+            
+            // Renderiza na tela em três seções diferentes
+            if (htmlVencidas !== "") divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">🔴 Contas Vencidas (Atrasadas)</h4>` + htmlVencidas;
+            if (htmlAVencer !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #ffc107; border-bottom: 2px solid #ffc107; padding-bottom: 5px;">🟡 Contas a Vencer (No Prazo)</h4>` + htmlAVencer;
             if (htmlPagas !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">✅ Histórico de Contas Pagas</h4>` + htmlPagas;
 
         } catch (e) { divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`; }
