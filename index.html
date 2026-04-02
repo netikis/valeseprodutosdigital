@@ -580,8 +580,32 @@
     </div>
     <p style="font-size: 14px; color: #555; margin-bottom: 25px;">Selecione o seu tipo de acesso para continuar:</p>
 
+    <button class="btn-enviar" onclick="abrirTelaPedidoMaterial()" style="background: #4285F4; margin-bottom: 10px;">📦 PEDIR MATERIAL</button>
+
     <button class="btn-enviar" onclick="escolherGestao()">👔 GESTÃO RH / GESTOR</button>
     <button class="btn-gold" onclick="escolherFuncionario()" style="background: #28a745; color: white;">📍 SOU FUNCIONÁRIO - BATER PONTO</button>
+</div>
+
+<div class="main-card login-card" id="tela-pedido-material" style="display: none;">
+    <div class="header-logo">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" class="logo-img">
+        <div class="title-top">Pedido de Material</div>
+    </div>
+    
+    <p style="text-align: center; font-size: 13px; color: #555;">Preencha os dados abaixo para solicitar materiais para sua equipe/obra.</p>
+
+    <label>Seu Nome (Funcionário)</label>
+    <input type="text" id="pm-nome" placeholder="Digite seu nome">
+    
+    <label>Nome da Equipe ou Obra</label>
+    <input type="text" id="pm-equipe" placeholder="Ex: Equipe Pintura, Obra Centro...">
+    
+    <label>Materiais Necessários</label>
+    <textarea id="pm-desc" rows="4" placeholder="Descreva os materiais e as quantidades. Ex: 2 latas de tinta branca, 5 pincéis..."></textarea>
+
+    <button class="btn-entrada" onclick="enviarPedidoMaterial()">ENVIAR PEDIDO</button>
+    
+    <button class="btn-logout" onclick="voltarTelaInicial()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Cancelar e Voltar</button>
 </div>
 
 <div class="main-card login-card" id="tela-selecao-empresa" style="display: none;">
@@ -631,6 +655,7 @@
         <div class="tab" style="background: #eef2f5; color: #1a2a43; border: 1px solid #1a2a43;" onclick="mudarAba('terceiros', this)">👷 Terceiros</div>
         <div class="tab tab-despesas" onclick="mudarAba('despesas', this)">📉 Despesas</div>
         <div class="tab" style="background: #1a2a43; color: white;" onclick="mudarAba('backup', this)">💾 Backup</div>
+        <div class="tab" onclick="mudarAba('pedidos', this)">📦 Pedidos Materiais</div>
     </div>
 
     <div id="aba-cadastrar" class="view-section active">
@@ -931,6 +956,18 @@
         </div>
     </div>
 
+    <div id="aba-pedidos" class="view-section">
+        <div style="background: #eef2f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #1a2a43;">
+            <h3 style="margin: 0; color: var(--dark-navy);">Gerenciamento de Materiais</h3>
+            <p style="font-size: 12px; color: #555; margin-top: 5px;">Acompanhe os pedidos feitos pelas equipes.</p>
+            <button class="btn-gold" onclick="buscarPedidosMaterial()" style="margin-top: 10px; padding: 10px;">🔄 ATUALIZAR LISTA</button>
+        </div>
+
+        <div id="lista-pedidos-resultados">
+            <p style="text-align: center; color: #888; font-size: 13px;">Clique em "Atualizar Lista" para ver os pedidos.</p>
+        </div>
+    </div>
+
     <button class="btn-logout" onclick="sairPainelGestor()" style="background: transparent; border: 1px solid #ccc; color: #666; margin-top: 40px;">⬅️ Trocar de Empresa (Sair)</button>
 </div>
 
@@ -1205,7 +1242,7 @@
         location.reload();
     };
 
-    function iniciarPainelGestor() {
+   function iniciarPainelGestor() {
         const empresaLogada = localStorage.getItem('empresaGestor');
         atualizarLogoInterface(empresaLogada); 
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
@@ -1216,6 +1253,13 @@
         const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
         document.getElementById('folha-mes').value = mesAtual;
         document.getElementById('backup-mes').value = mesAtual;
+        
+        // CORREÇÃO: Aguardar a tela e as funções carregarem antes de puxar o alerta
+        setTimeout(() => {
+            if (typeof window.checarNovosPedidosManutencao === "function") {
+                window.checarNovosPedidosManutencao();
+            }
+        }, 800);
     }
 
     const nomeMeses = { 
@@ -1542,7 +1586,7 @@ window.carregarFiltrosDespesas = async function() {
             function formatarVencimento(dataVenc) {
                 if(!dataVenc) return 'Sem prazo';
                 const partes = dataVenc.split('-');
-                if(partes.length === 3) return `${partes}/${partes}/${partes}`;
+                if(partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
                 return dataVenc;
             }
 
@@ -1558,7 +1602,7 @@ window.carregarFiltrosDespesas = async function() {
                 if (d.data_vencimento) {
                     const partesVenc = d.data_vencimento.split('-');
                     if (partesVenc.length === 3) {
-                        const dataVencObj = new Date(partesVenc, partesVenc - 1, partesVenc);
+                        const dataVencObj = new Date(partesVenc[0], partesVenc[1] - 1, partesVenc[2]);
                         if (dataVencObj < hoje) {
                             isVencida = true;
                         }
@@ -1974,7 +2018,7 @@ window.exportarPDF = function(tipo) {
         } else if (tipo === 'despesas') {
             head = [['Status', 'Vencimento', 'Obra / Local', 'Fornecedor', 'Nota Fiscal', 'Descrição', 'Valor (R$)', 'Recibo']];
             dados.forEach(row => {
-                function formatarVenc(v) { if(!v) return '-'; let p = v.split('-'); return p.length===3 ? `${p}/${p}/${p}` : v; }
+                function formatarVenc(v) { if(!v) return '-'; let p = v.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : v; }
                 let statusTexto = row.status === 'pago' ? `PAGO EM\n${row.data_pagamento||''}` : 'PENDENTE';
                 
                 body.push([ 
@@ -2314,6 +2358,9 @@ window.exportarPDF = function(tipo) {
 
         if (aba === 'despesas') {
             carregarFiltrosDespesas();
+        }
+        if (aba === 'pedidos') {
+            buscarPedidosMaterial();
         }
     };
 
@@ -2792,7 +2839,7 @@ window.exportarPDF = function(tipo) {
                 dados.id = doc.id;
                 window.dadosExportacaoPonto.push(dados); 
                 
-                dados.linkMaps = "https://www.google.com/maps?q=" + dados.latitude + "," + dados.longitude;    
+                dados.linkMaps = "https://www.google.com/maps?q=" + dados.latitude + "," + dados.longitude;   
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -3043,6 +3090,227 @@ window.exportarPDF = function(tipo) {
             btn.innerText = "CONFIRMAR E ASSINAR"; 
             btn.disabled = false; 
         }
+    };
+
+    // ==========================================
+    // MÓDULO: PEDIDOS DE MATERIAL
+    // ==========================================
+
+    window.abrirTelaPedidoMaterial = function() {
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        document.getElementById('tela-pedido-material').style.display = 'block';
+    };
+
+    window.enviarPedidoMaterial = async function() {
+        const nome = document.getElementById('pm-nome').value.trim();
+        const equipe = document.getElementById('pm-equipe').value.trim();
+        const desc = document.getElementById('pm-desc').value.trim();
+
+        if(!nome || !equipe || !desc) return Swal.fire('Atenção', 'Preencha todos os campos!', 'warning');
+
+        Swal.fire({ title: 'Enviando Pedido...', allowOutsideClick: false });
+        Swal.showLoading();
+
+        try {
+            const dataObj = new Date();
+            const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
+            const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+
+            await addDoc(collection(db, "pedidos_material"), {
+                empresa_id: 'MANUTENÇÃO', // Fixo para cair sempre na Manutenção
+                nome: nome,
+                equipe: equipe,
+                descricao: desc,
+                status: 'novo',
+                data: dataAtual,
+                hora: horaAtual,
+                timestamp: dataObj.getTime()
+            });
+
+            document.getElementById('pm-nome').value = '';
+            document.getElementById('pm-equipe').value = '';
+            document.getElementById('pm-desc').value = '';
+
+            Swal.fire('Enviado!', 'O pedido foi registrado no sistema.', 'success').then(() => {
+                // MENSAGEM ESPELHO PARA O WHATSAPP
+                const textoWhats = `FUNCIONÁRIO/EQUIPE FEZ PEDIDO NO SISTEMA, FAVOR CONFERIR\n\n*Funcionário:* ${nome}\n*Equipe:* ${equipe}`;
+                window.open(`https://api.whatsapp.com/send?phone=5543988368016&text=${encodeURIComponent(textoWhats)}`, '_blank');
+                voltarTelaInicial();
+            });
+
+        } catch(e) {
+            Swal.fire('Erro', 'Não foi possível enviar. Verifique a internet.', 'error');
+        }
+    };
+
+    window.checarNovosPedidosManutencao = async function() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (empresaLogada !== 'MANUTENÇÃO') return; // O apito só ocorre na Manutenção
+
+        try {
+            const q = query(collection(db, "pedidos_material"), where("empresa_id", "==", "MANUTENÇÃO"), where("status", "==", "novo"));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                let idsPendentes = [];
+                snap.forEach(doc => idsPendentes.push(doc.id));
+
+                // Trava a tela com alerta exigindo o nome
+                const { value: nomeVisualizador } = await Swal.fire({
+                    title: '🚨 NOVO PEDIDO DE MATERIAL!',
+                    text: `Existem ${idsPendentes.length} pedido(s) novo(s). Quem está verificando o sistema agora?`,
+                    input: 'text',
+                    inputPlaceholder: 'Digite seu nome para liberar...',
+                    icon: 'warning',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    confirmButtonText: 'OK, Visualizei',
+                    confirmButtonColor: '#d9534f',
+                    preConfirm: (nome) => {
+                        if (!nome) Swal.showValidationMessage('Obrigatório informar quem está visualizando!');
+                        return nome;
+                    }
+                });
+
+                if (nomeVisualizador) {
+                    // Atualiza o banco de dados
+                    for (let id of idsPendentes) {
+                        await updateDoc(doc(db, "pedidos_material", id), {
+                            status: 'visualizado',
+                            visualizado_por: nomeVisualizador
+                        });
+                    }
+                    Swal.fire('Liberado', `Pedidos marcados como visualizados por ${nomeVisualizador}.`, 'success');
+                    
+                    // Se o gestor já estiver na aba de pedidos, atualiza a lista
+                    if (document.getElementById('aba-pedidos') && document.getElementById('aba-pedidos').classList.contains('active')) {
+                        buscarPedidosMaterial();
+                    }
+                }
+            }
+        } catch(e) { console.error("Erro ao checar alertas", e); }
+    };
+
+    window.buscarPedidosMaterial = async function() {
+        const divLista = document.getElementById('lista-pedidos-resultados');
+        divLista.innerHTML = "A carregar...";
+
+        try {
+            // Busca apenas os pedidos atrelados à MANUTENÇÃO
+            const q = query(collection(db, "pedidos_material"), where("empresa_id", "==", "MANUTENÇÃO"));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                divLista.innerHTML = `<p style="text-align:center; color:#888;">Nenhum pedido registrado.</p>`;
+                return;
+            }
+
+            let arr = [];
+            snap.forEach(doc => arr.push({id: doc.id, ...doc.data()}));
+            arr.sort((a, b) => b.timestamp - a.timestamp); // Mais recentes primeiro
+
+            let html = "";
+            arr.forEach(p => {
+                const isPronto = p.status === 'pronto';
+                const isNovo = p.status === 'novo';
+                const corBorda = isPronto ? '#28a745' : (isNovo ? '#d9534f' : '#f0ad4e');
+                const badge = isPronto ? '✅ PRONTO' : (isNovo ? '🚨 NOVO' : '👁️ VISUALIZADO');
+
+                html += `
+                    <div class="resultado-item" style="border-left-color: ${corBorda}; background: ${isPronto ? '#f8fff9' : '#fff'};">
+                        <div style="display:flex; justify-content: space-between; align-items:center;">
+                            <b style="color:var(--dark-navy); font-size:15px;">${p.nome}</b>
+                            <span style="font-size: 10px; font-weight:bold; background:#eef2f5; padding:4px 8px; border-radius:5px;">${badge}</span>
+                        </div>
+                        <span style="font-size: 12px; color: #555;"><b>Equipe/Obra:</b> ${p.equipe}</span><br>
+                        <span style="font-size: 12px; color: #888;"><b>Data:</b> ${p.data} às ${p.hora}</span><br>
+                        ${p.visualizado_por ? `<span style="font-size: 11px; color: #d4a017; font-weight:bold;">Visualizado por: ${p.visualizado_por}</span><br>` : ''}
+                        
+                        <div style="margin-top: 10px; padding: 10px; background: #fafcff; border: 1px dashed #ccc; border-radius: 8px; font-size: 13px; white-space: pre-wrap; color: #333;">${p.descricao}</div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 15px;">
+                            <button onclick="pdfPedidoMaterial('${p.id}')" style="flex:1; background: #1a2a43; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">📄 PDF</button>
+                            ${!isPronto ? `<button onclick="marcarPedidoPronto('${p.id}')" style="flex:1; background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">✅ PRONTO</button>` : ''}
+                            <button onclick="excluirPedidoMaterial('${p.id}')" style="flex:1; background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">🗑️ EXCLUIR</button>
+                        </div>
+                    </div>
+                `;
+            });
+            divLista.innerHTML = html;
+            window.dadosPedidosMateriais = arr; // Salva para o gerador de PDF
+
+        } catch(e) { divLista.innerHTML = `<p style="text-align:center; color:#d9534f;">Erro ao buscar pedidos.</p>`; }
+    };
+
+    window.marcarPedidoPronto = async function(id) {
+        try {
+            await updateDoc(doc(db, "pedidos_material", id), { status: 'pronto' });
+            Swal.fire({toast:true, position:'top-end', icon:'success', title:'Material marcado como PRONTO!', showConfirmButton:false, timer:2500});
+            buscarPedidosMaterial();
+        } catch(e) { Swal.fire('Erro', 'Não foi possível atualizar.', 'error'); }
+    };
+
+    window.excluirPedidoMaterial = function(id) {
+        Swal.fire({
+            title: 'Excluir Pedido?', text: "Deseja apagar permanentemente?", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d9534f', confirmButtonText: 'Sim, apagar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "pedidos_material", id));
+                    buscarPedidosMaterial();
+                    Swal.fire('Excluído!', 'O pedido foi removido.', 'success');
+                } catch(e) { Swal.fire('Erro', 'Não foi possível apagar.', 'error'); }
+            }
+        });
+    };
+
+    window.pdfPedidoMaterial = function(id) {
+        const pedido = window.dadosPedidosMateriais.find(p => p.id === id);
+        if(!pedido) return;
+
+        const { jsPDF } = window.jspdf;
+        const docPdf = new jsPDF('p', 'mm', 'a4');
+
+        // Cabeçalho PDF
+        docPdf.setFillColor(26, 42, 67);
+        docPdf.rect(0, 0, 210, 22, 'F');
+        docPdf.setTextColor(255, 255, 255);
+        docPdf.setFontSize(16);
+        docPdf.setFont("helvetica", "bold");
+        docPdf.text("REQUISIÇÃO DE MATERIAIS", 14, 14);
+
+        // Corpo
+        docPdf.setTextColor(50, 50, 50);
+        docPdf.setFontSize(11);
+        docPdf.setFont("helvetica", "normal");
+        
+        docPdf.text(`Funcionario(a): ${pedido.nome}`, 14, 35);
+        docPdf.text(`Equipe / Obra: ${pedido.equipe}`, 14, 42);
+        docPdf.text(`Data do Pedido: ${pedido.data} às ${pedido.hora}`, 14, 49);
+        
+        let statusText = pedido.status === 'pronto' ? 'PRONTO' : (pedido.status === 'novo' ? 'NOVO' : 'VISUALIZADO');
+        docPdf.text(`Status Atual: ${statusText}`, 14, 56);
+        
+        if(pedido.visualizado_por) {
+            docPdf.text(`Conferido no sistema por: ${pedido.visualizado_por}`, 14, 63);
+        }
+
+        docPdf.setDrawColor(200, 200, 200);
+        docPdf.line(14, 72, 196, 72);
+
+        docPdf.setFontSize(12);
+        docPdf.setFont("helvetica", "bold");
+        docPdf.text("LISTA DE MATERIAIS SOLICITADOS:", 14, 82);
+
+        docPdf.setFontSize(11);
+        docPdf.setFont("helvetica", "normal");
+        
+        // Quebra a linha da descrição para não sair do PDF
+        const linhasDesc = docPdf.splitTextToSize(pedido.descricao, 180);
+        docPdf.text(linhasDesc, 14, 92);
+
+        docPdf.save(`Pedido_${pedido.equipe.replace(/\s+/g, '_')}_${pedido.data.replace(/\//g, '')}.pdf`);
     };
 
     // BLOQUEIO ANTI-CÓPIA
