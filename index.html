@@ -3179,10 +3179,7 @@ window.exportarPDF = function(tipo) {
                 html: `
                     <p style="font-size: 13px; color: #555; margin-bottom: 20px;">O sistema já registrou o pedido. Clique nos botões abaixo para avisar os gestores no WhatsApp:</p>
                     <button onclick="window.open('${link1}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 1 (MANUTENÇÃO)</button>
-                    <button onclick="window.open('${link2}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 2 (FELIPE)</button>
-                    <button onclick="window.open('${link3}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 3 (NOEL)</button>
-                   <button onclick="window.open('${link3}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 4 (WELLINGTON)</button>
-                   <button onclick="window.open('${link3}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 5 (ANTONIO)</button>
+                   
                 `,
                 showConfirmButton: true,
                 confirmButtonText: 'Concluir e Voltar',
@@ -3198,54 +3195,34 @@ window.exportarPDF = function(tipo) {
     };
 
     window.checarNovosPedidosManutencao = async function() {
-        const empresaLogada = localStorage.getItem('empresaGestor');
-        if (empresaLogada !== 'MANUTENÇÃO') return; // O apito só ocorre na Manutenção
-
-        try {
-            const q = query(collection(db, "pedidos_material"), where("empresa_id", "==", "MANUTENÇÃO"), where("status", "==", "novo"));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) {
-                let idsPendentes = [];
-                snap.forEach(doc => idsPendentes.push(doc.id));
-
-                // Trava a tela com alerta exigindo o nome
-                const { value: nomeVisualizador } = await Swal.fire({
-                    title: '🚨 NOVO PEDIDO DE MATERIAL!',
-                    text: `Existem ${idsPendentes.length} pedido(s) novo(s). Quem está verificando o sistema agora?`,
-                    input: 'text',
-                    inputPlaceholder: 'Digite seu nome para liberar...',
-                    icon: 'warning',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    confirmButtonText: 'OK, Visualizei',
-                    confirmButtonColor: '#d9534f',
-                    preConfirm: (nome) => {
-                        if (!nome) Swal.showValidationMessage('Obrigatório informar quem está visualizando!');
-                        return nome;
-                    }
-                });
-
-                if (nomeVisualizador) {
-                    // Atualiza o banco de dados
-                    for (let id of idsPendentes) {
-                        await updateDoc(doc(db, "pedidos_material", id), {
-                            status: 'visualizado',
-                            visualizado_por: nomeVisualizador
-                        });
-                    }
-                    Swal.fire('Liberado', `Pedidos marcados como visualizados por ${nomeVisualizador}.`, 'success');
-                    
-                    // Se o gestor já estiver na aba de pedidos, atualiza a lista
-                    if (document.getElementById('aba-pedidos') && document.getElementById('aba-pedidos').classList.contains('active')) {
-                        buscarPedidosMaterial();
-                    }
-                }
-            }
-        } catch(e) { console.error("Erro ao checar alertas", e); }
+        // Função desativada: A notificação agora é exclusiva via WhatsApp.
+        // A tela não vai mais travar pedindo o nome de quem visualizou.
+        return;
     };
 
-    window.buscarPedidosMaterial = async function() {
+           window.buscarPedidosMaterial = async function() {
+        // ADICIONA O EFEITO PISCANTE VIA JAVASCRIPT PARA NÃO PRECISAR MEXER LÁ EM CIMA NO CSS
+        if (!document.getElementById('style-piscar')) {
+            const style = document.createElement('style');
+            style.id = 'style-piscar';
+            style.innerHTML = `
+                @keyframes piscarVermelho {
+                    0% { background-color: #d9534f; color: white; box-shadow: 0 0 8px #d9534f; }
+                    50% { background-color: #f8d7da; color: #721c24; box-shadow: none; }
+                    100% { background-color: #d9534f; color: white; box-shadow: 0 0 8px #d9534f; }
+                }
+                .badge-piscar {
+                    animation: piscarVermelho 1.2s infinite;
+                    padding: 4px 8px;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    font-size: 10px;
+                    display: inline-block;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
         const divLista = document.getElementById('lista-pedidos-resultados');
         divLista.innerHTML = "A carregar...";
 
@@ -3265,26 +3242,39 @@ window.exportarPDF = function(tipo) {
 
             let html = "";
             arr.forEach(p => {
-                const isPronto = p.status === 'pronto';
                 const isNovo = p.status === 'novo';
-                const corBorda = isPronto ? '#28a745' : (isNovo ? '#d9534f' : '#f0ad4e');
-                const badge = isPronto ? '✅ PRONTO' : (isNovo ? '🚨 NOVO' : '👁️ VISUALIZADO');
+                const isAnalise = p.status === 'analise';
+                
+                // Cores dinâmicas baseadas no status
+                const corBorda = isNovo ? '#d9534f' : (isAnalise ? '#f0ad4e' : '#1a2a43');
+                
+                let badgeHTML = '';
+                if (isNovo) {
+                    badgeHTML = `<span class="badge-piscar">🚨 NOVO</span>`;
+                } else if (isAnalise) {
+                    badgeHTML = `<span style="font-size: 10px; font-weight:bold; background:#fcf8e3; color:#8a6d3b; padding:4px 8px; border-radius:5px;">⏳ EM ANÁLISE</span>`;
+                } else {
+                    badgeHTML = `<span style="font-size: 10px; font-weight:bold; background:#eef2f5; padding:4px 8px; border-radius:5px;">${p.status.toUpperCase()}</span>`;
+                }
 
                 html += `
-                    <div class="resultado-item" style="border-left-color: ${corBorda}; background: ${isPronto ? '#f8fff9' : '#fff'};">
+                    <div class="resultado-item" style="border-left-color: ${corBorda}; background: #fff;">
                         <div style="display:flex; justify-content: space-between; align-items:center;">
                             <b style="color:var(--dark-navy); font-size:15px;">${p.nome}</b>
-                            <span style="font-size: 10px; font-weight:bold; background:#eef2f5; padding:4px 8px; border-radius:5px;">${badge}</span>
+                            ${badgeHTML}
                         </div>
                         <span style="font-size: 12px; color: #555;"><b>Equipe/Obra:</b> ${p.equipe}</span><br>
                         <span style="font-size: 12px; color: #888;"><b>Data:</b> ${p.data} às ${p.hora}</span><br>
-                        ${p.visualizado_por ? `<span style="font-size: 11px; color: #d4a017; font-weight:bold;">Visualizado por: ${p.visualizado_por}</span><br>` : ''}
                         
                         <div style="margin-top: 10px; padding: 10px; background: #fafcff; border: 1px dashed #ccc; border-radius: 8px; font-size: 13px; white-space: pre-wrap; color: #333;">${p.descricao}</div>
 
                         <div style="display: flex; gap: 8px; margin-top: 15px;">
                             <button onclick="pdfPedidoMaterial('${p.id}')" style="flex:1; background: #1a2a43; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">📄 PDF</button>
-                            ${!isPronto ? `<button onclick="marcarPedidoPronto('${p.id}')" style="flex:1; background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">✅ PRONTO</button>` : ''}
+                            
+                            ${isNovo ? `<button onclick="marcarEmAnalise('${p.id}')" style="flex:1; background: #f0ad4e; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">⏳ EM ANÁLISE</button>` : ''}
+                            
+                            <button onclick="marcarPedidoPronto('${p.id}')" style="flex:1; background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">✅ ENTREGUE</button>
+                            
                             <button onclick="excluirPedidoMaterial('${p.id}')" style="flex:1; background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">🗑️ EXCLUIR</button>
                         </div>
                     </div>
@@ -3296,12 +3286,37 @@ window.exportarPDF = function(tipo) {
         } catch(e) { divLista.innerHTML = `<p style="text-align:center; color:#d9534f;">Erro ao buscar pedidos.</p>`; }
     };
 
-    window.marcarPedidoPronto = async function(id) {
+    window.marcarEmAnalise = async function(id) {
         try {
-            await updateDoc(doc(db, "pedidos_material", id), { status: 'pronto' });
-            Swal.fire({toast:true, position:'top-end', icon:'success', title:'Material marcado como PRONTO!', showConfirmButton:false, timer:2500});
+            await updateDoc(doc(db, "pedidos_material", id), { status: 'analise' });
+            Swal.fire({toast:true, position:'top-end', icon:'info', title:'Status alterado para EM ANÁLISE!', showConfirmButton:false, timer:2000});
             buscarPedidosMaterial();
         } catch(e) { Swal.fire('Erro', 'Não foi possível atualizar.', 'error'); }
+    };
+
+    window.marcarPedidoPronto = async function(id) {
+        Swal.fire({
+            title: 'Confirmar Entrega?',
+            text: "Você confirma que o material deste pedido foi realmente entregue para a equipe?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#d9534f',
+            confirmButtonText: 'Sim, foi entregue!',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    // Exclui o pedido do banco de dados automaticamente
+                    await deleteDoc(doc(db, "pedidos_material", id));
+                    
+                    Swal.fire('Entregue!', 'O pedido foi marcado como entregue e removido da tela.', 'success');
+                    buscarPedidosMaterial(); // Atualiza a lista para o pedido sumir
+                } catch(e) { 
+                    Swal.fire('Erro', 'Não foi possível confirmar a entrega.', 'error'); 
+                }
+            }
+        });
     };
 
     window.excluirPedidoMaterial = function(id) {
@@ -3343,26 +3358,22 @@ window.exportarPDF = function(tipo) {
         docPdf.text(`Equipe / Obra: ${pedido.equipe}`, 14, 42);
         docPdf.text(`Data do Pedido: ${pedido.data} às ${pedido.hora}`, 14, 49);
         
-        let statusText = pedido.status === 'pronto' ? 'PRONTO' : (pedido.status === 'novo' ? 'NOVO' : 'VISUALIZADO');
+        let statusText = pedido.status === 'analise' ? 'EM ANÁLISE' : 'NOVO';
         docPdf.text(`Status Atual: ${statusText}`, 14, 56);
-        
-        if(pedido.visualizado_por) {
-            docPdf.text(`Conferido no sistema por: ${pedido.visualizado_por}`, 14, 63);
-        }
 
         docPdf.setDrawColor(200, 200, 200);
-        docPdf.line(14, 72, 196, 72);
+        docPdf.line(14, 65, 196, 65);
 
         docPdf.setFontSize(12);
         docPdf.setFont("helvetica", "bold");
-        docPdf.text("LISTA DE MATERIAIS SOLICITADOS:", 14, 82);
+        docPdf.text("LISTA DE MATERIAIS SOLICITADOS:", 14, 75);
 
         docPdf.setFontSize(11);
         docPdf.setFont("helvetica", "normal");
         
         // Quebra a linha da descrição para não sair do PDF
         const linhasDesc = docPdf.splitTextToSize(pedido.descricao, 180);
-        docPdf.text(linhasDesc, 14, 92);
+        docPdf.text(linhasDesc, 14, 85);
 
         docPdf.save(`Pedido_${pedido.equipe.replace(/\s+/g, '_')}_${pedido.data.replace(/\//g, '')}.pdf`);
     };
