@@ -580,8 +580,6 @@
     </div>
     <p style="font-size: 14px; color: #555; margin-bottom: 25px;">Selecione o seu tipo de acesso para continuar:</p>
 
-    <button class="btn-enviar" onclick="abrirTelaPedidoMaterial()" style="background: #4285F4; margin-bottom: 10px;">📦 PEDIR MATERIAL</button>
-
     <button class="btn-enviar" onclick="escolherGestao()">👔 GESTÃO RH / GESTOR</button>
     <button class="btn-gold" onclick="escolherFuncionario()" style="background: #28a745; color: white;">📍 SOU FUNCIONÁRIO - BATER PONTO</button>
 </div>
@@ -605,7 +603,7 @@
 
     <button class="btn-entrada" onclick="enviarPedidoMaterial()">ENVIAR PEDIDO</button>
     
-    <button class="btn-logout" onclick="voltarTelaInicial()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Cancelar e Voltar</button>
+    <button class="btn-logout" onclick="voltarTelaRelogio()" style="margin-top: 20px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Cancelar e Voltar</button>
 </div>
 
 <div class="main-card login-card" id="tela-selecao-empresa" style="display: none;">
@@ -1025,7 +1023,11 @@
     <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTAR ENTRADA</button>
     <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTAR SAÍDA</button>
 
-    <button class="btn-logout" onclick="fazerLogout()">Sair da Conta (Logout)</button>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+    <h4 style="text-align: center; color: var(--dark-navy); margin-bottom: 10px;">Faltou material na obra?</h4>
+    <button class="btn-enviar" onclick="abrirTelaPedidoMaterial()" style="background: #4285F4; margin-top: 0; box-shadow: none;">📦 FAZER PEDIDO DE MATERIAL</button>
+
+    <button class="btn-logout" onclick="fazerLogout()" style="margin-top: 25px;">Sair da Conta (Logout)</button>
 </div>
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
@@ -1113,9 +1115,29 @@
     window.dadosExportacaoDespesas = [];
 
     // --- FUNÇÕES DE NAVEGAÇÃO INICIAL ---
-    window.escolherGestao = function() {
-        document.getElementById('tela-escolha-inicial').style.display = 'none';
-        document.getElementById('tela-selecao-empresa').style.display = 'block';
+    window.escolherGestao = async function() {
+        const { value: senhaDigitada } = await Swal.fire({
+            title: '🔐 Acesso Restrito',
+            text: 'Digite a senha da Gestão Geral:',
+            input: 'password',
+            inputPlaceholder: 'Sua senha',
+            showCancelButton: true,
+            confirmButtonText: 'Entrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#1a2a43',
+            cancelButtonColor: '#d9534f'
+        });
+
+        // Se o usuário clicar em cancelar, simplesmente fecha o alerta
+        if (!senhaDigitada) return;
+
+        // Verifica se a senha digitada é igual a Deusefiel
+        if (senhaDigitada === 'Deusefiel') {
+            document.getElementById('tela-escolha-inicial').style.display = 'none';
+            document.getElementById('tela-selecao-empresa').style.display = 'block';
+        } else {
+            Swal.fire('Acesso Negado', 'A senha está incorreta!', 'error');
+        }
     };
 
     window.escolherFuncionario = function() {
@@ -1242,7 +1264,7 @@
         location.reload();
     };
 
-   function iniciarPainelGestor() {
+    function iniciarPainelGestor() {
         const empresaLogada = localStorage.getItem('empresaGestor');
         atualizarLogoInterface(empresaLogada); 
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
@@ -1788,7 +1810,7 @@ window.carregarFiltrosDespesas = async function() {
                 </tbody>
                 <tfoot style="background: #eef2f5; font-weight: bold;">
                     <tr>
-                        <td colspan="2" style="padding: 12px; border: 1px solid #ccc; text-align: right;">TOTAL GERAL DE TODAS AS OBRAS:</td>
+                        <td colspan="2" style="padding: 12px; border: 1px solid #ccc; text-align: right;">TOTAL GERAL DE TODAS OBRAS:</td>
                         <td style="padding: 12px; border: 1px solid #ccc; text-align: right; color: #d9534f;">${formatarMoeda(totalGeralPendente)}</td>
                         <td style="padding: 12px; border: 1px solid #ccc; text-align: right; color: #28a745;">${formatarMoeda(totalGeralPago)}</td>
                     </tr>
@@ -2939,7 +2961,7 @@ window.exportarPDF = function(tipo) {
         }); 
         Swal.showLoading();
         
-        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
+       const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
         document.getElementById('pdf-empresa-nome').innerText = empresaLogada; 
         document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
         document.getElementById('pdf-texto').innerHTML = dados.texto; 
@@ -3099,6 +3121,20 @@ window.exportarPDF = function(tipo) {
     window.abrirTelaPedidoMaterial = function() {
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
         document.getElementById('tela-pedido-material').style.display = 'block';
+        
+        // Puxa o nome do funcionário logado para ele não precisar digitar
+        const nomeLogado = localStorage.getItem('funcLogadoNome');
+        if (nomeLogado) {
+            const campoNome = document.getElementById('pm-nome');
+            campoNome.value = nomeLogado;
+            campoNome.setAttribute('readonly', true);
+            campoNome.style.backgroundColor = '#eef2f5'; // Deixa cinza pra mostrar que tá bloqueado
+        }
+    };
+
+    window.voltarTelaRelogio = function() {
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        document.getElementById('tela-relogio').style.display = 'block';
     };
 
     window.enviarPedidoMaterial = async function() {
@@ -3127,7 +3163,6 @@ window.exportarPDF = function(tipo) {
                 timestamp: dataObj.getTime()
             });
 
-            document.getElementById('pm-nome').value = '';
             document.getElementById('pm-equipe').value = '';
             document.getElementById('pm-desc').value = '';
 
@@ -3135,7 +3170,7 @@ window.exportarPDF = function(tipo) {
                 // MENSAGEM ESPELHO PARA O WHATSAPP
                 const textoWhats = `FUNCIONÁRIO/EQUIPE FEZ PEDIDO NO SISTEMA, FAVOR CONFERIR\n\n*Funcionário:* ${nome}\n*Equipe:* ${equipe}`;
                 window.open(`https://api.whatsapp.com/send?phone=5543988368016&text=${encodeURIComponent(textoWhats)}`, '_blank');
-                voltarTelaInicial();
+                voltarTelaRelogio();
             });
 
         } catch(e) {
