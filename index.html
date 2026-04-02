@@ -1027,7 +1027,25 @@
     <h4 style="text-align: center; color: var(--dark-navy); margin-bottom: 10px;">Faltou material na obra?</h4>
     <button class="btn-enviar" onclick="abrirTelaPedidoMaterial()" style="background: #4285F4; margin-top: 0; box-shadow: none;">📦 FAZER PEDIDO DE MATERIAL</button>
 
+   <button class="btn-gold" onclick="abrirTelaMeusVales()" style="margin-top: 15px; box-shadow: none;">💰 MEUS VALES E RECIBOS</button>
+
     <button class="btn-logout" onclick="fazerLogout()" style="margin-top: 25px;">Sair da Conta (Logout)</button>
+</div>
+<div class="main-card" id="tela-meus-vales" style="display: none;">
+    <div class="header-logo">
+        <img src="https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg" crossorigin="anonymous" class="logo-img">
+        <div class="title-top">Meus Vales e Recibos</div>
+    </div>
+    
+    <div style="background: #eef2f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #1a2a43;">
+        <p style="font-size: 13px; color: #555; margin: 0;">Aqui você pode conferir todos os vales/produtos que pegou, além de assinar os que estão pendentes.</p>
+    </div>
+
+    <div id="lista-meus-vales">
+        <p style="text-align: center; color: #888; font-size: 13px;">A carregar...</p>
+    </div>
+
+    <button class="btn-logout" onclick="voltarTelaRelogioDeVales()" style="margin-top: 25px; background: transparent; color: #d9534f; border: 1px solid #d9534f;">Voltar ao Início</button>
 </div>
 
 <div class="main-card" id="tela-funcionario" style="display: none;">
@@ -3306,83 +3324,117 @@ window.exportarPDF = function(tipo) {
         });
     };
 
+   // ==========================================
+    // MÓDULO: MEUS VALES (VISÃO FUNCIONÁRIO)
     // ==========================================
-    // MÓDULO: PEDIDOS DE MATERIAL
-    // ==========================================
-
-    window.abrirTelaPedidoMaterial = function() {
+    window.abrirTelaMeusVales = function() {
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
-        document.getElementById('tela-pedido-material').style.display = 'block';
-        
-        // Puxa o nome do funcionário logado para ele não precisar digitar
-        const nomeLogado = localStorage.getItem('funcLogadoNome');
-        if (nomeLogado) {
-            const campoNome = document.getElementById('pm-nome');
-            campoNome.value = nomeLogado;
-            campoNome.setAttribute('readonly', true);
-            campoNome.style.backgroundColor = '#eef2f5'; // Deixa cinza pra mostrar que tá bloqueado
-        }
+        document.getElementById('tela-meus-vales').style.display = 'block';
+        buscarMeusVales(); // Puxa os dados automaticamente ao abrir
     };
 
-    window.voltarTelaRelogio = function() {
+    window.voltarTelaRelogioDeVales = function() {
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
         document.getElementById('tela-relogio').style.display = 'block';
     };
 
-    window.enviarPedidoMaterial = async function() {
-        const nome = document.getElementById('pm-nome').value.trim();
-        const equipe = document.getElementById('pm-equipe').value.trim();
-        const desc = document.getElementById('pm-desc').value.trim();
-
-        if(!nome || !equipe || !desc) return Swal.fire('Atenção', 'Preencha todos os campos!', 'warning');
-
-        Swal.fire({ title: 'Enviando Pedido...', allowOutsideClick: false });
-        Swal.showLoading();
+    window.buscarMeusVales = async function() {
+        const funcId = localStorage.getItem('funcLogadoId');
+        const divLista = document.getElementById('lista-meus-vales');
+        
+        if (!funcId) return;
+        
+        divLista.innerHTML = "A procurar os seus vales...";
+        window.valesEncontrados = {}; 
 
         try {
-            const dataObj = new Date();
-            const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
-            const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+            // Busca os vales onde o funcionario_id é igual ao ID de quem está logado
+            const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId));
+            const snap = await getDocs(q);
 
-            await addDoc(collection(db, "pedidos_material"), {
-                empresa_id: 'MANUTENÇÃO', // Fixo para cair sempre na Manutenção
-                nome: nome,
-                equipe: equipe,
-                descricao: desc,
-                status: 'novo',
-                data: dataAtual,
-                hora: horaAtual,
-                timestamp: dataObj.getTime()
+            if (snap.empty) {
+                divLista.innerHTML = `<p style="text-align:center; color:#888;">Você não possui nenhum vale ou produto registrado.</p>`;
+                return;
+            }
+
+            let arr = [];
+            snap.forEach(doc => arr.push({id: doc.id, ...doc.data()}));
+            arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            let html = "";
+            let totalAssinado = 0;
+
+            arr.forEach(v => {
+                window.valesEncontrados[v.id] = v;
+
+                const isAssinado = v.status === 'assinado';
+                const corBorda = isAssinado ? '#28a745' : '#f0ad4e';
+                const badge = isAssinado ? '✅ ASSINADO' : '⏳ PENDENTE';
+                
+                if(isAssinado) totalAssinado += parseMoedaLocal(v.valor);
+
+                html += `
+                    <div class="resultado-item" style="border-left-color: ${corBorda}; background: ${isAssinado ? '#f8fff9' : '#fff'};">
+                        <div style="display:flex; justify-content: space-between; align-items:center;">
+                            <b style="color:var(--dark-navy); font-size:16px;">R$ ${v.valor}</b>
+                            <span style="font-size: 10px; font-weight:bold; background:#eef2f5; padding:4px 8px; border-radius:5px; color:${corBorda}">${badge}</span>
+                        </div>
+                        <span style="font-size: 12px; color: #555;"><b>Tipo:</b> ${v.tipo}</span><br>
+                        <span style="font-size: 12px; color: #888;"><b>Data:</b> ${v.data_criacao || v.data} ${v.hora_criacao ? 'às '+v.hora_criacao : ''}</span><br>
+                        <div style="margin-top: 5px; font-size: 12px; color: #444;"><i>${v.descricao}</i></div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 15px;">
+                            ${isAssinado 
+                                ? `<button onclick="gerarPdfFuncionario('${v.id}')" style="flex:1; background: #1a2a43; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">📄 BAIXAR MEU RECIBO (PDF)</button>` 
+                                : `<button onclick="window.location.href='?id=${v.id}'" style="flex:1; background: #d4a017; color: var(--dark-navy); border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">✍️ ASSINAR AGORA</button>`}
+                        </div>
+                    </div>
+                `;
             });
 
-            document.getElementById('pm-equipe').value = '';
-            document.getElementById('pm-desc').value = '';
+            divLista.innerHTML = `<div style="text-align:center; margin-bottom: 15px; padding: 10px; background: #eef2f5; border-radius: 10px;">Total Já Recebido (Assinado): <b style="color:#28a745; font-size:16px;">${formatarMoeda(totalAssinado)}</b></div>` + html;
 
-            const textoWhats = `ATENÇÃO! PEDIDO REALIZADO NO SISTEMA:\n*FUNCIONÁRIO:* ${nome}\n*EQUIPE:* ${equipe}\nFAVOR CONFERIR:`;
+        } catch (e) {
+            divLista.innerHTML = `<p style="text-align:center; color:#d9534f;">Erro ao buscar seus vales. Tente novamente.</p>`;
+        }
+    };
+
+    // Função de PDF exclusiva para o funcionário baixar, sem envolver compartilhamento de WhatsApp
+    window.gerarPdfFuncionario = async function(id) {
+        const dados = window.valesEncontrados[id]; 
+        const empresaLogada = dados.empresa_id || "Empresa";
+        
+        Swal.fire({ title: 'Gerando Recibo...', allowOutsideClick: false }); 
+        Swal.showLoading();
+        
+        const horaPDF = dados.hora_criacao ? ` às ${dados.hora_criacao}` : ""; 
+        document.getElementById('pdf-empresa-nome').innerText = empresaLogada; 
+        document.getElementById('pdf-data').innerText = "Data: " + (dados.data_criacao || "") + horaPDF; 
+        document.getElementById('pdf-texto').innerHTML = dados.texto; 
+        document.getElementById('pdf-assinatura').src = dados.assinatura; 
+        document.getElementById('pdf-nome-ass').innerText = dados.nome;
+
+        try {
+            await new Promise(r => setTimeout(r, 800)); 
             
-            const link1 = `https://api.whatsapp.com/send?phone=5543988368016&text=${encodeURIComponent(textoWhats)}`;
-            const link2 = `https://api.whatsapp.com/send?phone=5543996408964&text=${encodeURIComponent(textoWhats)}`;
-            const link3 = `https://api.whatsapp.com/send?phone=5543996095268&text=${encodeURIComponent(textoWhats)}`;
-            const link4 = `https://api.whatsapp.com/send?phone=5543999164372&text=${encodeURIComponent(textoWhats)}`;
-            const link5 = `https://api.whatsapp.com/send?phone=5543996917028&text=${encodeURIComponent(textoWhats)}`;
-
-            Swal.fire({
-                title: 'Pedido Enviado! ✅',
-                html: `
-                    <p style="font-size: 13px; color: #555; margin-bottom: 20px;">O sistema já registrou o pedido. Clique nos botões abaixo para avisar os gestores no WhatsApp:</p>
-                    <button onclick="window.open('${link1}', '_blank')" style="background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">🟢 Avisar Gestor 1 (MANUTENÇÃO)</button>
-                   
-                `,
-                showConfirmButton: true,
-                confirmButtonText: 'Concluir e Voltar',
-                confirmButtonColor: '#1a2a43',
-                allowOutsideClick: false
-            }).then(() => {
-                voltarTelaRelogio();
-            });
-
-        } catch(e) {
-            Swal.fire('Erro', 'Não foi possível enviar. Verifique a internet.', 'error');
+            const { jsPDF } = window.jspdf; 
+            const pdf = new jsPDF('p', 'mm', 'a4'); 
+            const element = document.getElementById('area-pdf-escondida');
+            
+            const canvasImg = await html2canvas(element, { scale: 2, useCORS: true }); 
+            const imgData = canvasImg.toDataURL('image/jpeg');
+            const pdfWidth = pdf.internal.pageSize.getWidth(); 
+            const pdfHeight = (canvasImg.height * pdfWidth) / canvasImg.width;
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const dataLimpa = (dados.data_criacao || "").replace(/\//g, '-');
+            const nomeDoArquivo = `Meu_Recibo_${dataLimpa}.pdf`; 
+            
+            pdf.save(nomeDoArquivo); 
+            Swal.fire('Baixado!', 'O seu recibo foi salvo no seu celular/computador.', 'success'); 
+        } catch(e) { 
+            Swal.fire('Erro', 'Falha ao gerar o PDF.', 'error'); 
         }
     };
 
