@@ -3114,6 +3114,198 @@ window.exportarPDF = function(tipo) {
         }
     };
 
+// ==========================================
+    // MÓDULO: VALES E ADIANTAMENTOS
+    // ==========================================
+
+    document.getElementById('btnGerarLink').onclick = async function() {
+        const funcId = document.getElementById('p-func-select').value;
+        const funcSelect = document.getElementById('p-func-select');
+        const funcNome = funcSelect.options[funcSelect.selectedIndex].text;
+        const valor = document.getElementById('p-valor').value;
+        const tipo = document.getElementById('p-tipo').value;
+        const desc = document.getElementById('p-desc').value;
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        if (!funcId || !valor || !desc) {
+            return Swal.fire('Atenção', 'Selecione o funcionário, o valor e a descrição!', 'warning');
+        }
+
+        const btn = document.getElementById('btnGerarLink');
+        btn.innerText = "⏳ A GERAR LINK...";
+        btn.disabled = true;
+
+        const dataObj = new Date();
+        const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
+        const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+
+        try {
+            const docRef = await addDoc(collection(db, "vales_sistema"), {
+                empresa_id: empresaLogada,
+                funcionario_id: funcId,
+                nome: funcNome,
+                valor: valor,
+                tipo: tipo,
+                descricao: desc,
+                status: "pendente",
+                data_criacao: dataAtual,
+                hora_criacao: horaAtual,
+                data: dataAtual, 
+                timestamp: dataObj.getTime()
+            });
+
+            const textoRecibo = `Eu, <b>${funcNome}</b>, confirmo o recebimento do valor de <b>R$ ${valor}</b> em formato de <b>${tipo}</b>, referente a: <i>${desc}</i>.`;
+            
+            await updateDoc(doc(db, "vales_sistema", docRef.id), { texto: textoRecibo });
+
+            const linkAssinatura = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
+            const msgWhats = `Olá ${funcNome}, acesse o link abaixo para assinar digitalmente o seu vale de R$ ${valor} (${tipo}):\n\n${linkAssinatura}`;
+
+            Swal.fire({
+                title: 'Vale Gerado!',
+                text: 'O link de assinatura está pronto.',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonColor: '#25D366',
+                cancelButtonColor: '#1a2a43',
+                confirmButtonText: '🟢 Enviar no WhatsApp',
+                cancelButtonText: 'Copiar Link'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const funcionario = window.listaFuncionarios[funcId];
+                    if (funcionario && funcionario.tel) {
+                        window.open(`https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgWhats)}`, '_blank');
+                    } else {
+                        Swal.fire('Aviso', 'Este funcionário não tem telefone cadastrado. Copie o link manualmente.', 'info');
+                    }
+                } else {
+                    navigator.clipboard.writeText(linkAssinatura);
+                    Swal.fire({toast:true, position:'top-end', icon:'success', title:'Link Copiado!', showConfirmButton:false, timer:2000});
+                }
+            });
+
+            document.getElementById('p-valor').value = '';
+            document.getElementById('p-desc').value = '';
+
+        } catch (e) {
+            Swal.fire('Erro', 'Falha ao gerar o vale.', 'error');
+        } finally {
+            btn.innerText = "GERAR VALE E ENVIAR LINK";
+            btn.disabled = false;
+        }
+    };
+
+    window.buscarVales = async function() {
+        const funcId = document.getElementById('b-func-select').value;
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        if (!funcId) {
+            return Swal.fire('Atenção', 'Selecione um funcionário para buscar.', 'warning');
+        }
+
+        const divLista = document.getElementById('lista-resultados');
+        const btnExportar = document.getElementById('btnExportarVales');
+        
+        divLista.innerHTML = "A procurar...";
+        btnExportar.style.display = 'none';
+        window.dadosExportacaoVales = [];
+        window.valesEncontrados = {};
+
+        try {
+            const q = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("empresa_id", "==", empresaLogada));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                divLista.innerHTML = `<p style="text-align:center; color:#d9534f;">Nenhum vale encontrado.</p>`;
+                return;
+            }
+
+            let arr = [];
+            querySnapshot.forEach(doc => {
+                let d = doc.data();
+                d.id = doc.id;
+                arr.push(d);
+            });
+
+            arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            let html = "";
+            let totalVales = 0;
+
+            arr.forEach(v => {
+                window.dadosExportacaoVales.push(v);
+                window.valesEncontrados[v.id] = v;
+
+                const isAssinado = v.status === 'assinado';
+                const corBorda = isAssinado ? '#28a745' : '#f0ad4e';
+                const badge = isAssinado ? '✅ ASSINADO' : '⏳ PENDENTE';
+                
+                if(isAssinado) totalVales += parseMoedaLocal(v.valor);
+
+                html += `
+                    <div class="resultado-item" style="border-left-color: ${corBorda}; background: ${isAssinado ? '#f8fff9' : '#fff'};">
+                        <div style="display:flex; justify-content: space-between; align-items:center;">
+                            <b style="color:var(--dark-navy); font-size:16px;">R$ ${v.valor}</b>
+                            <span style="font-size: 10px; font-weight:bold; background:#eef2f5; padding:4px 8px; border-radius:5px; color:${corBorda}">${badge}</span>
+                        </div>
+                        <span style="font-size: 12px; color: #555;"><b>Tipo:</b> ${v.tipo}</span><br>
+                        <span style="font-size: 12px; color: #888;"><b>Data:</b> ${v.data_criacao || v.data} ${v.hora_criacao ? 'às '+v.hora_criacao : ''}</span><br>
+                        <div style="margin-top: 5px; font-size: 12px; color: #444;"><i>${v.descricao}</i></div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 15px;">
+                            ${isAssinado 
+                                ? `<button onclick="gerarEnviarPDF('${v.id}')" style="flex:1; background: #1a2a43; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">📄 VER RECIBO</button>` 
+                                : `<button onclick="reenviarLinkVale('${v.id}')" style="flex:1; background: #25D366; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">🟢 REENVIAR LINK</button>`}
+                            <button onclick="excluirVale('${v.id}')" style="flex:1; background: #d9534f; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor:pointer;">🗑️ APAGAR</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            btnExportar.style.display = 'block';
+            divLista.innerHTML = `<div style="text-align:center; margin-bottom: 15px; padding: 10px; background: #eef2f5; border-radius: 10px;">Total em Vales Assinados: <b style="color:#d9534f; font-size:16px;">${formatarMoeda(totalVales)}</b></div>` + html;
+
+        } catch (e) {
+            divLista.innerHTML = `<p style="text-align:center; color:#d9534f;">Erro ao buscar vales.</p>`;
+        }
+    };
+
+    window.reenviarLinkVale = function(id) {
+        const v = window.valesEncontrados[id];
+        const linkAssinatura = `${window.location.origin}${window.location.pathname}?id=${id}`;
+        const msgWhats = `Olá ${v.nome}, você tem um vale pendente de assinatura no valor de R$ ${v.valor} (${v.tipo}). Acesse o link para assinar:\n\n${linkAssinatura}`;
+        
+        const funcionario = window.listaFuncionarios[v.funcionario_id];
+        if (funcionario && funcionario.tel) {
+            window.open(`https://api.whatsapp.com/send?phone=55${funcionario.tel}&text=${encodeURIComponent(msgWhats)}`, '_blank');
+        } else {
+            navigator.clipboard.writeText(linkAssinatura);
+            Swal.fire('Copiado', 'Funcionário sem telefone. Link copiado para a área de transferência.', 'info');
+        }
+    };
+
+    window.excluirVale = function(id) {
+        Swal.fire({
+            title: 'Apagar Vale?',
+            text: "Deseja apagar este vale? Ele será removido da folha de pagamento.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, apagar!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "vales_sistema", id));
+                    Swal.fire('Apagado!', 'Vale removido com sucesso.', 'success');
+                    buscarVales();
+                } catch(e) {
+                    Swal.fire('Erro', 'Não foi possível apagar.', 'error');
+                }
+            }
+        });
+    };
+
     // ==========================================
     // MÓDULO: PEDIDOS DE MATERIAL
     // ==========================================
