@@ -3621,7 +3621,76 @@ window.exportarPDF = function(tipo) {
 
         docPdf.save(`Pedido_${pedido.equipe.replace(/\s+/g, '_')}_${pedido.data.replace(/\//g, '')}.pdf`);
     };
+    
+    // ==========================================
+    // MÓDULO: PEDIDOS DE MATERIAL (FUNCIONÁRIO)
+    // ==========================================
 
+    window.abrirTelaPedidoMaterial = function() {
+        // Esconde todas as telas
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        // Mostra a tela de pedido
+        document.getElementById('tela-pedido-material').style.display = 'block';
+
+        // Puxa o nome do funcionário logado automaticamente
+        const nomeLogado = localStorage.getItem('funcLogadoNome');
+        if (nomeLogado) {
+            document.getElementById('pm-nome').value = nomeLogado;
+        }
+    };
+
+    window.voltarTelaRelogio = function() {
+        // Cancela o pedido e volta para a tela de relógio
+        document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
+        document.getElementById('tela-relogio').style.display = 'block';
+    };
+
+    window.enviarPedidoMaterial = async function() {
+        const nome = document.getElementById('pm-nome').value.trim();
+        const equipe = document.getElementById('pm-equipe').value.trim();
+        const desc = document.getElementById('pm-desc').value.trim();
+        const empresaLogada = localStorage.getItem('funcLogadoEmpresa') || 'MANUTENÇÃO';
+
+        if (!nome || !equipe || !desc) {
+            return Swal.fire('Atenção', 'Preencha todos os campos para pedir material!', 'warning');
+        }
+
+        Swal.fire({
+            title: 'A enviar pedido...',
+            text: 'Por favor, aguarde.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading() }
+        });
+
+        const dataObj = new Date();
+        const dataAtual = `${String(dataObj.getDate()).padStart(2, '0')}/${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
+        const horaAtual = String(dataObj.getHours()).padStart(2, '0') + ':' + String(dataObj.getMinutes()).padStart(2, '0');
+
+        try {
+            await addDoc(collection(db, "pedidos_material"), {
+                empresa_id: empresaLogada,
+                nome: nome,
+                equipe: equipe,
+                descricao: desc,
+                status: "novo",
+                data: dataAtual,
+                hora: horaAtual,
+                timestamp: dataObj.getTime()
+            });
+
+            Swal.fire('Enviado!', 'O seu pedido foi encaminhado para o Gestor.', 'success');
+            
+            // Limpa os campos e volta para a tela inicial do ponto
+            document.getElementById('pm-equipe').value = '';
+            document.getElementById('pm-desc').value = '';
+            window.voltarTelaRelogio();
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Falha ao enviar o pedido de material. Tente novamente.', 'error');
+        }
+    };
+    
     // BLOQUEIO ANTI-CÓPIA
     document.addEventListener('contextmenu', event => event.preventDefault());
     
