@@ -3701,6 +3701,131 @@ window.exportarPDF = function(tipo) {
             return false; 
         } 
     };
+
+// === INÍCIO DO SISTEMA DE ALERTAS ===
+async function monitorarVencimentosObras() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "despesas_obras"));
+        
+        const dataHojeReal = new Date();
+        const hojeFormatado = dataHojeReal.toISOString().substring(0, 10);
+        
+        const hojeMeioDia = new Date();
+        hojeMeioDia.setHours(12, 0, 0, 0); 
+        
+        let htmlAlertas = "";
+        let emitirSom = false;
+
+        querySnapshot.forEach((doc) => {
+            const dados = doc.data();
+            const idDoc = doc.id;
+            
+            if (dados.status !== "Pago" && dados.vencimento) {
+                
+                let dataVenc;
+                if (dados.vencimento.includes('/')) {
+                    const partes = dados.vencimento.split('/');
+                    const dia = parseInt(partes.shift(), 10);
+                    const mes = parseInt(partes.shift(), 10) - 1;
+                    const ano = parseInt(partes.shift(), 10);
+                    dataVenc = new Date(ano, mes, dia);
+                } else {
+                    const partes = dados.vencimento.split('-');
+                    const ano = parseInt(partes.shift(), 10);
+                    const mes = parseInt(partes.shift(), 10) - 1;
+                    const dia = parseInt(partes.shift(), 10);
+                    dataVenc = new Date(ano, mes, dia);
+                }
+                
+                dataVenc.setHours(12, 0, 0, 0);
+
+                const diffMs = dataVenc.getTime() - hojeMeioDia.getTime();
+                const diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+                const silenciadoHj = localStorage.getItem(`silenciado_${idDoc}_${hojeFormatado}`);
+
+                if (!silenciadoHj) {
+                    let tituloAlerta = "";
+                    let classeUrgencia = "";
+
+                    if (diasRestantes === 0) {
+                        tituloAlerta = "VENCE HOJE";
+                        classeUrgencia = "urgente";
+                        emitirSom = true;
+                    } else if (diasRestantes > 0 && diasRestantes <= 3) {
+                        tituloAlerta = `VENCE EM ${diasRestantes} DIA(S)`;
+                        classeUrgencia = "aviso";
+                        emitirSom = true;
+                    }
+
+                    if (tituloAlerta !== "") {
+                        const linkVer = dados.arquivoUrl || dados.link || "#";
+                        htmlAlertas += montarPainelAlerta(idDoc, dados.descricao || "Sem Descrição", tituloAlerta, classeUrgencia, linkVer);
+                    }
+                }
+            }
+        });
+
+        if (htmlAlertas !== "") {
+            renderizarAlertasNoCanto(htmlAlertas, emitirSom);
+        }
+    } catch (err) {
+        console.error("Erro na monitorização:", err);
+    }
+}
+
+// A função foi associada ao "window" para garantir que o botão OK a encontra
+window.confirmarLeituraAlerta = function(id) {
+    const hj = new Date().toISOString().substring(0, 10);
+    localStorage.setItem(`silenciado_${id}_${hj}`, "true");
+    
+    const el = document.getElementById(`card-alerta-${id}`);
+    if (el) {
+        el.style.opacity = "0";
+        el.style.transform = "translateX(50px)";
+        setTimeout(() => el.remove(), 400);
+    }
+};
+
+function montarPainelAlerta(id, desc, titulo, tipo, link) {
+    const corTema = tipo === "urgente" ? "#d9534f" : "#f0ad4e";
+    const displayVer = (link && link !== "#") ? "block" : "none";
+
+    return `
+        <div id="card-alerta-${id}" style="background:#fff; width:320px; border-radius:12px; border:1px solid #eee; border-left:8px solid ${corTema}; box-shadow:0 10px 25px rgba(0,0,0,0.1); margin-bottom:12px; padding:15px; display:flex; align-items:center; justify-content:space-between; transition:0.4s;">
+            <div style="flex:1; padding-right:10px;">
+                <b style="color:${corTema}; font-size:14px; display:block; margin-bottom:4px;">${titulo}</b>
+                <span style="color:#1a2a43; font-weight:700; font-size:15px; line-height:1.2; display:block;">${desc}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button onclick="window.confirmarLeituraAlerta('${id}')" style="background:#f8f9fa; border:1px solid #ddd; border-radius:6px; padding:6px 12px; font-weight:700; cursor:pointer; color:#333;">OK</button>
+                <a href="${link}" target="_blank" style="display:${displayVer}; text-decoration:none; background:#1a2a43; color:#fff; text-align:center; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700;">VER</a>
+            </div>
+        </div>
+    `;
+}
+
+function renderizarAlertasNoCanto(conteudo, som) {
+    let container = document.getElementById("alerta-container-global");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "alerta-container-global";
+        container.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:10000; max-height:80vh; overflow-y:auto; padding:5px;";
+        document.body.appendChild(container);
+    }
+    container.innerHTML = conteudo;
+
+    if (som) {
+        const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+        audio.play().catch(() => {});
+    }
+}
+
+// Inicia a monitorização automaticamente
+setTimeout(monitorarVencimentosObras, 2000);
+setInterval(monitorarVencimentosObras, 3600000);
+// === FIM DO SISTEMA DE ALERTAS ===
+
 </script>
 </body>
 </html>
