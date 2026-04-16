@@ -1623,10 +1623,10 @@ window.carregarFiltrosDespesas = async function() {
 
             if (!encontrou) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada.</p>`; return; }
 
-            function formatarVencimento(dataVenc) {
+           function formatarVencimento(dataVenc) {
                 if(!dataVenc) return 'Sem prazo';
                 const partes = dataVenc.split('-');
-                if(partes.length === 3) return `${partes}/${partes}/${partes}`;
+                if(partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
                 return dataVenc;
             }
 
