@@ -1321,14 +1321,14 @@
                 return { ano: 'Outros', mes: 'Outros', dia: '??' };
             }
             
-            let apenasData = String(dataString).trim().split(' ')[0];
+            let apenasData = String(dataString).trim().split(' ');
             let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
             let partes = textoLimpo.split(/[\/\-]/);
             
             if (partes.length >= 3) {
-                let p1 = partes[0]; 
-                let p2 = partes[1]; 
-                let p3 = partes[2];
+                let p1 = partes; 
+                let p2 = partes; 
+                let p3 = partes;
                 let ano, mes, dia;
                 
                 if (p3.length >= 4) { 
@@ -1626,7 +1626,7 @@ window.carregarFiltrosDespesas = async function() {
             function formatarVencimento(dataVenc) {
                 if(!dataVenc) return 'Sem prazo';
                 const partes = dataVenc.split('-');
-                if(partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+                if(partes.length === 3) return `${partes}/${partes}/${partes}`;
                 return dataVenc;
             }
 
@@ -1642,7 +1642,7 @@ window.carregarFiltrosDespesas = async function() {
                 if (d.data_vencimento) {
                     const partesVenc = d.data_vencimento.split('-');
                     if (partesVenc.length === 3) {
-                        const dataVencObj = new Date(partesVenc[0], partesVenc[1] - 1, partesVenc[2]);
+                        const dataVencObj = new Date(partesVenc, partesVenc - 1, partesVenc);
                         if (dataVencObj < hoje) {
                             isVencida = true;
                         }
@@ -2058,7 +2058,7 @@ window.exportarPDF = function(tipo) {
         } else if (tipo === 'despesas') {
             head = [['Status', 'Vencimento', 'Obra / Local', 'Fornecedor', 'Nota Fiscal', 'Descrição', 'Valor (R$)', 'Recibo']];
             dados.forEach(row => {
-                function formatarVenc(v) { if(!v) return '-'; let p = v.split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : v; }
+                function formatarVenc(v) { if(!v) return '-'; let p = v.split('-'); return p.length===3 ? `${p}/${p}/${p}` : v; }
                 let statusTexto = row.status === 'pago' ? `PAGO EM\n${row.data_pagamento||''}` : 'PENDENTE';
                 
                 body.push([ 
@@ -3444,7 +3444,7 @@ window.exportarPDF = function(tipo) {
         return;
     };
 
-           window.buscarPedidosMaterial = async function() {
+            window.buscarPedidosMaterial = async function() {
         // ADICIONA O EFEITO PISCANTE VIA JAVASCRIPT PARA NÃO PRECISAR MEXER LÁ EM CIMA NO CSS
         if (!document.getElementById('style-piscar')) {
             const style = document.createElement('style');
@@ -3709,7 +3709,6 @@ async function monitorarVencimentosObras() {
         
         const dataHojeReal = new Date();
         const hojeFormatado = dataHojeReal.toISOString().substring(0, 10);
-        
         const hojeMeioDia = new Date();
         hojeMeioDia.setHours(12, 0, 0, 0); 
         
@@ -3720,17 +3719,20 @@ async function monitorarVencimentosObras() {
             const dados = doc.data();
             const idDoc = doc.id;
             
-            if (dados.status !== "Pago" && dados.vencimento) {
+            const statusAtual = dados.status || dados.Status || "";
+            const dataVencimentoBanco = dados.vencimento || dados.data_vencimento || dados.dataVencimento || dados.data;
+            
+            if (statusAtual !== "Pago" && statusAtual !== "pago" && dataVencimentoBanco) {
                 
                 let dataVenc;
-                if (dados.vencimento.includes('/')) {
-                    const partes = dados.vencimento.split('/');
+                if (dataVencimentoBanco.includes('/')) {
+                    const partes = dataVencimentoBanco.split('/');
                     const dia = parseInt(partes.shift(), 10);
                     const mes = parseInt(partes.shift(), 10) - 1;
                     const ano = parseInt(partes.shift(), 10);
                     dataVenc = new Date(ano, mes, dia);
                 } else {
-                    const partes = dados.vencimento.split('-');
+                    const partes = dataVencimentoBanco.split('-');
                     const ano = parseInt(partes.shift(), 10);
                     const mes = parseInt(partes.shift(), 10) - 1;
                     const dia = parseInt(partes.shift(), 10);
@@ -3742,7 +3744,7 @@ async function monitorarVencimentosObras() {
                 const diffMs = dataVenc.getTime() - hojeMeioDia.getTime();
                 const diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-                const silenciadoHj = localStorage.getItem(`silenciado_${idDoc}_${hojeFormatado}`);
+                const silenciadoHj = localStorage.getItem(`novo_aviso_${idDoc}_${hojeFormatado}`);
 
                 if (!silenciadoHj) {
                     let tituloAlerta = "";
@@ -3759,8 +3761,13 @@ async function monitorarVencimentosObras() {
                     }
 
                     if (tituloAlerta !== "") {
-                        const linkVer = dados.arquivoUrl || dados.link || "#";
-                        htmlAlertas += montarPainelAlerta(idDoc, dados.descricao || "Sem Descrição", tituloAlerta, classeUrgencia, linkVer);
+                        // --- AGORA PUXA EXATAMENTE OS NOMES QUE ESTÃO NO SEU CÓDIGO (loja_nome e obra_nome) ---
+                        const nomeLoja = dados.loja_nome || dados.loja || "Fornecedor não informado";
+                        const nomeObra = dados.obra_nome || dados.obra || "Obra não informada";
+                        const nomeDespesa = dados.descricao || "Sem descrição";
+                        const linkVer = dados.foto_recibo || dados.arquivoUrl || dados.link || dados.arquivo || "#";
+                        
+                        htmlAlertas += montarPainelAlerta(idDoc, nomeLoja, nomeObra, nomeDespesa, tituloAlerta, classeUrgencia, linkVer);
                     }
                 }
             }
@@ -3770,14 +3777,14 @@ async function monitorarVencimentosObras() {
             renderizarAlertasNoCanto(htmlAlertas, emitirSom);
         }
     } catch (err) {
-        console.error("Erro na monitorização:", err);
+        console.warn("Aguardando permissão do sistema para ler os boletos...");
+        setTimeout(monitorarVencimentosObras, 10000); 
     }
 }
 
-// A função foi associada ao "window" para garantir que o botão OK a encontra
 window.confirmarLeituraAlerta = function(id) {
     const hj = new Date().toISOString().substring(0, 10);
-    localStorage.setItem(`silenciado_${id}_${hj}`, "true");
+    localStorage.setItem(`novo_aviso_${id}_${hj}`, "true");
     
     const el = document.getElementById(`card-alerta-${id}`);
     if (el) {
@@ -3787,15 +3794,18 @@ window.confirmarLeituraAlerta = function(id) {
     }
 };
 
-function montarPainelAlerta(id, desc, titulo, tipo, link) {
+// Layout atualizado para exibir OBRA e LOJA
+function montarPainelAlerta(id, loja, obra, desc, titulo, tipo, link) {
     const corTema = tipo === "urgente" ? "#d9534f" : "#f0ad4e";
     const displayVer = (link && link !== "#") ? "block" : "none";
 
     return `
-        <div id="card-alerta-${id}" style="background:#fff; width:320px; border-radius:12px; border:1px solid #eee; border-left:8px solid ${corTema}; box-shadow:0 10px 25px rgba(0,0,0,0.1); margin-bottom:12px; padding:15px; display:flex; align-items:center; justify-content:space-between; transition:0.4s;">
+        <div id="card-alerta-${id}" style="background:#fff; width:340px; border-radius:12px; border:1px solid #eee; border-left:8px solid ${corTema}; box-shadow:0 10px 25px rgba(0,0,0,0.1); margin-bottom:12px; padding:15px; display:flex; align-items:center; justify-content:space-between; transition:0.4s; z-index:999999;">
             <div style="flex:1; padding-right:10px;">
-                <b style="color:${corTema}; font-size:14px; display:block; margin-bottom:4px;">${titulo}</b>
-                <span style="color:#1a2a43; font-weight:700; font-size:15px; line-height:1.2; display:block;">${desc}</span>
+                <b style="color:${corTema}; font-size:14px; display:block; margin-bottom:6px;">${titulo}</b>
+                <span style="color:#666; font-size:11px; text-transform:uppercase; font-weight:800; display:block; margin-bottom:2px;">🏗️ OBRA: ${obra}</span>
+                <span style="color:#666; font-size:11px; text-transform:uppercase; font-weight:800; display:block; margin-bottom:4px;">🏢 LOJA: ${loja}</span>
+                <span style="color:#1a2a43; font-weight:600; font-size:14px; line-height:1.2; display:block;">${desc}</span>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <button onclick="window.confirmarLeituraAlerta('${id}')" style="background:#f8f9fa; border:1px solid #ddd; border-radius:6px; padding:6px 12px; font-weight:700; cursor:pointer; color:#333;">OK</button>
@@ -3810,7 +3820,7 @@ function renderizarAlertasNoCanto(conteudo, som) {
     if (!container) {
         container = document.createElement("div");
         container.id = "alerta-container-global";
-        container.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:10000; max-height:80vh; overflow-y:auto; padding:5px;";
+        container.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:999999; max-height:80vh; overflow-y:auto; padding:5px;";
         document.body.appendChild(container);
     }
     container.innerHTML = conteudo;
@@ -3821,8 +3831,8 @@ function renderizarAlertasNoCanto(conteudo, som) {
     }
 }
 
-// Inicia a monitorização automaticamente
-setTimeout(monitorarVencimentosObras, 2000);
+// Inicia a monitorização 3 segundos após carregar a página
+setTimeout(monitorarVencimentosObras, 3000);
 setInterval(monitorarVencimentosObras, 3600000);
 // === FIM DO SISTEMA DE ALERTAS ===
 
