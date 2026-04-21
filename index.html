@@ -3704,8 +3704,13 @@ window.exportarPDF = function(tipo) {
 
 // === INÍCIO DO SISTEMA DE ALERTAS ===
 async function monitorarVencimentosObras() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "despesas_obras"));
+    // CORREÇÃO: Verifica se quem está logado é o Gestor. Se não for, bloqueia os alertas.
+    if (!localStorage.getItem('empresaGestor')) {
+        return; 
+    }
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "despesas_obras"));
         
         const dataHojeReal = new Date();
         const hojeFormatado = dataHojeReal.toISOString().substring(0, 10);
