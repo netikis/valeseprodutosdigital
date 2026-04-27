@@ -1315,44 +1315,46 @@
         "10": "Outubro", "11": "Novembro", "12": "Dezembro" 
     };
 
-      function separarDataSegura(dataString) {
-        try {
-            if (!dataString) {
-                return { ano: 'Outros', mes: 'Outros', dia: '??' };
-            }
-            
-            let apenasData = String(dataString).trim().split(' ');
-            let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
-            let partes = textoLimpo.split(/[\/\-]/);
-            
-            if (partes.length >= 3) {
-                let p1 = partes; 
-                let p2 = partes; 
-                let p3 = partes;
-                let ano, mes, dia;
-                
-                if (p3.length >= 4) { 
-                    ano = p3.substring(0, 4); 
-                    mes = p2; 
-                    dia = p1; 
-                } else if (p1.length >= 4) { 
-                    ano = p1.substring(0, 4); 
-                    mes = p2; 
-                    dia = p3; 
-                } else { 
-                    ano = "20" + p3; 
-                    mes = p2; 
-                    dia = p1; 
-                }
-                
-                return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
-            }
-            return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
-        } catch(e) { 
-            return { ano: 'Outros', mes: 'Outros', dia: '??' }; 
+function separarDataSegura(dataString) {
+    try {
+        if (!dataString) {
+            return { ano: 'Outros', mes: 'Outros', dia: '??' };
         }
+        
+        // CORREÇÃO 1: Adicionado o [0] para pegar a string da data antes de usar o replace
+        let apenasData = String(dataString).trim().split(' ')[0]; 
+        let textoLimpo = apenasData.replace(/[^\d\/\-]/g, '');
+        let partes = textoLimpo.split(/[\/\-]/);
+        
+        if (partes.length >= 3) {
+            // CORREÇÃO 2: Pegar os índices corretos da lista (0, 1 e 2)
+            let p1 = partes[0]; 
+            let p2 = partes[1]; 
+            let p3 = partes[2];
+            let ano, mes, dia;
+            
+            if (p3.length >= 4) { 
+                ano = p3.substring(0, 4); 
+                mes = p2; 
+                dia = p1; 
+            } else if (p1.length >= 4) { 
+                ano = p1.substring(0, 4); 
+                mes = p2; 
+                dia = p3; 
+            } else { 
+                ano = "20" + p3; 
+                mes = p2; 
+                dia = p1; 
+            }
+            
+            return { ano: ano, mes: mes.padStart(2, '0'), dia: dia.padStart(2, '0') };
+        }
+        return { ano: 'Outros', mes: 'Outros', dia: String(dataString) };
+    } catch(e) { 
+        console.error("Erro na data:", e);
+        return { ano: 'Outros', mes: 'Outros', dia: '??' }; 
     }
-
+}
 
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
@@ -2452,7 +2454,7 @@ window.exportarPDF = function(tipo) {
         }
     }
 
-    window.gerarFolhaPagamento = async function() {
+window.gerarFolhaPagamento = async function() {
         const funcId = document.getElementById('folha-func-select').value;
         const mesSelected = document.getElementById('folha-mes').value;
         const anoSelected = document.getElementById('folha-ano').value;
@@ -2469,7 +2471,8 @@ window.exportarPDF = function(tipo) {
         Swal.showLoading();
 
         const funcionario = window.listaFuncionarios[funcId];
-        const salarioBase = parseMoedaLocal(funcionario.salario || "0");
+        // Trava de segurança: se o salário vier quebrado, assume 0
+        const salarioBase = parseMoedaLocal(funcionario.salario || "0") || 0; 
         const horaEntPadrão = funcionario.hora_entrada || "07:00";
         const horaSaiPadrão = funcionario.hora_saida || "17:00";
 
@@ -2479,7 +2482,10 @@ window.exportarPDF = function(tipo) {
         if (jornadaDiariaHoras < 0) jornadaDiariaHoras += 24; 
 
         try {
-            const qVales = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId), where("status", "==", "assinado"));
+            const empresaLogada = localStorage.getItem('empresaGestor');
+
+            // 1. BUSCA DE VALES - Simplificada para evitar erro de índice ausente no Firebase
+            const qVales = query(collection(db, "vales_sistema"), where("funcionario_id", "==", funcId));
             const valesSnap = await getDocs(qVales);
             
             let totalDinheiro = 0; 
@@ -2487,15 +2493,39 @@ window.exportarPDF = function(tipo) {
 
             valesSnap.forEach(doc => {
                 const vale = doc.data();
-                const dataVale = separarDataSegura(vale.data_criacao || vale.data);
                 
-                if (dataVale.mes === mesSelected && dataVale.ano === anoSelected) {
-                    let v = parseMoedaLocal(vale.valor);
-                    if(vale.tipo === 'Dinheiro') totalDinheiro += v;
-                    if(vale.tipo === 'Produto') totalProduto += v;
+                // ESPIÃO 1: Mostra todos os vales desse funcionário que vieram do banco
+                console.log("🔍 Vale encontrado no banco:", vale);
+                
+                // Compara ignorando maiúsculas e minúsculas para evitar erro de digitação no status
+                const statusVale = String(vale.status || "").toLowerCase();
+                
+                if (vale.empresa_id === empresaLogada && statusVale === 'assinado') {
+                    const dataVale = separarDataSegura(vale.data_criacao || vale.data);
+                    
+                    // ESPIÃO 2: Mostra como a data foi separada
+                    console.log("📅 Data extraída do vale:", dataVale, " | Mês/Ano selecionado:", mesSelected, anoSelected);
+                    
+                    if (Number(dataVale.mes) === Number(mesSelected) && Number(dataVale.ano) === Number(anoSelected)) {
+                        let v = parseMoedaLocal(vale.valor) || 0;
+                        
+                        const tipoVale = String(vale.tipo || "").toLowerCase();
+                        if (tipoVale.includes('produto') || tipoVale.includes('material')) {
+                            totalProduto += v;
+                            console.log("✅ Adicionado aos Produtos:", v);
+                        } else {
+                            totalDinheiro += v;
+                            console.log("✅ Adicionado ao Dinheiro:", v);
+                        }
+                    } else {
+                        console.log("❌ Ignorado: O mês ou ano não bateu.");
+                    }
+                } else {
+                    console.log("❌ Ignorado: Empresa ou Status diferente. Empresa:", vale.empresa_id, " | Status:", vale.status);
                 }
             });
 
+            // 2. BUSCA DE PONTOS
             const qPonto = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
             const pontoSnap = await getDocs(qPonto);
 
@@ -2504,11 +2534,11 @@ window.exportarPDF = function(tipo) {
                 const pt = doc.data();
                 const dataPonto = separarDataSegura(pt.data);
                 
-                if (dataPonto.mes === mesSelected && dataPonto.ano === anoSelected) {
+                if (Number(dataPonto.mes) === Number(mesSelected) && Number(dataPonto.ano) === Number(anoSelected)) {
                     pontosDoMes.push(pt);
                 }
             });
-
+                          
             let diasTrabalhados = {};
             pontosDoMes.forEach(pt => {
                 if(!diasTrabalhados[pt.data]) {
@@ -2541,13 +2571,25 @@ window.exportarPDF = function(tipo) {
             let valorHoraExtra = valorHoraTrabalho * 1.5; 
             let valorTotalReceberExtras = totalHorasExtrasDecimais * valorHoraExtra;
 
-            let liquidoReceber = salarioBase + valorTotalReceberExtras - totalDinheiro - totalProduto;
+            // --- LOG PARA DEBUG (Aperte F12 no navegador para ver esses valores) ---
+            console.log("=== RESUMO CÁLCULO ===");
+            console.log("Salário Base:", salarioBase);
+            console.log("Total Extras:", valorTotalReceberExtras);
+            console.log("Total Vales Dinheiro:", totalDinheiro);
+            console.log("Total Vales Produto:", totalProduto);
+
+            // 3. CÁLCULO DO LÍQUIDO - O abate acontece nesta linha
+            let liquidoReceber = (salarioBase + valorTotalReceberExtras) - (totalDinheiro + totalProduto);
+            
+            // Impede que o funcionário fique com saldo negativo
+            if (liquidoReceber < 0) liquidoReceber = 0; 
 
             let horasDisplay = Math.floor(totalHorasExtrasDecimais);
             let minutosDisplay = Math.round((totalHorasExtrasDecimais - horasDisplay) * 60);
 
             document.getElementById('f-nome-display').innerText = funcionario.nome;
-            document.getElementById('f-periodo-display').innerText = `Referência: ${nomeMeses[mesSelected]} de ${anoSelected}`;
+            // Se nomeMeses não estiver definido no seu código, troque para um texto fixo ou garanta que o array existe
+            document.getElementById('f-periodo-display').innerText = `Referência: ${mesSelected} / ${anoSelected}`;
             
             document.getElementById('f-salario-base').innerText = formatarMoeda(salarioBase);
             document.getElementById('f-horas-extras-texto').innerText = `(+) Horas Extras (${horasDisplay}h ${minutosDisplay}m):`;
@@ -2562,11 +2604,10 @@ window.exportarPDF = function(tipo) {
             Swal.close();
 
         } catch (e) {
-            console.error(e);
+            console.error("Erro na folha:", e);
             Swal.fire('Erro', 'Ocorreu um erro ao calcular a folha de pagamento.', 'error');
         }
     };
-
        document.getElementById('btnCadastrarFunc').onclick = async function() {
         const nome = document.getElementById('c-nome').value.trim();
         const cpf = document.getElementById('c-cpf').value.trim();
@@ -3704,13 +3745,19 @@ window.exportarPDF = function(tipo) {
 
 // === INÍCIO DO SISTEMA DE ALERTAS ===
 async function monitorarVencimentosObras() {
-    // CORREÇÃO: Verifica se quem está logado é o Gestor. Se não for, bloqueia os alertas.
-    if (!localStorage.getItem('empresaGestor')) {
+    const empresaGestor = localStorage.getItem('empresaGestor');
+    const telaPatraoAtiva = document.getElementById('tela-patrao').style.display === 'block';
+
+    // CORREÇÃO 1: Só executa se for um Gestor E a tela de gestão estiver de fato aberta.
+    // Isso garante 100% que os alertas NUNCA apareçam na tela do ponto eletrônico.
+    if (!empresaGestor || !telaPatraoAtiva) {
         return; 
     }
 
-    try {
-        const querySnapshot = await getDocs(collection(db, "despesas_obras"));
+    try {
+        // CORREÇÃO 2: Busca no banco de dados APENAS as despesas referentes à empresa acessada (MANUTENÇÃO, WORKMAN, etc.)
+        const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaGestor));
+        const querySnapshot = await getDocs(q);
         
         const dataHojeReal = new Date();
         const hojeFormatado = dataHojeReal.toISOString().substring(0, 10);
@@ -3766,7 +3813,6 @@ async function monitorarVencimentosObras() {
                     }
 
                     if (tituloAlerta !== "") {
-                        // --- AGORA PUXA EXATAMENTE OS NOMES QUE ESTÃO NO SEU CÓDIGO (loja_nome e obra_nome) ---
                         const nomeLoja = dados.loja_nome || dados.loja || "Fornecedor não informado";
                         const nomeObra = dados.obra_nome || dados.obra || "Obra não informada";
                         const nomeDespesa = dados.descricao || "Sem descrição";
@@ -3782,8 +3828,7 @@ async function monitorarVencimentosObras() {
             renderizarAlertasNoCanto(htmlAlertas, emitirSom);
         }
     } catch (err) {
-        console.warn("Aguardando permissão do sistema para ler os boletos...");
-        setTimeout(monitorarVencimentosObras, 10000); 
+        console.warn("Aguardando carregamento...", err);
     }
 }
 
