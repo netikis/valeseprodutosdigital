@@ -1645,16 +1645,18 @@ window.carregarFiltrosDespesas = async function() {
                 const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
                 
                 // Lógica para descobrir se a nota está vencida
-                let isVencida = false;
-                if (d.data_vencimento) {
-                    const partesVenc = d.data_vencimento.split('-');
-                    if (partesVenc.length === 3) {
-                        const dataVencObj = new Date(partesVenc, partesVenc - 1, partesVenc);
-                        if (dataVencObj < hoje) {
-                            isVencida = true;
-                        }
-                    }
-                }
+               let isVencida = false;
+               if (d.data_vencimento) {
+               const partesVenc = d.data_vencimento.split('-');
+               if (partesVenc.length === 3) {
+               // CORREÇÃO: Pegar as partes corretas (Ano = [0], Mês = [1], Dia = [2])
+               const dataVencObj = new Date(partesVenc[0], partesVenc[1] - 1, partesVenc[2]);
+        
+               if (dataVencObj < hoje) {
+               isVencida = true;
+        }
+    }
+}
 
                 // Ajusta as cores e textos dependendo se está vencida ou não
                 const corBorda = isVencida ? '#dc3545' : '#ffc107'; // Vermelho ou Amarelo
