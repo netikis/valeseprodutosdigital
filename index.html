@@ -1167,8 +1167,11 @@
         document.querySelectorAll('.main-card').forEach(card => card.style.display = 'none');
         document.getElementById('tela-escolha-inicial').style.display = 'block';
         atualizarLogoInterface("FH CONSTRUÇÕES CIVIS"); // Reseta a logo
-    };
-
+        if (document.getElementById('alerta-container-global')) {
+        document.getElementById('alerta-container-global').style.display = 'none';
+    }
+};
+   
     window.entrarEmpresaFuncionario = function(nomeEmpresa) {
         localStorage.setItem('empresaTemporariaFuncionario', nomeEmpresa);
         atualizarLogoInterface(nomeEmpresa);
@@ -3747,14 +3750,25 @@ window.gerarFolhaPagamento = async function() {
 async function monitorarVencimentosObras() {
     const empresaGestor = localStorage.getItem('empresaGestor');
     const telaPatraoAtiva = document.getElementById('tela-patrao').style.display === 'block';
+    
+    // Captura a caixa de alertas (se ela já existir)
+    let containerAlerta = document.getElementById("alerta-container-global");
 
-    // CORREÇÃO 1: Só executa se for um Gestor E a tela de gestão estiver de fato aberta.
-    // Isso garante 100% que os alertas NUNCA apareçam na tela do ponto eletrônico.
+    // TRAVA: Se não for gestor ou a tela de gestão não estiver aberta...
     if (!empresaGestor || !telaPatraoAtiva) {
+        // ...força a caixa de alertas a sumir e aborta a função!
+        if (containerAlerta) {
+            containerAlerta.style.display = 'none';
+        }
         return; 
     }
 
-    try {
+    // Se passou da trava, garante que a caixa fique visível na área de Gestão
+    if (containerAlerta) {
+        containerAlerta.style.display = 'block';
+    }
+
+     try {
         // CORREÇÃO 2: Busca no banco de dados APENAS as despesas referentes à empresa acessada (MANUTENÇÃO, WORKMAN, etc.)
         const q = query(collection(db, "despesas_obras"), where("empresa_id", "==", empresaGestor));
         const querySnapshot = await getDocs(q);
