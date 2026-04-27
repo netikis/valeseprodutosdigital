@@ -1302,7 +1302,9 @@
             if (typeof window.checarNovosPedidosManutencao === "function") {
                 window.checarNovosPedidosManutencao();
             }
-        }, 800);
+            monitorarVencimentosObras();
+        
+         }, 800);
     }
 
     const nomeMeses = { 
