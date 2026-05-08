@@ -650,6 +650,7 @@
         <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
         <div class="tab" onclick="mudarAba('folha', this)">📄 Folha Pagamento</div>
+        <div class="tab" onclick="mudarAba('calendario', this)">📅 Calendário</div>
         <div class="tab" style="background: #eef2f5; color: #1a2a43; border: 1px solid #1a2a43;" onclick="mudarAba('terceiros', this)">👷 Terceiros</div>
         <div class="tab tab-despesas" onclick="mudarAba('despesas', this)">📉 Despesas</div>
         <div class="tab" style="background: #1a2a43; color: white;" onclick="mudarAba('backup', this)">💾 Backup</div>
@@ -685,6 +686,21 @@
             <div style="flex: 1;">
                 <label>Horário de Saída</label>
                 <input type="time" id="c-saida" value="17:00">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <div style="flex: 1;">
+                <label>Intervalo (minutos)</label>
+                <input type="number" id="c-intervalo" value="60" min="0" max="300" placeholder="60">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <div style="flex: 1;">
+                <label>Sábado (horas)</label>
+                <input type="number" id="c-sabado-horas" value="0" min="0" max="12" step="0.5" placeholder="0">
+                <p style="font-size: 11px; color: #888; margin: 6px 0 0 0;">* Se trabalha sábado até meio-dia, use 4. Se não trabalha, deixe 0.</p>
             </div>
         </div>
         
@@ -806,6 +822,10 @@
                     <span id="f-horas-extras-texto">(+) Horas Extras (0h):</span>
                     <strong id="f-valor-extras">R$ 0,00</strong>
                 </div>
+                <div class="folha-linha" style="color:#1a2a43;">
+                    <span id="f-banco-horas-texto">(=) Banco de Horas (crédito 0h):</span>
+                    <strong id="f-banco-horas">0h 0m</strong>
+                </div>
                 <div class="folha-linha desconto">
                     <span>(-) Vales / Adiantamentos:</span>
                     <strong id="f-valor-vales">R$ 0,00</strong>
@@ -814,12 +834,46 @@
                     <span>(-) Produtos / Materiais:</span>
                     <strong id="f-valor-produtos">R$ 0,00</strong>
                 </div>
+                <div class="folha-linha desconto">
+                    <span id="f-desconto-horas-texto">(-) Desconto de Horas (0h):</span>
+                    <strong id="f-valor-desconto-horas">R$ 0,00</strong>
+                </div>
                 
                 <div class="folha-linha destaque">
                     <span>LÍQUIDO A RECEBER:</span>
                     <span id="f-valor-liquido" style="color: #28a745; font-size: 18px;">R$ 0,00</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="aba-calendario" class="view-section">
+        <div style="background: #eef2f5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #1a2a43;">
+            <h3 style="margin: 0; color: var(--dark-navy); text-align:center;">📅 Calendário de Feriados</h3>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #555; text-align:center;">
+                Cadastre feriados municipal/estadual/federal. Esses dias não entram como "horas devidas" e podem virar banco de horas se houver trabalho.
+            </p>
+        </div>
+
+        <label>Data do Feriado</label>
+        <input type="date" id="fer-data">
+
+        <label>Nome / Descrição</label>
+        <input type="text" id="fer-nome" placeholder="Ex.: São João / Consciência Negra / Aniversário da cidade">
+
+        <label>Tipo</label>
+        <select id="fer-tipo">
+            <option value="municipal">Municipal</option>
+            <option value="estadual">Estadual</option>
+            <option value="federal">Federal</option>
+        </select>
+
+        <button class="btn-enviar" id="btnSalvarFeriado" onclick="salvarFeriado()">SALVAR FERIADO</button>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <button class="btn-gold" onclick="carregarFeriados()" style="margin-top:0; box-shadow:none;">🔄 ATUALIZAR LISTA</button>
+        <div id="lista-feriados" style="margin-top: 15px;">
+            <p style="text-align: center; color: #888; font-size: 13px;">Cadastre e clique em “Atualizar Lista”.</p>
         </div>
     </div>
 
@@ -1021,6 +1075,8 @@
     </div>
 
     <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTAR ENTRADA</button>
+    <button class="btn-logout" onclick="baterPonto('Início Intervalo')" style="margin-top: 12px; background: #6c757d; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">⏸️ SAIR P/ ALMOÇO (INÍCIO INTERVALO)</button>
+    <button class="btn-logout" onclick="baterPonto('Fim Intervalo')" style="margin-top: 12px; background: #4285F4; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">▶️ VOLTAR DO ALMOÇO (FIM INTERVALO)</button>
     <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTAR SAÍDA</button>
 
     <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
@@ -1083,7 +1139,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     
     const LOGOS_EMPRESAS = {
         "FH CONSTRUÇÕES CIVIS": "https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg",
@@ -1112,6 +1169,28 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Auth anônimo (sem mudar o fluxo do usuário). Isso cria um UID seguro por dispositivo.
+    let authReadyResolve;
+    const authReady = new Promise((resolve) => { authReadyResolve = resolve; });
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            localStorage.setItem('auth_uid', user.uid);
+            authReadyResolve?.(user);
+        }
+    });
+
+    async function ensureAuth() {
+        if (auth.currentUser) return auth.currentUser;
+        try {
+            await signInAnonymously(auth);
+        } catch (e) {
+            console.error('Falha no Auth anônimo', e);
+        }
+        return await authReady;
+    }
 
     // CHECAGEM DO STATUS (KILL SWITCH)
     async function verificarStatusSistema() {
@@ -1126,6 +1205,8 @@
         }
     }
     verificarStatusSistema();
+    // Garante que o app sempre tenha um UID (sem pedir login)
+    ensureAuth();
 
     window.listaFuncionarios = {};
     window.dadosExportacaoVales = [];
@@ -2411,6 +2492,106 @@ window.exportarPDF = function(tipo) {
         if (aba === 'pedidos') {
             buscarPedidosMaterial();
         }
+        if (aba === 'calendario') {
+            carregarFeriados();
+        }
+    };
+
+    window.salvarFeriado = async function() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!empresaLogada) return Swal.fire('Atenção', 'Entre como gestor para cadastrar feriados.', 'warning');
+
+        const data = document.getElementById('fer-data').value; // YYYY-MM-DD
+        const nome = document.getElementById('fer-nome').value.trim();
+        const tipo = document.getElementById('fer-tipo').value;
+
+        if (!data) return Swal.fire('Atenção', 'Selecione a data do feriado.', 'warning');
+        if (!nome) return Swal.fire('Atenção', 'Informe o nome/descrição do feriado.', 'warning');
+
+        const btn = document.getElementById('btnSalvarFeriado');
+        btn.innerText = '⏳ A SALVAR...';
+        btn.disabled = true;
+
+        try {
+            const user = await ensureAuth();
+            const uid = user?.uid || localStorage.getItem('auth_uid') || null;
+            await addDoc(collection(db, "feriados"), {
+                empresa_id: empresaLogada,
+                data_iso: data,
+                nome,
+                tipo,
+                criado_por_uid: uid,
+                criado_em: serverTimestamp()
+            });
+            Swal.fire('Sucesso!', 'Feriado cadastrado.', 'success');
+            document.getElementById('fer-nome').value = '';
+            carregarFeriados();
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível salvar o feriado.', 'error');
+        } finally {
+            btn.innerText = 'SALVAR FERIADO';
+            btn.disabled = false;
+        }
+    };
+
+    window.carregarFeriados = async function() {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        const div = document.getElementById('lista-feriados');
+        if (!div) return;
+        if (!empresaLogada) {
+            div.innerHTML = `<p style="text-align:center; color:#888; font-size:13px;">Entre como gestor para ver os feriados.</p>`;
+            return;
+        }
+
+        div.innerHTML = `<p style="text-align:center; color:#888; font-size:13px;">A carregar...</p>`;
+        try {
+            const q = query(collection(db, "feriados"), where("empresa_id", "==", empresaLogada));
+            const snap = await getDocs(q);
+            if (snap.empty) {
+                div.innerHTML = `<p style="text-align:center; color:#888; font-size:13px;">Nenhum feriado cadastrado.</p>`;
+                return;
+            }
+            let items = [];
+            snap.forEach(d => {
+                const f = d.data();
+                items.push({ id: d.id, ...f });
+            });
+            items.sort((a, b) => String(a.data_iso || '').localeCompare(String(b.data_iso || '')));
+
+            div.innerHTML = items.map(f => `
+                <div class="resultado-item" style="border-left-color:#1a2a43;">
+                    <b>${(f.data_iso || '').split('-').reverse().join('/')}</b> - ${f.nome || ''}<br>
+                    <span style="font-size:12px; color:#666;">Tipo: ${(f.tipo || '').toUpperCase()}</span>
+                    <button onclick="excluirFeriado('${f.id}')" style="background:#d9534f; color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; width:100%; margin-top:8px; font-weight:700;">🗑️ REMOVER</button>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            div.innerHTML = `<p style="text-align:center; color:#d9534f; font-size:13px;">Erro ao carregar feriados.</p>`;
+        }
+    };
+
+    window.excluirFeriado = async function(id) {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!empresaLogada) return;
+        const ok = await Swal.fire({
+            title: 'Remover feriado?',
+            text: 'Isso afeta os cálculos da folha/banco de horas.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            cancelButtonColor: '#1a2a43',
+            confirmButtonText: 'Sim, remover'
+        });
+        if (!ok.isConfirmed) return;
+        try {
+            await deleteDoc(doc(db, "feriados", id));
+            Swal.fire('Removido!', 'Feriado removido.', 'success');
+            carregarFeriados();
+        } catch (e) {
+            Swal.fire('Erro', 'Não foi possível remover.', 'error');
+        }
     };
 
     async function carregarListaDeFuncionarios() {
@@ -2441,7 +2622,8 @@ window.exportarPDF = function(tipo) {
                         <div>
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
-                            <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'}</span>
+                            <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>
+                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Intervalo: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
@@ -2482,11 +2664,98 @@ window.gerarFolhaPagamento = async function() {
         const salarioBase = parseMoedaLocal(funcionario.salario || "0") || 0; 
         const horaEntPadrão = funcionario.hora_entrada || "07:00";
         const horaSaiPadrão = funcionario.hora_saida || "17:00";
+        const intervaloMinutosPadrao = Number(funcionario.intervalo_minutos ?? 60);
+        const sabadoHorasPadrao = Number(funcionario.sabado_horas ?? 0);
 
         let [eH, eM] = horaEntPadrão.split(':').map(Number);
         let [sH, sM] = horaSaiPadrão.split(':').map(Number);
         let jornadaDiariaHoras = (sH + sM/60) - (eH + eM/60);
         if (jornadaDiariaHoras < 0) jornadaDiariaHoras += 24; 
+        if (Number.isFinite(intervaloMinutosPadrao) && intervaloMinutosPadrao > 0) {
+            jornadaDiariaHoras = Math.max(0, jornadaDiariaHoras - (intervaloMinutosPadrao / 60));
+        }
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+
+        function isoDateLocal(ano, mes1a12, dia) {
+            return `${ano}-${pad2(mes1a12)}-${pad2(dia)}`;
+        }
+
+        // Calcula Páscoa (Meeus/Jones/Butcher) para suportar feriados móveis, se você quiser cadastrar no Firestore.
+        function calcularPascoa(ano) {
+            const a = ano % 19;
+            const b = Math.floor(ano / 100);
+            const c = ano % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const mes = Math.floor((h + l - 7 * m + 114) / 31); // 3=março, 4=abril
+            const dia = ((h + l - 7 * m + 114) % 31) + 1;
+            return { mes, dia }; // mes 3-4
+        }
+
+        function addDias(ano, mesIndex0, dia, delta) {
+            const dt = new Date(ano, mesIndex0, dia);
+            dt.setDate(dt.getDate() + delta);
+            return dt;
+        }
+
+        // Feriados nacionais fixos (Brasil). Municipais/estaduais devem ser cadastrados no Firestore (coleção "feriados").
+        function feriadosNacionaisFixos(ano) {
+            return new Set([
+                `${ano}-01-01`, // Confraternização Universal
+                `${ano}-04-21`, // Tiradentes
+                `${ano}-05-01`, // Dia do Trabalho
+                `${ano}-09-07`, // Independência
+                `${ano}-10-12`, // Nossa Senhora Aparecida
+                `${ano}-11-02`, // Finados
+                `${ano}-11-15`, // Proclamação da República
+                `${ano}-12-25`  // Natal
+            ]);
+        }
+
+        function isFeriadoOuDomingo(dataIso, holidaySet) {
+            // dataIso: YYYY-MM-DD
+            const [y, m, d] = dataIso.split('-').map(Number);
+            const dow = new Date(y, m - 1, d).getDay(); // 0=domingo
+            return dow === 0 || holidaySet.has(dataIso);
+        }
+
+        function isSabado(dataIso) {
+            const [y, m, d] = dataIso.split('-').map(Number);
+            return new Date(y, m - 1, d).getDay() === 6;
+        }
+
+        function isDiaUtil(dataIso, holidaySet) {
+            const [y, m, d] = dataIso.split('-').map(Number);
+            const dow = new Date(y, m - 1, d).getDay();
+            if (dow === 0) return false;
+            if (holidaySet.has(dataIso)) return false;
+            return true;
+        }
+
+        function horasDevidasNoMes(ano, mes1a12, jornadaLiquidaHoras, sabadoHoras, holidaySet) {
+            const totalDias = new Date(ano, mes1a12, 0).getDate();
+            let soma = 0;
+            for (let d = 1; d <= totalDias; d++) {
+                const iso = isoDateLocal(ano, mes1a12, d);
+                const [yy, mm, dd] = iso.split('-').map(Number);
+                const dow = new Date(yy, mm - 1, dd).getDay(); // 0=dom ... 6=sáb
+                if (holidaySet.has(iso) || dow === 0) continue;
+                if (dow === 6) {
+                    if (Number.isFinite(sabadoHoras) && sabadoHoras > 0) soma += sabadoHoras;
+                    continue;
+                }
+                if (isDiaUtil(iso, holidaySet)) soma += jornadaLiquidaHoras;
+            }
+            return soma;
+        }
 
         try {
             const empresaLogada = localStorage.getItem('empresaGestor');
@@ -2554,29 +2823,115 @@ window.gerarFolhaPagamento = async function() {
                 diasTrabalhados[pt.data].push(pt);
             });
 
-            let totalHorasExtrasDecimais = 0;
+            let totalHorasExtras50Decimais = 0;
+            let bancoHorasCreditoDecimais = 0; // feriado/domingo (e outros dias não-devidos)
+            let totalHorasTrabalhadasMesDevidas = 0; // somente dias que entram como "devidos"
 
-            Object.keys(diasTrabalhados).forEach(dia => {
-                let batidas = diasTrabalhados[dia];
-                let entradas = batidas.filter(b => b.tipo === 'Entrada').map(b => b.timestamp);
-                let saidas = batidas.filter(b => b.tipo === 'Saída').map(b => b.timestamp);
-
-                if (entradas.length > 0 && saidas.length > 0) {
-                    let primeiraEntrada = Math.min(...entradas);
-                    let ultimaSaida = Math.max(...saidas);
-                    
-                    if (ultimaSaida > primeiraEntrada) {
-                        let horasTrabalhadas = (ultimaSaida - primeiraEntrada) / (1000 * 60 * 60);
-                        if (horasTrabalhadas > jornadaDiariaHoras) {
-                            totalHorasExtrasDecimais += (horasTrabalhadas - jornadaDiariaHoras);
+            // Feriados (nacionais fixos + cadastrados no Firestore por empresa)
+            const feriadosSet = feriadosNacionaisFixos(Number(anoSelected));
+            try {
+                const qFer = query(collection(db, "feriados"), where("empresa_id", "==", empresaLogada));
+                const ferSnap = await getDocs(qFer);
+                ferSnap.forEach((d) => {
+                    const f = d.data();
+                    if (!f) return;
+                    // Aceita "data_iso" (YYYY-MM-DD) ou "data" (DD/MM/AAAA)
+                    if (typeof f.data_iso === 'string' && f.data_iso.includes('-')) {
+                        if (f.data_iso.startsWith(String(anoSelected))) feriadosSet.add(f.data_iso);
+                    } else if (typeof f.data === 'string' && f.data.includes('/')) {
+                        const parts = f.data.split('/');
+                        if (parts.length === 3) {
+                            const iso = `${parts[2]}-${pad2(parts[1])}-${pad2(parts[0])}`;
+                            if (iso.startsWith(String(anoSelected))) feriadosSet.add(iso);
                         }
                     }
+                });
+            } catch (e) {
+                // Se a coleção não existir ou falhar, segue só com feriados fixos
+            }
+
+            Object.keys(diasTrabalhados).forEach(dia => {
+                const batidas = (diasTrabalhados[dia] || [])
+                    .filter(b => b && (b.tipo === 'Entrada' || b.tipo === 'Saída' || b.tipo === 'Início Intervalo' || b.tipo === 'Fim Intervalo') && Number.isFinite(b.timestamp))
+                    .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                // Soma o tempo efetivamente trabalhado, pausando no intervalo (almoço)
+                let trabalhandoDesde = null; // timestamp de início do período trabalhado atual
+                let emIntervalo = false;
+                let segundosTrabalhados = 0;
+                let tevePar = false;
+
+                for (const b of batidas) {
+                    if (b.tipo === 'Entrada') {
+                        // Se já estava "em trabalho" e recebeu outra Entrada, ignora a duplicada.
+                        if (!emIntervalo && trabalhandoDesde == null) trabalhandoDesde = b.timestamp;
+                    } else if (b.tipo === 'Saída') {
+                        if (trabalhandoDesde != null && b.timestamp > trabalhandoDesde) {
+                            segundosTrabalhados += (b.timestamp - trabalhandoDesde) / 1000;
+                            trabalhandoDesde = null;
+                            tevePar = true;
+                        }
+                        emIntervalo = false;
+                    } else if (b.tipo === 'Início Intervalo') {
+                        // Fecha o período trabalhado até o início do intervalo
+                        if (trabalhandoDesde != null && b.timestamp > trabalhandoDesde) {
+                            segundosTrabalhados += (b.timestamp - trabalhandoDesde) / 1000;
+                            trabalhandoDesde = null;
+                            tevePar = true;
+                        }
+                        emIntervalo = true;
+                    } else if (b.tipo === 'Fim Intervalo') {
+                        // Retoma contagem do trabalho após o intervalo
+                        if (emIntervalo) {
+                            trabalhandoDesde = b.timestamp;
+                            emIntervalo = false;
+                        }
+                    }
+                }
+
+                // Se não teve nenhum par Entrada->Saída, não calcula extra nesse dia (evita inflar por batida faltante)
+                if (!tevePar) return;
+
+                const horasTrabalhadas = segundosTrabalhados / 3600;
+                const { ano, mes, dia: dd } = separarDataSegura(dia);
+                const dataIso = `${ano}-${pad2(mes)}-${pad2(dd)}`;
+
+                // Se trabalhou em feriado/domingo:
+                // - Não conta como "devido"
+                // - Vai para banco de horas (não computa como horas extras na folha)
+                if (isFeriadoOuDomingo(dataIso, feriadosSet)) {
+                    bancoHorasCreditoDecimais += horasTrabalhadas;
+                    return;
+                }
+
+                // Sábado: só entra como "devido" se o funcionário tiver carga no sábado (>0)
+                const sabadoEhDevido = isSabado(dataIso) && Number.isFinite(sabadoHorasPadrao) && sabadoHorasPadrao > 0;
+                const diaEhDevido = sabadoEhDevido || isDiaUtil(dataIso, feriadosSet);
+
+                if (diaEhDevido) {
+                    totalHorasTrabalhadasMesDevidas += horasTrabalhadas;
+                } else {
+                    // Qualquer dia não-devido (ex.: sábado sem jornada) vira crédito de banco
+                    bancoHorasCreditoDecimais += horasTrabalhadas;
+                    return;
+                }
+
+                // Em dia útil: extra 50% só do que ultrapassar a jornada líquida diária
+                if (horasTrabalhadas > jornadaDiariaHoras) {
+                    totalHorasExtras50Decimais += (horasTrabalhadas - jornadaDiariaHoras);
                 }
             });
 
             let valorHoraTrabalho = salarioBase / 220; 
-            let valorHoraExtra = valorHoraTrabalho * 1.5; 
-            let valorTotalReceberExtras = totalHorasExtrasDecimais * valorHoraExtra;
+            let valorTotalReceberExtras =
+                (totalHorasExtras50Decimais * (valorHoraTrabalho * 1.5));
+
+            // Desconto de horas (faltas/atrasos) — padrão: considera dias úteis (seg-sex) como dias devidos.
+            const anoNum = Number(anoSelected);
+            const mesNum = Number(mesSelected);
+            const horasDevidasMes = horasDevidasNoMes(anoNum, mesNum, jornadaDiariaHoras, sabadoHorasPadrao, feriadosSet);
+            const horasFaltantes = Math.max(0, horasDevidasMes - totalHorasTrabalhadasMesDevidas);
+            const valorDescontoHoras = horasFaltantes * valorHoraTrabalho;
 
             // --- LOG PARA DEBUG (Aperte F12 no navegador para ver esses valores) ---
             console.log("=== RESUMO CÁLCULO ===");
@@ -2586,11 +2941,12 @@ window.gerarFolhaPagamento = async function() {
             console.log("Total Vales Produto:", totalProduto);
 
             // 3. CÁLCULO DO LÍQUIDO - O abate acontece nesta linha
-            let liquidoReceber = (salarioBase + valorTotalReceberExtras) - (totalDinheiro + totalProduto);
+            let liquidoReceber = (salarioBase + valorTotalReceberExtras) - (totalDinheiro + totalProduto + valorDescontoHoras);
             
             // Impede que o funcionário fique com saldo negativo
             if (liquidoReceber < 0) liquidoReceber = 0; 
 
+            const totalHorasExtrasDecimais = totalHorasExtras50Decimais;
             let horasDisplay = Math.floor(totalHorasExtrasDecimais);
             let minutosDisplay = Math.round((totalHorasExtrasDecimais - horasDisplay) * 60);
 
@@ -2601,9 +2957,23 @@ window.gerarFolhaPagamento = async function() {
             document.getElementById('f-salario-base').innerText = formatarMoeda(salarioBase);
             document.getElementById('f-horas-extras-texto').innerText = `(+) Horas Extras (${horasDisplay}h ${minutosDisplay}m):`;
             document.getElementById('f-valor-extras').innerText = formatarMoeda(valorTotalReceberExtras);
+
+            const bancoH = Math.floor(bancoHorasCreditoDecimais);
+            const bancoM = Math.round((bancoHorasCreditoDecimais - bancoH) * 60);
+            if (document.getElementById('f-banco-horas-texto')) {
+                document.getElementById('f-banco-horas-texto').innerText = `(=) Banco de Horas (crédito ${bancoH}h ${bancoM}m):`;
+            }
+            if (document.getElementById('f-banco-horas')) {
+                document.getElementById('f-banco-horas').innerText = `${bancoH}h ${bancoM}m`;
+            }
             
             document.getElementById('f-valor-vales').innerText = formatarMoeda(totalDinheiro);
             document.getElementById('f-valor-produtos').innerText = formatarMoeda(totalProduto);
+
+            const horasFaltDisplay = Math.floor(horasFaltantes);
+            const minFaltDisplay = Math.round((horasFaltantes - horasFaltDisplay) * 60);
+            document.getElementById('f-desconto-horas-texto').innerText = `(-) Desconto de Horas (${horasFaltDisplay}h ${minFaltDisplay}m):`;
+            document.getElementById('f-valor-desconto-horas').innerText = formatarMoeda(valorDescontoHoras);
             
             document.getElementById('f-valor-liquido').innerText = formatarMoeda(liquidoReceber);
 
@@ -2623,6 +2993,8 @@ window.gerarFolhaPagamento = async function() {
         const pix = document.getElementById('c-pix') ? document.getElementById('c-pix').value.trim() : '';
         const entrada = document.getElementById('c-entrada').value;
         const saida = document.getElementById('c-saida').value;
+        const intervaloMinutos = Number(document.getElementById('c-intervalo')?.value || 60);
+        const sabadoHoras = Number(document.getElementById('c-sabado-horas')?.value || 0);
         const empresaLogada = localStorage.getItem('empresaGestor');
 
         if (!nome || !cpf) {
@@ -2643,6 +3015,8 @@ window.gerarFolhaPagamento = async function() {
                 pix: pix,
                 hora_entrada: entrada,
                 hora_saida: saida,
+                intervalo_minutos: Number.isFinite(intervaloMinutos) ? intervaloMinutos : 60,
+                sabado_horas: Number.isFinite(sabadoHoras) ? sabadoHoras : 0,
                 senha: "" // Senha vazia para ele criar no 1º acesso
             });
             
@@ -2654,6 +3028,8 @@ window.gerarFolhaPagamento = async function() {
             document.getElementById('c-salario').value = '';
             document.getElementById('c-tel').value = '';
             if(document.getElementById('c-pix')) document.getElementById('c-pix').value = '';
+            if(document.getElementById('c-intervalo')) document.getElementById('c-intervalo').value = '60';
+            if(document.getElementById('c-sabado-horas')) document.getElementById('c-sabado-horas').value = '0';
             
             // Recarrega a lista na hora
             carregarListaDeFuncionarios();
@@ -2686,6 +3062,12 @@ window.gerarFolhaPagamento = async function() {
                     
                     <label style="margin-top: 10px;">Chave PIX:</label>
                     <input id="edit-f-pix" type="text" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.pix || ''}">
+
+                    <label style="margin-top: 10px;">Intervalo (minutos):</label>
+                    <input id="edit-f-intervalo" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.intervalo_minutos ?? 60)}" min="0" max="300">
+
+                    <label style="margin-top: 10px;">Sábado (horas):</label>
+                    <input id="edit-f-sabado-horas" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.sabado_horas ?? 0)}" min="0" max="12" step="0.5">
                 </div>
             `,
             showCancelButton: true,
@@ -2698,7 +3080,9 @@ window.gerarFolhaPagamento = async function() {
                     nome: document.getElementById('edit-f-nome').value.trim(),
                     salario: document.getElementById('edit-f-salario').value.trim(),
                     tel: document.getElementById('edit-f-tel').value.trim(),
-                    pix: document.getElementById('edit-f-pix').value.trim()
+                    pix: document.getElementById('edit-f-pix').value.trim(),
+                    intervalo_minutos: Number(document.getElementById('edit-f-intervalo').value || 60),
+                    sabado_horas: Number(document.getElementById('edit-f-sabado-horas').value || 0)
                 }
             }
         }).then(async (result) => {
@@ -2762,7 +3146,10 @@ window.gerarFolhaPagamento = async function() {
             let salvos = 0;
             for (let i = 0; i < pontosOffline.length; i++) {
                 try { 
-                    await addDoc(collection(db, "ponto_registros"), pontosOffline[i]); 
+                    const payload = { ...pontosOffline[i] };
+                    if (!payload.created_at) payload.created_at = serverTimestamp();
+                    payload.synced_at = serverTimestamp();
+                    await addDoc(collection(db, "ponto_registros"), payload); 
                     salvos++; 
                 } catch(e) {
                     console.error('Erro de sincronização', e);
@@ -2788,10 +3175,111 @@ window.gerarFolhaPagamento = async function() {
         Swal.fire('Link Copiado!', 'O funcionário só precisa entrar no link e escolher a opção "SOU FUNCIONÁRIO".', 'success');
     };
 
-    window.baterPonto = function(tipo) {
+    window.baterPonto = async function(tipo) {
         const obra = document.getElementById('obra-atual').value;
         const fotoBase64 = document.getElementById('foto-base64').value;
         const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa');
+        const user = await ensureAuth();
+        const authUid = user?.uid || localStorage.getItem('auth_uid') || null;
+
+        function obterDataAtualStr() {
+            const d = new Date();
+            const diaStr = String(d.getDate()).padStart(2, '0');
+            const mesStr = String(d.getMonth() + 1).padStart(2, '0');
+            const anoStr = d.getFullYear();
+            return `${diaStr}/${mesStr}/${anoStr}`;
+        }
+
+        function getChaveEstadoPonto(funcId) {
+            const dataHoje = obterDataAtualStr();
+            return `estado_ponto_${funcId}_${dataHoje}`;
+        }
+
+        function lerEstadoPonto(funcId) {
+            try {
+                return JSON.parse(localStorage.getItem(getChaveEstadoPonto(funcId)) || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function salvarEstadoPonto(funcId, estado) {
+            localStorage.setItem(getChaveEstadoPonto(funcId), JSON.stringify(estado));
+        }
+
+        function validarSequencia(tipoMarcacao, estado) {
+            const last = estado?.lastTipo || null;
+            const emIntervalo = Boolean(estado?.emIntervalo);
+            const encerrado = Boolean(estado?.encerrado);
+
+            // Se já marcou saída final do dia, não permite novas marcações nesse mesmo dia
+            if (encerrado) {
+                return { ok: false, msg: 'Você já registrou a SAÍDA hoje. Se precisar corrigir, fale com a gestão.' };
+            }
+
+            // Primeiro registro do dia
+            if (!last) {
+                if (tipoMarcacao !== 'Entrada') {
+                    return { ok: false, msg: 'A primeira marcação do dia deve ser ENTRADA.' };
+                }
+                return { ok: true };
+            }
+
+            if (tipoMarcacao === 'Entrada') {
+                return { ok: false, msg: 'Você já fez ENTRADA hoje. Use INÍCIO/FIM INTERVALO ou SAÍDA.' };
+            }
+
+            if (tipoMarcacao === 'Início Intervalo') {
+                if (emIntervalo) return { ok: false, msg: 'Você já está em intervalo. Para voltar, clique em FIM INTERVALO.' };
+                if (last !== 'Entrada' && last !== 'Fim Intervalo') {
+                    return { ok: false, msg: 'Para iniciar o intervalo, você precisa estar trabalhando (após ENTRADA ou FIM INTERVALO).' };
+                }
+                return { ok: true };
+            }
+
+            if (tipoMarcacao === 'Fim Intervalo') {
+                if (!emIntervalo) return { ok: false, msg: 'Você não iniciou o intervalo ainda. Clique primeiro em INÍCIO INTERVALO.' };
+                if (last !== 'Início Intervalo') {
+                    return { ok: false, msg: 'Para finalizar o intervalo, a última marcação deve ser INÍCIO INTERVALO.' };
+                }
+                return { ok: true };
+            }
+
+            if (tipoMarcacao === 'Saída') {
+                if (emIntervalo) return { ok: false, msg: 'Você está em intervalo. Primeiro registre FIM INTERVALO, depois SAÍDA.' };
+                if (last !== 'Entrada' && last !== 'Fim Intervalo') {
+                    return { ok: false, msg: 'Para registrar SAÍDA, você precisa estar trabalhando (após ENTRADA ou FIM INTERVALO).' };
+                }
+                return { ok: true };
+            }
+
+            return { ok: true };
+        }
+
+        function atualizarEstadoAposMarcacao(funcId, tipoMarcacao, ts) {
+            const novo = {
+                lastTipo: tipoMarcacao,
+                lastTs: ts,
+                emIntervalo: tipoMarcacao === 'Início Intervalo' ? true : (tipoMarcacao === 'Fim Intervalo' ? false : (lerEstadoPonto(funcId)?.emIntervalo || false)),
+                encerrado: tipoMarcacao === 'Saída'
+            };
+            // Se marcou "Fim Intervalo", garante que não fica travado em intervalo
+            if (tipoMarcacao === 'Fim Intervalo') novo.emIntervalo = false;
+            // Se marcou entrada/saída, não muda o "emIntervalo" (exceto saída final)
+            if (tipoMarcacao === 'Entrada') novo.emIntervalo = false;
+            if (tipoMarcacao === 'Saída') novo.emIntervalo = false;
+            salvarEstadoPonto(funcId, novo);
+        }
+
+        // Validação de sequência (evita batidas fora de ordem)
+        const funcIdPre = localStorage.getItem('funcLogadoId');
+        if (funcIdPre) {
+            const estadoAtual = lerEstadoPonto(funcIdPre);
+            const valid = validarSequencia(tipo, estadoAtual);
+            if (!valid.ok) {
+                return Swal.fire('Sequência inválida', valid.msg, 'warning');
+            }
+        }
 
         if (!obra) {
             return Swal.fire('Atenção', 'Deve informar em qual obra está!', 'warning');
@@ -2839,6 +3327,7 @@ window.gerarFolhaPagamento = async function() {
             const payloadPonto = {
                 empresa_id: empresaDoFuncionario,
                 funcionario_id: funcId,
+                auth_uid: authUid,
                 nome: funcNome,
                 tipo: tipo,
                 obra: obra,
@@ -2847,13 +3336,20 @@ window.gerarFolhaPagamento = async function() {
                 latitude: lat,
                 longitude: lng,
                 foto: fotoBase64,
-                timestamp: dataObj.getTime()
+                timestamp: dataObj.getTime(),
+                client_device_tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown",
+                created_at: serverTimestamp()
             };
 
             if (navigator.onLine) {
                 try {
-                    await addDoc(collection(db, "ponto_registros"), payloadPonto);
-                    Swal.fire('Sucesso!', `Ponto de ${tipo} registrado às ${horaAtual}.`, 'success');
+                    const docRef = await addDoc(collection(db, "ponto_registros"), payloadPonto);
+                    atualizarEstadoAposMarcacao(funcId, tipo, payloadPonto.timestamp);
+                    Swal.fire(
+                        'Sucesso!',
+                        `Ponto de ${tipo} registrado às ${horaAtual}.<br><br><b>Protocolo:</b> ${docRef.id}`,
+                        'success'
+                    );
                 } catch(e) {
                     salvarNoCelular(payloadPonto);
                 }
@@ -2880,6 +3376,7 @@ window.gerarFolhaPagamento = async function() {
             const offlineData = JSON.parse(localStorage.getItem('pontos_offline') || '[]');
             offlineData.push(payloadPonto);
             localStorage.setItem('pontos_offline', JSON.stringify(offlineData));
+            atualizarEstadoAposMarcacao(payloadPonto.funcionario_id, payloadPonto.tipo, payloadPonto.timestamp);
             Swal.fire(
                 'Ponto Guardado Offline! 📶❌',
                 `Sem internet. O seu ponto de ${payloadPonto.tipo} foi travado com o horário exato:<br><br><b style="font-size:18px; color:#d9534f;">${payloadPonto.data} às ${payloadPonto.hora}</b><br><br>Será enviado quando conectar a uma rede.`,
@@ -2913,8 +3410,18 @@ window.gerarFolhaPagamento = async function() {
         window.dadosExportacaoPonto = [];
 
         try {
+            // Carrega os registros do ponto
             const q = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId)); 
             const querySnapshot = await getDocs(q);
+
+            // Carrega eventos (ex.: cancelamentos) para manter trilha/auditoria sem apagar registros
+            const qEvt = query(collection(db, "ponto_eventos"), where("funcionario_id", "==", funcId));
+            const snapEvt = await getDocs(qEvt);
+            const cancelados = new Set();
+            snapEvt.forEach((d) => {
+                const ev = d.data();
+                if (ev && ev.tipo === 'CANCELAMENTO' && ev.ponto_id) cancelados.add(ev.ponto_id);
+            });
             
             if (querySnapshot.empty) { 
                 divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhum registo.</p>`; 
@@ -2925,6 +3432,7 @@ window.gerarFolhaPagamento = async function() {
             querySnapshot.forEach((doc) => {
                 const dados = doc.data(); 
                 dados.id = doc.id;
+                dados.cancelado_em_evento = cancelados.has(dados.id);
                 window.dadosExportacaoPonto.push(dados); 
                 
                 dados.linkMaps = "https://www.google.com/maps?q=" + dados.latitude + "," + dados.longitude;   
@@ -2968,16 +3476,20 @@ window.gerarFolhaPagamento = async function() {
                     agrupado[ano][mes].sort((a, b) => { 
                         return (b.timestamp || 0) - (a.timestamp || 0); 
                     }).forEach(dados => {
-                        const cor = dados.tipo === 'Entrada' ? '#28a745' : '#d9534f';
+                        const cor = dados.tipo === 'Entrada' ? '#28a745'
+                                  : (dados.tipo === 'Saída' ? '#d9534f' : '#6c757d');
                         const fotoThumb = dados.foto ? `<img src="${dados.foto}" onclick="abrirFoto('${dados.foto}')" style="width: 50px; border-radius: 5px; float: right; cursor: pointer; border: 1px solid #ccc; transition: 0.2s;" title="Clique para ampliar" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">` : '';
                         
+                        const canceladoBadge = (dados.cancelado_em_evento ? `<div style="margin-top:6px; padding:6px 8px; background:#fff3cd; border:1px solid #ffeeba; color:#856404; border-radius:8px; font-size:12px; font-weight:700;">⚠️ REGISTRO CANCELADO (mantido para auditoria)</div>` : ``);
+                        const btnAcao = (dados.cancelado_em_evento ? `` : `<button onclick="solicitarCancelamentoPonto('${dados.id}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">⚠️ SOLICITAR CANCELAMENTO</button>`);
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
                                 ${fotoThumb}
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
                                <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
                                 <button class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>
-                                <button onclick="excluirPonto('${dados.id}')" style="background: #d9534f; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">🗑️ APAGAR PONTO</button>
+                                ${btnAcao}
+                                ${canceladoBadge}
                             </div>`;
                     });
                     
@@ -2994,26 +3506,48 @@ window.gerarFolhaPagamento = async function() {
         }
     };
 
-     window.excluirPonto = function(id) {
-        Swal.fire({
-            title: 'Excluir Ponto?',
-            text: "Certeza que deseja apagar este registo de ponto? Esta ação afeta a folha de pagamento.",
-            icon: 'warning',
+    window.solicitarCancelamentoPonto = async function(pontoId) {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!empresaLogada) {
+            return Swal.fire('Atenção', 'Apenas a gestão pode solicitar cancelamento/ajuste de ponto.', 'warning');
+        }
+        const user = await ensureAuth();
+        const authUid = user?.uid || localStorage.getItem('auth_uid') || null;
+
+        const { value: motivo } = await Swal.fire({
+            title: '⚠️ Solicitar cancelamento',
+            input: 'textarea',
+            inputLabel: 'Informe o motivo/justificativa (obrigatório)',
+            inputPlaceholder: 'Ex.: Batida duplicada, erro de funcionário, entrada registrada no botão errado...',
+            inputAttributes: { maxlength: 400 },
             showCancelButton: true,
-            confirmButtonColor: '#d9534f',
-            cancelButtonColor: '#1a2a43',
-            confirmButtonText: 'Sim, apagar!'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await deleteDoc(doc(db, "ponto_registros", id));
-                    Swal.fire('Apagado!', 'O registo de ponto foi removido.', 'success');
-                    buscarPonto(); // Atualiza a lista na tela na hora
-                } catch (e) {
-                    Swal.fire('Erro', 'Não foi possível excluir o ponto.', 'error');
+            confirmButtonText: 'Registrar solicitação',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#1a2a43',
+            preConfirm: (val) => {
+                if (!val || String(val).trim().length < 10) {
+                    Swal.showValidationMessage('Informe uma justificativa com pelo menos 10 caracteres.');
                 }
+                return val;
             }
         });
+        if (!motivo) return;
+
+        try {
+            await addDoc(collection(db, "ponto_eventos"), {
+                tipo: "CANCELAMENTO",
+                ponto_id: pontoId,
+                empresa_id: empresaLogada,
+                gestor_auth_uid: authUid,
+                funcionario_id: document.getElementById('pt-func-select')?.value || null,
+                motivo: String(motivo).trim(),
+                criado_em: serverTimestamp()
+            });
+            Swal.fire('Registrado!', 'Solicitação registrada. O registro original foi mantido para auditoria.', 'success');
+            buscarPonto();
+        } catch (e) {
+            Swal.fire('Erro', 'Não foi possível registrar a solicitação.', 'error');
+        }
     };
 
     window.gerarEnviarPDF = async function(id) {
