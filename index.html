@@ -553,6 +553,19 @@
     </style>
 </head>
 <body>
+<script>
+  // Fallback: se o JavaScript principal falhar, ao menos mostra a tela inicial.
+  window.addEventListener('error', function (e) {
+    try {
+      var el = document.getElementById('fatal-error');
+      var msg = document.getElementById('fatal-error-msg');
+      if (msg) msg.textContent = (e && e.message) ? e.message : String(e);
+      if (el) el.style.display = 'block';
+      var tela = document.getElementById('tela-escolha-inicial');
+      if (tela) tela.style.display = 'block';
+    } catch (_) {}
+  });
+</script>
 
 <script>
     if ('serviceWorker' in navigator) {
@@ -573,7 +586,7 @@
     <p style="font-size: 14px; color: #aaa;">Por favor, entre em contato com o administrador do sistema para regularizar a situação.</p>
 </div>
 
-<div class="main-card login-card" id="tela-escolha-inicial" style="display: none; text-align: center;">
+<div class="main-card login-card" id="tela-escolha-inicial" style="display: block; text-align: center;">
     <div class="header-logo">
         <img src="https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg" crossorigin="anonymous" alt="Logo" class="logo-img">
         <div class="title-top">Bem-vindo</div>
@@ -1120,6 +1133,12 @@
     </div>
 
     <button class="btn-gold" id="btnAssinar" style="margin-top: 25px;">CONFIRMAR E ASSINAR</button>
+</div>
+
+<div id="fatal-error" style="display:none; max-width:750px; margin:20px auto; background:#fff3cd; border:1px solid #ffeeba; color:#856404; padding:16px; border-radius:12px; font-family:'Poppins', sans-serif;">
+    <b>Erro ao carregar o sistema.</b><br>
+    <span style="font-size:12px;">Se estiver como “Aplicativo” no celular, tente fechar e abrir novamente. Se persistir, atualize a página (limpe cache do app) e verifique a internet.</span>
+    <div id="fatal-error-msg" style="margin-top:10px; font-size:12px; white-space:pre-wrap;"></div>
 </div>
 
 <div id="area-pdf-escondida" style="position: absolute; left: -9999px; top: 0; background: white; padding: 40px; width: 700px; color: #000; font-family: 'Poppins', sans-serif;">
