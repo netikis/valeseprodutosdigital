@@ -561,8 +561,28 @@
       var msg = document.getElementById('fatal-error-msg');
       if (msg) msg.textContent = (e && e.message) ? e.message : String(e);
       if (el) el.style.display = 'block';
-      var tela = document.getElementById('tela-escolha-inicial');
-      if (tela) tela.style.display = 'block';
+      // Só mostra a tela inicial se nenhuma outra tela estiver visível,
+      // para não sobrepor telas como "Relógio de Ponto".
+      var telas = [
+        'tela-relogio',
+        'tela-login',
+        'tela-patrao',
+        'tela-selecao-empresa',
+        'tela-selecao-empresa-funcionario',
+        'tela-pedido-material',
+        'tela-meus-vales',
+        'tela-funcionario'
+      ];
+      var algumaVisivel = telas.some(function (id) {
+        var x = document.getElementById(id);
+        if (!x) return false;
+        var st = window.getComputedStyle(x);
+        return st && st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
+      });
+      if (!algumaVisivel) {
+        var tela = document.getElementById('tela-escolha-inicial');
+        if (tela) tela.style.display = 'block';
+      }
     } catch (_) {}
   });
 </script>
@@ -586,7 +606,7 @@
     <p style="font-size: 14px; color: #aaa;">Por favor, entre em contato com o administrador do sistema para regularizar a situação.</p>
 </div>
 
-<div class="main-card login-card" id="tela-escolha-inicial" style="display: block; text-align: center;">
+<div class="main-card login-card" id="tela-escolha-inicial" style="display: none; text-align: center;">
     <div class="header-logo">
         <img src="https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg" crossorigin="anonymous" alt="Logo" class="logo-img">
         <div class="title-top">Bem-vindo</div>
