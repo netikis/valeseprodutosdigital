@@ -506,6 +506,21 @@
         
         .folha-linha.desconto { color: #d9534f; }
         .folha-linha.acrescimo { color: #28a745; }
+        .folha-detalhe {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.45;
+            margin: -4px 0 10px 0;
+            padding: 0 2px;
+        }
+        .folha-secao-titulo {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--dark-navy);
+            margin: 14px 0 6px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         .badge-tag {
             background: #e0e6ed;
@@ -846,19 +861,45 @@
                     <h3 style="margin: 0; color: var(--dark-navy);" id="f-nome-display">Nome</h3>
                     <p style="margin: 0; font-size: 12px; color: #666;" id="f-periodo-display">Ref: Mês/Ano</p>
                 </div>
-                
+
+                <p id="f-explicacao-regras" class="folha-detalhe" style="margin-top:0; margin-bottom:12px; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e0e6ed;">
+                    Este resumo usa as regras cadastradas: <b>salário proporcional por dias trabalhados</b> (salário ÷ 30 × dias com ponto),
+                    <b>hora extra</b> pela base 220h (50% em dia útil; 100% em domingo/feriado),
+                    e <b>atrasos</b> pela hora de desconto (salário ÷ 30 ÷ 8).
+                </p>
+
+                <div class="folha-secao-titulo">Salário do período</div>
                 <div class="folha-linha">
-                    <span>(+) Salário Base:</span>
+                    <span>Salário mensal (contrato):</span>
+                    <strong id="f-salario-mensal-contrato">R$ 0,00</strong>
+                </div>
+                <div class="folha-linha">
+                    <span>Valor de 1 dia (÷ 30):</span>
+                    <strong id="f-valor-dia-salario">R$ 0,00</strong>
+                </div>
+                <div class="folha-linha">
+                    <span>Dias pagos (com registro de trabalho):</span>
+                    <strong id="f-dias-pagos">0</strong>
+                </div>
+                <div class="folha-linha acrescimo">
+                    <span>(+) Salário proporcional:</span>
                     <strong id="f-salario-base">R$ 0,00</strong>
                 </div>
+                <p id="f-detalhe-salario-proporcional" class="folha-detalhe"></p>
+
+                <div class="folha-secao-titulo">Acertos</div>
                 <div class="folha-linha acrescimo">
                     <span id="f-horas-extras-texto">(+) Horas Extras (0h):</span>
                     <strong id="f-valor-extras">R$ 0,00</strong>
                 </div>
+                <p id="f-detalhe-extras" class="folha-detalhe"></p>
+
                 <div class="folha-linha" style="color:#1a2a43;">
-                    <span id="f-banco-horas-texto">(=) Banco de Horas (crédito 0h):</span>
+                    <span id="f-banco-horas-texto">(=) Banco de horas (saldo):</span>
                     <strong id="f-banco-horas">0h 0m</strong>
                 </div>
+                <p id="f-detalhe-banco-horas" class="folha-detalhe"></p>
+
                 <div class="folha-linha desconto">
                     <span>(-) Vales / Adiantamentos:</span>
                     <strong id="f-valor-vales">R$ 0,00</strong>
@@ -868,14 +909,23 @@
                     <strong id="f-valor-produtos">R$ 0,00</strong>
                 </div>
                 <div class="folha-linha desconto">
-                    <span id="f-desconto-horas-texto">(-) Desconto de Horas (0h):</span>
+                    <span id="f-desconto-horas-texto">(-) Atrasos / horas devidas (0h):</span>
                     <strong id="f-valor-desconto-horas">R$ 0,00</strong>
                 </div>
+                <p id="f-detalhe-desconto-atrasos" class="folha-detalhe"></p>
                 
                 <div class="folha-linha destaque">
-                    <span>LÍQUIDO A RECEBER:</span>
-                    <span id="f-valor-liquido" style="color: #28a745; font-size: 18px;">R$ 0,00</span>
+                    <span id="f-label-liquido">LÍQUIDO A RECEBER:</span>
+                    <span id="f-valor-liquido" style="font-size: 18px; font-weight: 700;">R$ 0,00</span>
                 </div>
+                <p id="f-formula-liquido" class="folha-detalhe" style="margin-top:10px; text-align:center;"></p>
+
+                <details id="f-discriminacao-wrap" open style="margin-top:18px; border-top:1px solid #eee; padding-top:12px;">
+                    <summary style="cursor:pointer; font-weight:700; color:var(--dark-navy); font-size:13px;">📋 Discriminação dia a dia (jornada esperada × ponto)</summary>
+                    <p class="folha-detalhe" style="margin:10px 0;">Cada linha corresponde a um dia do mês: <b>jornada esperada</b> (cadastro + feriados + sábado), <b>horas computadas</b> pelas batidas e a <b>diferença</b> (esperado − trabalhado). Serve para conferência interna e documentação.</p>
+                    <button type="button" class="btn-pdf-relatorio" style="margin-bottom:10px;" onclick="exportarPDFDiscriminacaoFolha()">📥 EXPORTAR DISCRIMINAÇÃO EM PDF</button>
+                    <div id="f-tabela-discriminacao" style="overflow-x:auto; max-height:420px; overflow-y:auto; border:1px solid #e0e6ed; border-radius:10px;"></div>
+                </details>
             </div>
         </div>
     </div>
@@ -2240,6 +2290,87 @@ window.exportarPDF = function(tipo) {
         doc.save(`relatorio_${tipo}_${empresaAtualNome}.pdf`.replace(/\s+/g, '_'));
     };
 
+    window.exportarPDFDiscriminacaoFolha = function () {
+        const pack = window.folhaDiscriminacaoPDF;
+        if (!pack || !Array.isArray(pack.linhas) || pack.linhas.length === 0) {
+            return Swal.fire('Atenção', 'Calcule a folha primeiro (botão Calcular fechamento) para gerar o PDF da discriminação.', 'warning');
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const emp = String(pack.empresaNome || 'Empresa').trim() || 'Empresa';
+
+        doc.setFillColor(26, 42, 67);
+        doc.rect(0, 0, 297, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DISCRIMINACAO DIA A DIA — FOLHA / JORNADA', 14, 11);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(220, 220, 220);
+        doc.text(emp + '  |  Funcionario: ' + (pack.funcionarioNome || ''), 14, 18);
+        doc.text('Referencia: ' + (pack.mesRef || '') + '  |  Emitido em: ' + (pack.emitidoEm || ''), 14, 24);
+        doc.setFontSize(8);
+        doc.text(
+            'Resumo do calculo: ' + (pack.diasPagos != null ? pack.diasPagos : '-') + ' dias pagos  |  Proporcional: ' + (pack.salarioProporcionalFmt || '-') + '  |  Liquido: ' + (pack.liquidoFmt || '-'),
+            14,
+            29
+        );
+
+        const head = [[
+            'Data',
+            'Dia',
+            'Tipo',
+            'Jornada esperada',
+            'Horas ponto',
+            'Dif. (esp. - trab.)',
+            'Dia pago?',
+            'Observacao'
+        ]];
+        const body = pack.linhas.map(function (r) {
+            return [
+                r.keyDia || '',
+                r.nomeSemana || '',
+                r.tipoDia || '',
+                r.esperadoTxt || '',
+                r.trabalhadoTxt || '',
+                r.diferencaTxt || '',
+                r.diaPagoTxt || '',
+                r.situacao || ''
+            ];
+        });
+
+        doc.autoTable({
+            startY: 34,
+            head: head,
+            body: body,
+            theme: 'striped',
+            styles: { fontSize: 7, cellPadding: 1.8, valign: 'top', textColor: [51, 51, 51], overflow: 'linebreak' },
+            headStyles: { fillColor: [26, 42, 67], textColor: 255, fontStyle: 'bold', fontSize: 7 },
+            alternateRowStyles: { fillColor: [245, 248, 250] },
+            margin: { left: 10, right: 10 },
+            columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 22 },
+                2: { cellWidth: 28 },
+                3: { cellWidth: 40 },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 22 },
+                6: { cellWidth: 16 },
+                7: { cellWidth: 92 }
+            },
+            didDrawPage: function (data) {
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text('Pagina ' + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 8);
+            }
+        });
+
+        const safeNome = String(pack.funcionarioNome || 'funcionario').replace(/[^\w\u00C0-\u024F\s-]/g, '').replace(/\s+/g, '_');
+        const safeRef = String(pack.mesRef || '').replace(/\//g, '-');
+        doc.save('discriminacao_folha_' + safeNome + '_' + safeRef + '.pdf');
+    };
+
     window.fazerBackupMes = async function() {
         const mesSelected = document.getElementById('backup-mes').value;
         const anoSelected = document.getElementById('backup-ano').value;
@@ -2840,12 +2971,23 @@ window.gerarFolhaPagamento = async function() {
                 }
             });
 
-            // 2. BUSCA DE PONTOS
+            // 2. BUSCA DE PONTOS (ignora registros cancelados por evento de auditoria)
             const qPonto = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
             const pontoSnap = await getDocs(qPonto);
 
+            const canceladosPonto = new Set();
+            try {
+                const qEvtP = query(collection(db, "ponto_eventos"), where("funcionario_id", "==", funcId));
+                const snapEvtP = await getDocs(qEvtP);
+                snapEvtP.forEach((ed) => {
+                    const ev = ed.data();
+                    if (ev && ev.tipo === "CANCELAMENTO" && ev.ponto_id) canceladosPonto.add(ev.ponto_id);
+                });
+            } catch (_) { /* sem eventos */ }
+
             let pontosDoMes = [];
             pontoSnap.forEach(doc => {
+                if (canceladosPonto.has(doc.id)) return;
                 const pt = doc.data();
                 const dataPonto = separarDataSegura(pt.data);
                 
@@ -2863,8 +3005,8 @@ window.gerarFolhaPagamento = async function() {
             });
 
             let totalHorasExtras50Decimais = 0;
-            let bancoHorasCreditoDecimais = 0; // feriado/domingo (e outros dias não-devidos)
-            let totalHorasTrabalhadasMesDevidas = 0; // somente dias que entram como "devidos"
+            let totalHorasExtras100Decimais = 0; // domingo e feriado (adicional 100%)
+            let bancoHorasCreditoDecimais = 0; // sábado sem escala, etc. (sem pagamento extra nesta folha)
 
             // Feriados (nacionais fixos + cadastrados no Firestore por empresa)
             const feriadosSet = feriadosNacionaisFixos(Number(anoSelected));
@@ -2889,20 +3031,18 @@ window.gerarFolhaPagamento = async function() {
                 // Se a coleção não existir ou falhar, segue só com feriados fixos
             }
 
-            Object.keys(diasTrabalhados).forEach(dia => {
-                const batidas = (diasTrabalhados[dia] || [])
+            function calcularHorasDoDia(batidasRaw) {
+                const batidas = (batidasRaw || [])
                     .filter(b => b && (b.tipo === 'Entrada' || b.tipo === 'Saída' || b.tipo === 'Início Intervalo' || b.tipo === 'Fim Intervalo') && Number.isFinite(b.timestamp))
                     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-                // Soma o tempo efetivamente trabalhado, pausando no intervalo (almoço)
-                let trabalhandoDesde = null; // timestamp de início do período trabalhado atual
+                let trabalhandoDesde = null;
                 let emIntervalo = false;
                 let segundosTrabalhados = 0;
                 let tevePar = false;
 
                 for (const b of batidas) {
                     if (b.tipo === 'Entrada') {
-                        // Se já estava "em trabalho" e recebeu outra Entrada, ignora a duplicada.
                         if (!emIntervalo && trabalhandoDesde == null) trabalhandoDesde = b.timestamp;
                     } else if (b.tipo === 'Saída') {
                         if (trabalhandoDesde != null && b.timestamp > trabalhandoDesde) {
@@ -2912,7 +3052,6 @@ window.gerarFolhaPagamento = async function() {
                         }
                         emIntervalo = false;
                     } else if (b.tipo === 'Início Intervalo') {
-                        // Fecha o período trabalhado até o início do intervalo
                         if (trabalhandoDesde != null && b.timestamp > trabalhandoDesde) {
                             segundosTrabalhados += (b.timestamp - trabalhandoDesde) / 1000;
                             trabalhandoDesde = null;
@@ -2920,7 +3059,6 @@ window.gerarFolhaPagamento = async function() {
                         }
                         emIntervalo = true;
                     } else if (b.tipo === 'Fim Intervalo') {
-                        // Retoma contagem do trabalho após o intervalo
                         if (emIntervalo) {
                             trabalhandoDesde = b.timestamp;
                             emIntervalo = false;
@@ -2928,82 +3066,236 @@ window.gerarFolhaPagamento = async function() {
                     }
                 }
 
-                // Se não teve nenhum par Entrada->Saída, não calcula extra nesse dia (evita inflar por batida faltante)
-                if (!tevePar) return;
+                const firstTs = batidas.length ? batidas[0].timestamp : null;
+                const lastTs = batidas.length ? batidas[batidas.length - 1].timestamp : null;
+                return {
+                    horasFechadas: segundosTrabalhados / 3600,
+                    tevePar,
+                    firstTs,
+                    lastTs,
+                    nBatidas: batidas.length
+                };
+            }
 
-                const horasTrabalhadas = segundosTrabalhados / 3600;
+            function horasTrabalhadasParaDesconto(r, horasDevidasNoDia) {
+                let h = r.horasFechadas;
+                if (!r.tevePar && r.nBatidas >= 2 && r.firstTs != null && r.lastTs != null && r.lastTs > r.firstTs) {
+                    const spanH = (r.lastTs - r.firstTs) / (1000 * 60 * 60);
+                    h = Math.max(h, Math.min(spanH, (horasDevidasNoDia || 8) * 1.35));
+                }
+                return h;
+            }
+
+            Object.keys(diasTrabalhados).forEach(dia => {
+                const r = calcularHorasDoDia(diasTrabalhados[dia]);
+                if (r.nBatidas === 0) return;
+
                 const { ano, mes, dia: dd } = separarDataSegura(dia);
                 const dataIso = `${ano}-${pad2(mes)}-${pad2(dd)}`;
 
-                // Se trabalhou em feriado/domingo:
-                // - Não conta como "devido"
-                // - Vai para banco de horas (não computa como horas extras na folha)
-                if (isFeriadoOuDomingo(dataIso, feriadosSet)) {
-                    bancoHorasCreditoDecimais += horasTrabalhadas;
-                    return;
-                }
-
-                // Sábado: só entra como "devido" se o funcionário tiver carga no sábado (>0)
                 const sabadoEhDevido = isSabado(dataIso) && Number.isFinite(sabadoHorasPadrao) && sabadoHorasPadrao > 0;
                 const diaEhDevido = sabadoEhDevido || isDiaUtil(dataIso, feriadosSet);
+                const horasDevidasNoDia = sabadoEhDevido ? sabadoHorasPadrao : jornadaDiariaHoras;
 
-                if (diaEhDevido) {
-                    totalHorasTrabalhadasMesDevidas += horasTrabalhadas;
-                } else {
-                    // Qualquer dia não-devido (ex.: sábado sem jornada) vira crédito de banco
+                const horasTrabalhadas = horasTrabalhadasParaDesconto(r, horasDevidasNoDia);
+                if (horasTrabalhadas <= 0 && !r.tevePar) return;
+
+                // Domingo/feriado: hora extra 100% (valor da hora × 2) sobre as horas trabalhadas
+                if (isFeriadoOuDomingo(dataIso, feriadosSet)) {
+                    if (horasTrabalhadas > 0) {
+                        totalHorasExtras100Decimais += horasTrabalhadas;
+                    }
+                    return;
+                }
+
+                if (!diaEhDevido) {
                     bancoHorasCreditoDecimais += horasTrabalhadas;
                     return;
                 }
 
-                // Em dia útil: extra 50% só do que ultrapassar a jornada líquida diária
-                if (horasTrabalhadas > jornadaDiariaHoras) {
-                    totalHorasExtras50Decimais += (horasTrabalhadas - jornadaDiariaHoras);
+                // Extra 50% só com fechamento de períodos (evita inflar por batida solta)
+                if (r.tevePar && r.horasFechadas > jornadaDiariaHoras) {
+                    totalHorasExtras50Decimais += (r.horasFechadas - jornadaDiariaHoras);
                 }
             });
 
-            let valorHoraTrabalho = salarioBase / 220; 
+            // Hora extra: salário ÷ 220 × adicional (50% dia útil | 100% domingo/feriado)
+            const valorHoraNormal220 = salarioBase / 220;
             let valorTotalReceberExtras =
-                (totalHorasExtras50Decimais * (valorHoraTrabalho * 1.5));
+                (totalHorasExtras50Decimais * (valorHoraNormal220 * 1.5)) +
+                (totalHorasExtras100Decimais * (valorHoraNormal220 * 2.0));
 
-            // Desconto de horas (faltas/atrasos) — padrão: considera dias úteis (seg-sex) como dias devidos.
+            // Desconto de faltas/atrasos: (salário ÷ 30 ÷ 8h) por hora faltante — regra da empresa
+            const diasMesParaSalario = 30;
+            const horasBaseDescontoPorDia = 8;
+            const valorDiaSalario = salarioBase / diasMesParaSalario;
+            const valorHoraDesconto = valorDiaSalario / horasBaseDescontoPorDia;
             const anoNum = Number(anoSelected);
             const mesNum = Number(mesSelected);
-            const horasDevidasMes = horasDevidasNoMes(anoNum, mesNum, jornadaDiariaHoras, sabadoHorasPadrao, feriadosSet);
-            const horasFaltantes = Math.max(0, horasDevidasMes - totalHorasTrabalhadasMesDevidas);
-            const valorDescontoHoras = horasFaltantes * valorHoraTrabalho;
+            const diasNoMesCalc = new Date(anoNum, mesNum, 0).getDate();
+            let horasFaltantes = 0;
+            let diasPagos = 0;
+            const discriminacaoDias = [];
+            const nomesDiasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+            function formatarHorasDecimais(hDec) {
+                const neg = hDec < 0;
+                const a = Math.abs(Number(hDec) || 0);
+                const hh = Math.floor(a);
+                const mm = Math.round((a - hh) * 60);
+                return (neg ? '−' : '') + `${hh}h ${mm}m`;
+            }
+
+            for (let d = 1; d <= diasNoMesCalc; d++) {
+                const isoD = isoDateLocal(anoNum, mesNum, d);
+                const dt = new Date(anoNum, mesNum - 1, d);
+                const dowD = dt.getDay();
+                const nomeSemana = nomesDiasSemana[dowD];
+                const keyDia = `${String(d).padStart(2, '0')}/${String(mesNum).padStart(2, '0')}/${anoNum}`;
+
+                if (dowD === 0 || feriadosSet.has(isoD)) {
+                    const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
+                    const workedD = horasTrabalhadasParaDesconto(rD, 24);
+                    discriminacaoDias.push({
+                        keyDia, nomeSemana, tipoDia: feriadosSet.has(isoD) ? 'Feriado' : 'Domingo',
+                        esperadoTxt: '0h (descanso)',
+                        trabalhadoTxt: formatarHorasDecimais(workedD),
+                        diferencaTxt: formatarHorasDecimais(0 - workedD),
+                        diaPagoTxt: 'Não',
+                        situacao: workedD > 0
+                            ? 'Há registro de trabalho em descanso/feriado (pago como hora extra +100% na folha, conforme regra).'
+                            : 'Sem registro de ponto.'
+                    });
+                    continue;
+                }
+
+                if (dowD === 6 && !(Number.isFinite(sabadoHorasPadrao) && sabadoHorasPadrao > 0)) {
+                    const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
+                    const workedD = horasTrabalhadasParaDesconto(rD, 24);
+                    discriminacaoDias.push({
+                        keyDia, nomeSemana, tipoDia: 'Sábado (sem escala)',
+                        esperadoTxt: '0h (não devido)',
+                        trabalhadoTxt: formatarHorasDecimais(workedD),
+                        diferencaTxt: formatarHorasDecimais(0 - workedD),
+                        diaPagoTxt: 'Não',
+                        situacao: workedD > 0
+                            ? 'Há trabalho em sábado sem jornada cadastrada (conta como crédito de banco de horas, não como dia pago).'
+                            : '—'
+                    });
+                    continue;
+                }
+
+                let expectedD = 0;
+                let tipoDia = 'Dia útil';
+                if (dowD === 6) {
+                    expectedD = sabadoHorasPadrao;
+                    tipoDia = 'Sábado (escala)';
+                } else {
+                    expectedD = jornadaDiariaHoras;
+                }
+
+                const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
+                const workedD = horasTrabalhadasParaDesconto(rD, expectedD);
+                const faltaD = workedD > 0 ? Math.max(0, expectedD - workedD) : null;
+                const diaPago = workedD > 0;
+                let situacao = '';
+                if (diaPago) {
+                    diasPagos += 1;
+                    horasFaltantes += Math.max(0, expectedD - workedD);
+                    situacao = (faltaD === 0)
+                        ? 'Jornada do dia cumprida (sem horas devidas).'
+                        : `Atraso e/ou saída antecipada: faltaram ${formatarHorasDecimais(faltaD)} para completar a jornada esperada.`;
+                } else {
+                    situacao = 'Sem registro de ponto neste dia — não entra como “dia pago” no salário proporcional e não soma atraso em horas (regra atual).';
+                }
+
+                const esperadoTxtLinha = (dowD === 6)
+                    ? `${formatarHorasDecimais(expectedD)} (carga de sábado: ${sabadoHorasPadrao}h)`
+                    : `${formatarHorasDecimais(expectedD)} (jornada: ${funcionario.hora_entrada || '—'} às ${funcionario.hora_saida || '—'}, intervalo ${funcionario.intervalo_minutos ?? 60} min)`;
+
+                discriminacaoDias.push({
+                    keyDia,
+                    nomeSemana,
+                    tipoDia,
+                    esperadoTxt: esperadoTxtLinha,
+                    trabalhadoTxt: formatarHorasDecimais(workedD),
+                    diferencaTxt: formatarHorasDecimais(expectedD - workedD),
+                    diaPagoTxt: diaPago ? 'Sim' : 'Não',
+                    situacao
+                });
+            }
+            const salarioProporcional = valorDiaSalario * diasPagos;
+            const valorDescontoHoras = horasFaltantes * valorHoraDesconto;
+
+            // Banco de horas (saldo): crédito - débito (atrasos)
+            const bancoHorasSaldoDecimais = (bancoHorasCreditoDecimais || 0) - (horasFaltantes || 0);
 
             // --- LOG PARA DEBUG (Aperte F12 no navegador para ver esses valores) ---
             console.log("=== RESUMO CÁLCULO ===");
+            console.log("Hora desconto (salário/30/8):", valorHoraDesconto.toFixed(4));
+            console.log("Hora normal 220h:", valorHoraNormal220.toFixed(4));
+            console.log("Horas faltantes (soma dia a dia):", horasFaltantes.toFixed(2));
+            console.log("Dias pagos (trabalhados):", diasPagos);
+            console.log("Salário proporcional:", salarioProporcional.toFixed(2));
             console.log("Salário Base:", salarioBase);
             console.log("Total Extras:", valorTotalReceberExtras);
             console.log("Total Vales Dinheiro:", totalDinheiro);
             console.log("Total Vales Produto:", totalProduto);
 
-            // 3. CÁLCULO DO LÍQUIDO - O abate acontece nesta linha
-            let liquidoReceber = (salarioBase + valorTotalReceberExtras) - (totalDinheiro + totalProduto + valorDescontoHoras);
-            
-            // Impede que o funcionário fique com saldo negativo
-            if (liquidoReceber < 0) liquidoReceber = 0; 
-
-            const totalHorasExtrasDecimais = totalHorasExtras50Decimais;
-            let horasDisplay = Math.floor(totalHorasExtrasDecimais);
-            let minutosDisplay = Math.round((totalHorasExtrasDecimais - horasDisplay) * 60);
+            // 3. CÁLCULO DO LÍQUIDO — valor real do fechamento (pode ser negativo se vales/atrasos excederem créditos)
+            const liquidoReceber =
+                (salarioProporcional + valorTotalReceberExtras) -
+                (totalDinheiro + totalProduto + valorDescontoHoras);
 
             document.getElementById('f-nome-display').innerText = funcionario.nome;
-            // Se nomeMeses não estiver definido no seu código, troque para um texto fixo ou garanta que o array existe
             document.getElementById('f-periodo-display').innerText = `Referência: ${mesSelected} / ${anoSelected}`;
-            
-            document.getElementById('f-salario-base').innerText = formatarMoeda(salarioBase);
-            document.getElementById('f-horas-extras-texto').innerText = `(+) Horas Extras (${horasDisplay}h ${minutosDisplay}m):`;
-            document.getElementById('f-valor-extras').innerText = formatarMoeda(valorTotalReceberExtras);
 
-            const bancoH = Math.floor(bancoHorasCreditoDecimais);
-            const bancoM = Math.round((bancoHorasCreditoDecimais - bancoH) * 60);
+            document.getElementById('f-salario-mensal-contrato').innerText = formatarMoeda(salarioBase);
+            document.getElementById('f-valor-dia-salario').innerText = formatarMoeda(valorDiaSalario);
+            document.getElementById('f-dias-pagos').innerText = String(diasPagos);
+            document.getElementById('f-salario-base').innerText = formatarMoeda(salarioProporcional);
+            const detSal = document.getElementById('f-detalhe-salario-proporcional');
+            if (detSal) {
+                detSal.innerHTML = `<b>Conta:</b> ${diasPagos} dias × ${formatarMoeda(valorDiaSalario)} (valor do dia) = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
+                <span style="color:#888;">Só entram dias úteis/sábados (quando houver escala) em que existiu trabalho registrado no ponto.</span>`;
+            }
+
+            const h50 = Math.floor(totalHorasExtras50Decimais);
+            const m50 = Math.round((totalHorasExtras50Decimais - h50) * 60);
+            const h100 = Math.floor(totalHorasExtras100Decimais);
+            const m100 = Math.round((totalHorasExtras100Decimais - h100) * 60);
+            document.getElementById('f-horas-extras-texto').innerText =
+                `(+) Horas extras (${h50}h ${m50}m úteis +50% · ${h100}h ${m100}m dom/fer +100%):`;
+            document.getElementById('f-valor-extras').innerText = formatarMoeda(valorTotalReceberExtras);
+            const detEx = document.getElementById('f-detalhe-extras');
+            if (detEx) {
+                const v50 = totalHorasExtras50Decimais * (valorHoraNormal220 * 1.5);
+                const v100 = totalHorasExtras100Decimais * (valorHoraNormal220 * 2.0);
+                detEx.innerHTML = `<b>Base da hora extra:</b> salário ÷ 220 = <b>${formatarMoeda(valorHoraNormal220)}/h</b>.<br>
+                • Dia útil (+50%): ${h50}h ${m50}m → ${formatarMoeda(v50)}<br>
+                • Domingo/feriado (+100%): ${h100}h ${m100}m → ${formatarMoeda(v100)}<br>
+                <span style="color:#888;">Domingo e feriados cadastrados no calendário entram como +100% (paga como 2× a hora normal).</span>`;
+            }
+
+            const bancoAbs = Math.abs(bancoHorasSaldoDecimais);
+            const bancoH = Math.floor(bancoAbs);
+            const bancoM = Math.round((bancoAbs - bancoH) * 60);
+            const sinalBanco = bancoHorasSaldoDecimais >= 0 ? '+' : '-';
             if (document.getElementById('f-banco-horas-texto')) {
-                document.getElementById('f-banco-horas-texto').innerText = `(=) Banco de Horas (crédito ${bancoH}h ${bancoM}m):`;
+                document.getElementById('f-banco-horas-texto').innerText = `(=) Banco de horas (saldo ${sinalBanco}${bancoH}h ${bancoM}m):`;
             }
             if (document.getElementById('f-banco-horas')) {
-                document.getElementById('f-banco-horas').innerText = `${bancoH}h ${bancoM}m`;
+                document.getElementById('f-banco-horas').innerText = `${sinalBanco}${bancoH}h ${bancoM}m`;
+            }
+            const detBk = document.getElementById('f-detalhe-banco-horas');
+            if (detBk) {
+                const credH = Math.floor(bancoHorasCreditoDecimais || 0);
+                const credM = Math.round(((bancoHorasCreditoDecimais || 0) - credH) * 60);
+                const debH = Math.floor(horasFaltantes || 0);
+                const debM = Math.round(((horasFaltantes || 0) - debH) * 60);
+                detBk.innerHTML = `<b>Crédito</b> (trabalho em domingo/feriado ou dia fora da escala): <b>${credH}h ${credM}m</b> &nbsp;|&nbsp;
+                <b>Débito</b> (horas que faltaram nos dias pagos): <b>${debH}h ${debM}m</b><br>
+                <span style="color:#888;"><b>Saldo</b> = crédito − débito. Este saldo é informativo; o desconto em R$ vem só dos atrasos (linha abaixo).</span>`;
             }
             
             document.getElementById('f-valor-vales').innerText = formatarMoeda(totalDinheiro);
@@ -3011,10 +3303,83 @@ window.gerarFolhaPagamento = async function() {
 
             const horasFaltDisplay = Math.floor(horasFaltantes);
             const minFaltDisplay = Math.round((horasFaltantes - horasFaltDisplay) * 60);
-            document.getElementById('f-desconto-horas-texto').innerText = `(-) Desconto de Horas (${horasFaltDisplay}h ${minFaltDisplay}m):`;
+            document.getElementById('f-desconto-horas-texto').innerText =
+                `(-) Atrasos / horas devidas (${horasFaltDisplay}h ${minFaltDisplay}m):`;
             document.getElementById('f-valor-desconto-horas').innerText = formatarMoeda(valorDescontoHoras);
+            const detAtr = document.getElementById('f-detalhe-desconto-atrasos');
+            if (detAtr) {
+                detAtr.innerHTML = `<b>Hora de desconto (atraso):</b> (salário ÷ 30 ÷ 8) = <b>${formatarMoeda(valorHoraDesconto)}/h</b>.<br>
+                <b>Conta:</b> ${horasFaltDisplay}h ${minFaltDisplay}m × ${formatarMoeda(valorHoraDesconto)}/h = <b>${formatarMoeda(valorDescontoHoras)}</b>.<br>
+                <span style="color:#888;">São somadas, dia a dia, as horas que faltaram para completar a jornada esperada em cada dia em que houve trabalho.</span>`;
+            }
             
-            document.getElementById('f-valor-liquido').innerText = formatarMoeda(liquidoReceber);
+            const elValorLiq = document.getElementById('f-valor-liquido');
+            const elLabelLiq = document.getElementById('f-label-liquido');
+            if (elValorLiq) {
+                elValorLiq.innerText = formatarMoeda(liquidoReceber);
+                elValorLiq.style.color = liquidoReceber < 0 ? '#c0392b' : '#28a745';
+            }
+            if (elLabelLiq) {
+                elLabelLiq.innerText =
+                    liquidoReceber < 0 ? 'SALDO DO FECHAMENTO (negativo):' : 'LÍQUIDO A RECEBER:';
+            }
+            const detLiq = document.getElementById('f-formula-liquido');
+            if (detLiq) {
+                let txtForm = `<b>Fórmula do líquido:</b><br>
+                ${formatarMoeda(salarioProporcional)} (proporcional) + ${formatarMoeda(valorTotalReceberExtras)} (extras)
+                − ${formatarMoeda(totalDinheiro)} (vales) − ${formatarMoeda(totalProduto)} (produtos) − ${formatarMoeda(valorDescontoHoras)} (atrasos)
+                = <b>${formatarMoeda(liquidoReceber)}</b>`;
+                if (liquidoReceber < 0) {
+                    txtForm +=
+                        `<br><span style="color:#922b21;font-size:12px;">Saldo negativo: neste fechamento, descontos e vales somam mais do que o proporcional + extras. Na prática não há valor a pagar ao colaborador nesta vista — reveja vales, batidas ou proporcional.</span>`;
+                }
+                detLiq.innerHTML = txtForm;
+            }
+
+            const tabDisc = document.getElementById('f-tabela-discriminacao');
+            if (tabDisc && Array.isArray(discriminacaoDias)) {
+                const linhas = discriminacaoDias.map((r) => `
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px 6px; white-space:nowrap; font-weight:600;">${r.keyDia}</td>
+                        <td style="padding:8px 6px;">${r.nomeSemana}</td>
+                        <td style="padding:8px 6px; font-size:10px;">${r.tipoDia}</td>
+                        <td style="padding:8px 6px; font-size:10px; max-width:140px;">${r.esperadoTxt}</td>
+                        <td style="padding:8px 6px;">${r.trabalhadoTxt}</td>
+                        <td style="padding:8px 6px; font-weight:700;">${r.diferencaTxt}</td>
+                        <td style="padding:8px 6px;">${r.diaPagoTxt}</td>
+                        <td style="padding:8px 6px; font-size:10px; color:#444;">${r.situacao}</td>
+                    </tr>
+                `).join('');
+                tabDisc.innerHTML = `
+                    <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                        <thead>
+                            <tr style="background:#eef2f5; position:sticky; top:0; z-index:1;">
+                                <th style="text-align:left; padding:8px 6px;">Data</th>
+                                <th style="text-align:left; padding:8px 6px;">Dia</th>
+                                <th style="text-align:left; padding:8px 6px;">Tipo</th>
+                                <th style="text-align:left; padding:8px 6px;">Jornada esperada</th>
+                                <th style="text-align:left; padding:8px 6px;">Horas no ponto</th>
+                                <th style="text-align:left; padding:8px 6px;">Dif. (esp. − trab.)</th>
+                                <th style="text-align:left; padding:8px 6px;">Dia pago?</th>
+                                <th style="text-align:left; padding:8px 6px;">Observação</th>
+                            </tr>
+                        </thead>
+                        <tbody>${linhas}</tbody>
+                    </table>
+                `;
+                window.folhaDiscriminacaoPDF = {
+                    empresaNome: localStorage.getItem('empresaGestor') || 'Empresa',
+                    funcionarioNome: funcionario.nome,
+                    mesRef: `${String(mesSelected).padStart(2, '0')}/${anoSelected}`,
+                    emitidoEm: new Date().toLocaleString('pt-BR'),
+                    diasPagos: diasPagos,
+                    salarioProporcionalFmt: formatarMoeda(salarioProporcional),
+                    liquidoFmt: formatarMoeda(liquidoReceber),
+                    linhas: discriminacaoDias
+                };
+            } else {
+                window.folhaDiscriminacaoPDF = null;
+            }
 
             document.getElementById('resultado-folha').style.display = 'block';
             Swal.close();
