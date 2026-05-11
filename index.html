@@ -4357,7 +4357,6 @@ async function monitorarVencimentosObras() {
         
         let htmlAlertas = "";
         let emitirSom = false;
-        const agoraMs = Date.now();
 
         querySnapshot.forEach((doc) => {
             const dados = doc.data();
@@ -4388,40 +4387,44 @@ async function monitorarVencimentosObras() {
                 const diffMs = dataVenc.getTime() - hojeMeioDia.getTime();
                 const diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-                // Soneca: ao clicar OK, pausa por alguns minutos, mas volta a alertar enquanto não estiver PAGO.
-                const sonecaAte = Number(localStorage.getItem(`alerta_soneca_ate_${idDoc}`) || 0);
-                if (sonecaAte && agoraMs < sonecaAte) return;
+                // OK do dia: silencia só até o fim do dia; no dia seguinte volta se ainda não estiver PAGO.
+                const silenciadoHoje = localStorage.getItem(`novo_aviso_${idDoc}_${hojeFormatado}`);
 
-                let tituloAlerta = "";
-                let classeUrgencia = "";
+                if (!silenciadoHoje) {
+                    let tituloAlerta = "";
+                    let classeUrgencia = "";
 
-                if (diasRestantes === 0) {
-                    tituloAlerta = "VENCE HOJE";
-                    classeUrgencia = "urgente";
-                    emitirSom = true;
-                } else if (diasRestantes > 0 && diasRestantes <= 3) {
-                    tituloAlerta = `VENCE EM ${diasRestantes} DIA(S)`;
-                    classeUrgencia = "aviso";
-                    emitirSom = true;
-                } else if (diasRestantes < 0) {
-                    tituloAlerta = "🔴 VENCIDO";
-                    classeUrgencia = "urgente";
-                    emitirSom = true;
-                }
+                    if (diasRestantes === 0) {
+                        tituloAlerta = "VENCE HOJE";
+                        classeUrgencia = "urgente";
+                        emitirSom = true;
+                    } else if (diasRestantes > 0 && diasRestantes <= 3) {
+                        tituloAlerta = `VENCE EM ${diasRestantes} DIA(S)`;
+                        classeUrgencia = "aviso";
+                        emitirSom = true;
+                    } else if (diasRestantes < 0) {
+                        tituloAlerta = "🔴 VENCIDO";
+                        classeUrgencia = "urgente";
+                        emitirSom = true;
+                    }
 
-                if (tituloAlerta !== "") {
-                    const nomeLoja = dados.loja_nome || dados.loja || "Fornecedor não informado";
-                    const nomeObra = dados.obra_nome || dados.obra || "Obra não informada";
-                    const nomeDespesa = dados.descricao || "Sem descrição";
-                    const linkVer = dados.foto_recibo || dados.arquivoUrl || dados.link || dados.arquivo || "#";
-                    
-                    htmlAlertas += montarPainelAlerta(idDoc, nomeLoja, nomeObra, nomeDespesa, tituloAlerta, classeUrgencia, linkVer);
+                    if (tituloAlerta !== "") {
+                        const nomeLoja = dados.loja_nome || dados.loja || "Fornecedor não informado";
+                        const nomeObra = dados.obra_nome || dados.obra || "Obra não informada";
+                        const nomeDespesa = dados.descricao || "Sem descrição";
+                        const linkVer = dados.foto_recibo || dados.arquivoUrl || dados.link || dados.arquivo || "#";
+                        
+                        htmlAlertas += montarPainelAlerta(idDoc, nomeLoja, nomeObra, nomeDespesa, tituloAlerta, classeUrgencia, linkVer);
+                    }
                 }
             }
         });
 
         if (htmlAlertas !== "") {
             renderizarAlertasNoCanto(htmlAlertas, emitirSom);
+        } else {
+            const c = document.getElementById("alerta-container-global");
+            if (c) c.innerHTML = "";
         }
     } catch (err) {
         console.warn("Aguardando carregamento...", err);
@@ -4429,9 +4432,8 @@ async function monitorarVencimentosObras() {
 }
 
 window.confirmarLeituraAlerta = function(id) {
-    // Soneca (não remove definitivo). Volta a alertar enquanto não estiver PAGO.
-    const sonecaMin = 10; // ajuste aqui se quiser mais/menos tempo
-    localStorage.setItem(`alerta_soneca_ate_${id}`, String(Date.now() + sonecaMin * 60 * 1000));
+    const hj = new Date().toISOString().substring(0, 10);
+    localStorage.setItem(`novo_aviso_${id}_${hj}`, "true");
     
     const el = document.getElementById(`card-alerta-${id}`);
     if (el) {
