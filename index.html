@@ -737,10 +737,16 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 5px;">
-            <div style="flex: 1;">
-                <label>Intervalo (minutos)</label>
-                <input type="number" id="c-intervalo" value="60" min="0" max="300" placeholder="60">
+        <div style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 160px;">
+                <label>Almoço / pausa não remunerada (minutos)</label>
+                <input type="number" id="c-intervalo" value="60" min="0" max="300" placeholder="60" title="Tempo descontado entre entrada e saída para calcular a jornada líquida esperada.">
+                <p style="font-size: 11px; color: #666; margin: 6px 0 0 0;">Ex.: 60 = 1h de almoço. Este valor entra no cálculo da folha (entrada − saída − almoço).</p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    <button type="button" class="btn-enviar" style="padding: 6px 10px; font-size: 11px;" onclick="document.getElementById('c-intervalo').value='30'">30 min</button>
+                    <button type="button" class="btn-enviar" style="padding: 6px 10px; font-size: 11px;" onclick="document.getElementById('c-intervalo').value='60'">1 h</button>
+                    <button type="button" class="btn-enviar" style="padding: 6px 10px; font-size: 11px;" onclick="document.getElementById('c-intervalo').value='90'">1 h 30</button>
+                </div>
             </div>
         </div>
 
@@ -2793,7 +2799,7 @@ window.exportarPDF = function(tipo) {
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
                             <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>
-                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Intervalo: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span>
+                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Almoço: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
@@ -3211,7 +3217,7 @@ window.gerarFolhaPagamento = async function() {
 
                 const esperadoTxtLinha = (dowD === 6)
                     ? `${formatarHorasDecimais(expectedD)} (carga de sábado: ${sabadoHorasPadrao}h)`
-                    : `${formatarHorasDecimais(expectedD)} (jornada: ${funcionario.hora_entrada || '—'} às ${funcionario.hora_saida || '—'}, intervalo ${funcionario.intervalo_minutos ?? 60} min)`;
+                    : `${formatarHorasDecimais(expectedD)} (jornada: ${funcionario.hora_entrada || '—'} às ${funcionario.hora_saida || '—'}, almoço ${funcionario.intervalo_minutos ?? 60} min)`;
 
                 discriminacaoDias.push({
                     keyDia,
@@ -3467,8 +3473,13 @@ window.gerarFolhaPagamento = async function() {
                     <label style="margin-top: 10px;">Chave PIX:</label>
                     <input id="edit-f-pix" type="text" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${func.pix || ''}">
 
-                    <label style="margin-top: 10px;">Intervalo (minutos):</label>
-                    <input id="edit-f-intervalo" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.intervalo_minutos ?? 60)}" min="0" max="300">
+                    <label style="margin-top: 10px;">Almoço / pausa não remunerada (minutos):</label>
+                    <input id="edit-f-intervalo" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.intervalo_minutos ?? 60)}" min="0" max="300" title="Descontado da faixa entrada–saída na jornada esperada.">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+                        <button type="button" style="margin:0;padding:4px 10px;font-size:12px;background:#eef2f5;color:#1a2a43;border:1px solid #ccd6e0;border-radius:6px;cursor:pointer;" onclick="document.getElementById('edit-f-intervalo').value='30'">30 min</button>
+                        <button type="button" style="margin:0;padding:4px 10px;font-size:12px;background:#eef2f5;color:#1a2a43;border:1px solid #ccd6e0;border-radius:6px;cursor:pointer;" onclick="document.getElementById('edit-f-intervalo').value='60'">1 h</button>
+                        <button type="button" style="margin:0;padding:4px 10px;font-size:12px;background:#eef2f5;color:#1a2a43;border:1px solid #ccd6e0;border-radius:6px;cursor:pointer;" onclick="document.getElementById('edit-f-intervalo').value='90'">1 h 30</button>
+                    </div>
 
                     <label style="margin-top: 10px;">Sábado (horas):</label>
                     <input id="edit-f-sabado-horas" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.sabado_horas ?? 0)}" min="0" max="12" step="0.5">
