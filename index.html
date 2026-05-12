@@ -464,11 +464,14 @@
 
         #video-selfie { 
             width: 100%; 
+            max-height: 260px;
+            object-fit: cover;
             border-radius: 10px; 
             border: 2px solid #e0e6ed; 
             margin-top: 10px; 
             display: none; 
-            transform: scaleX(-1); 
+            transform: scaleX(-1);
+            pointer-events: none;
         }
         
         #foto-tirada { 
@@ -1151,11 +1154,11 @@
     <input type="text" id="obra-atual" placeholder="Informe a obra ou local atual">
 
     <label style="margin-top: 15px;">Confirmação de Identidade:</label>
-    <button id="btn-iniciar-camera" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
+    <button id="btn-iniciar-camera" type="button" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
     <video id="video-selfie" autoplay playsinline muted></video>
     <canvas id="canvas-selfie" style="display: none;"></canvas>
     <img id="foto-tirada" src="" alt="Sua foto aparecerá aqui">
-    <button id="btn-tirar-foto" class="btn-gold" style="display: none; margin-top: 10px;" onclick="tirarFoto()">Tirar Foto</button>
+    <button id="btn-tirar-foto" type="button" class="btn-gold" style="display: none; margin-top: 10px;" onclick="tirarFoto()">Tirar Foto</button>
     
     <input type="hidden" id="foto-base64" value="">
 
@@ -1163,10 +1166,10 @@
         ⚠️ O sistema aguardará o sinal do satélite para guardar a localização exata. Permaneça num local aberto.
     </div>
 
-    <button class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTAR ENTRADA</button>
-    <button class="btn-logout" onclick="baterPonto('Início Intervalo')" style="margin-top: 12px; background: #6c757d; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">⏸️ SAIR P/ ALMOÇO (INÍCIO INTERVALO)</button>
-    <button class="btn-logout" onclick="baterPonto('Fim Intervalo')" style="margin-top: 12px; background: #4285F4; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">▶️ VOLTAR DO ALMOÇO (FIM INTERVALO)</button>
-    <button class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTAR SAÍDA</button>
+    <button type="button" class="btn-entrada" onclick="baterPonto('Entrada')">🟢 REGISTAR ENTRADA</button>
+    <button type="button" class="btn-logout" onclick="baterPonto('Início Intervalo')" style="margin-top: 12px; background: #6c757d; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">⏸️ SAIR P/ ALMOÇO (INÍCIO INTERVALO)</button>
+    <button type="button" class="btn-logout" onclick="baterPonto('Fim Intervalo')" style="margin-top: 12px; background: #4285F4; color: white; border: none; box-shadow: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px;">▶️ VOLTAR DO ALMOÇO (FIM INTERVALO)</button>
+    <button type="button" class="btn-saida" onclick="baterPonto('Saída')">🔴 REGISTAR SAÍDA</button>
 
     <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
     <h4 style="text-align: center; color: var(--dark-navy); margin-bottom: 10px;">Faltou material na obra?</h4>
@@ -1280,11 +1283,20 @@
     async function ensureAuth() {
         if (auth.currentUser) return auth.currentUser;
         try {
-            await signInAnonymously(auth);
+            const cred = await signInAnonymously(auth);
+            if (cred && cred.user) return cred.user;
         } catch (e) {
             console.error('Falha no Auth anônimo', e);
         }
-        return await authReady;
+        if (auth.currentUser) return auth.currentUser;
+        try {
+            return await Promise.race([
+                authReady,
+                new Promise((resolve) => setTimeout(() => resolve(auth.currentUser || null), 8000))
+            ]);
+        } catch (_) {
+            return auth.currentUser || null;
+        }
     }
 
     // CHECAGEM DO STATUS (KILL SWITCH)
@@ -3618,11 +3630,12 @@ window.gerarFolhaPagamento = async function() {
     };
 
     window.baterPonto = async function(tipo) {
-        const obra = document.getElementById('obra-atual').value;
+        if (window.__pontoProcessando) {
+            return Swal.fire({ icon: 'info', title: 'Aguarde', text: 'O registo anterior ainda está a ser processado.', timer: 2200, showConfirmButton: false });
+        }
+        const obra = (document.getElementById('obra-atual').value || '').trim();
         const fotoBase64 = document.getElementById('foto-base64').value;
         const empresaDoFuncionario = localStorage.getItem('funcLogadoEmpresa');
-        const user = await ensureAuth();
-        const authUid = user?.uid || localStorage.getItem('auth_uid') || null;
 
         function obterDataAtualStr() {
             const d = new Date();
@@ -3731,30 +3744,32 @@ window.gerarFolhaPagamento = async function() {
             return Swal.fire('Atenção', 'Tire a foto (selfie) antes de bater o ponto!', 'warning');
         }
 
-        Swal.fire({
-            title: 'Registrando Ponto...',
-            text: 'Obtendo a hora exata da batida...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-
-        if (!navigator.geolocation) {
-            processarPontoFinal("Sem GPS", "Sem GPS");
-            return;
+        let authUid = null;
+        try {
+            const user = await ensureAuth();
+            authUid = user?.uid || localStorage.getItem('auth_uid') || null;
+        } catch (e) {
+            console.error('ensureAuth no ponto', e);
+            authUid = localStorage.getItem('auth_uid') || null;
         }
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                processarPontoFinal(position.coords.latitude, position.coords.longitude);
-            },
-            (error) => {
-                console.warn("Sinal de GPS fraco ou negado. Ponto será registrado sem localização exata.");
-                processarPontoFinal("Localização não obtida", "Localização não obtida");
-            },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-        );
+        function liberaProcessamento() {
+            window.__pontoProcessando = false;
+        }
+
+        window.__pontoProcessando = true;
+        Swal.fire({
+            title: 'Registrando Ponto...',
+            text: 'A obter localização (alguns segundos). Se este aviso ficar preso, toque fora para fechar e tente de novo.',
+            allowOutsideClick: true,
+            didOpen: function () { Swal.showLoading(); }
+        });
 
         async function processarPontoFinal(lat, lng) {
+            try {
+                if (typeof Swal !== 'undefined' && Swal.close) Swal.close();
+            } catch (_) {}
+
             const funcId = localStorage.getItem('funcLogadoId');
             const funcNome = localStorage.getItem('funcLogadoNome');
 
@@ -3792,7 +3807,8 @@ window.gerarFolhaPagamento = async function() {
                         `Ponto de ${tipo} registrado às ${horaAtual}.<br><br><b>Protocolo:</b> ${docRef.id}`,
                         'success'
                     );
-                } catch(e) {
+                } catch (e) {
+                    console.error(e);
                     salvarNoCelular(payloadPonto);
                 }
             } else {
@@ -3806,10 +3822,9 @@ window.gerarFolhaPagamento = async function() {
             document.getElementById('video-selfie').style.display = 'none';
             document.getElementById('btn-iniciar-camera').style.display = 'block';
             document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
-            
-            // Para a câmera
+
             if (streamCamera) {
-                streamCamera.getTracks().forEach(track => track.stop());
+                streamCamera.getTracks().forEach(function (track) { track.stop(); });
                 streamCamera = null;
             }
         }
@@ -3824,6 +3839,72 @@ window.gerarFolhaPagamento = async function() {
                 `Sem internet. O seu ponto de ${payloadPonto.tipo} foi travado com o horário exato:<br><br><b style="font-size:18px; color:#d9534f;">${payloadPonto.data} às ${payloadPonto.hora}</b><br><br>Será enviado quando conectar a uma rede.`,
                 'info'
             );
+        }
+
+        try {
+            if (!navigator.geolocation) {
+                await processarPontoFinal("Sem GPS", "Sem GPS");
+                return;
+            }
+
+            let failSafe = null;
+            await new Promise(function (resolve) {
+                let settled = false;
+                function done() {
+                    if (settled) return;
+                    settled = true;
+                    if (failSafe) clearTimeout(failSafe);
+                    resolve();
+                }
+
+                failSafe = setTimeout(function () {
+                    if (!window.__pontoProcessando) return;
+                    liberaProcessamento();
+                    try { Swal.close(); } catch (_) {}
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Tempo esgotado',
+                        text: 'O GPS não respondeu a tempo. Verifique se a localização está ligada e tente novamente.'
+                    });
+                    done();
+                }, 18000);
+
+                navigator.geolocation.getCurrentPosition(
+                    async function (position) {
+                        try {
+                            await processarPontoFinal(position.coords.latitude, position.coords.longitude);
+                        } catch (err) {
+                            console.error(err);
+                            try { Swal.close(); } catch (_) {}
+                            Swal.fire('Erro', 'Falha ao guardar o ponto. Tente novamente.', 'error');
+                        } finally {
+                            liberaProcessamento();
+                            done();
+                        }
+                    },
+                    async function (error) {
+                        console.warn("Sinal de GPS fraco ou negado. Ponto será registrado sem localização exata.", error);
+                        try {
+                            await processarPontoFinal("Localização não obtida", "Localização não obtida");
+                        } catch (err) {
+                            console.error(err);
+                            try { Swal.close(); } catch (_) {}
+                            Swal.fire('Erro', 'Falha ao guardar o ponto.', 'error');
+                        } finally {
+                            liberaProcessamento();
+                            done();
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+                );
+            });
+        } catch (e) {
+            console.error('baterPonto', e);
+            try { Swal.close(); } catch (_) {}
+            Swal.fire('Erro', 'Não foi possível concluir o registo.', 'error');
+            liberaProcessamento();
+        } finally {
+            liberaProcessamento();
         }
     };
 
