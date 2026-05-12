@@ -1549,6 +1549,28 @@ function separarDataSegura(dataString) {
     }
 }
 
+    /** Coordenadas numéricas válidas para Maps / Firestore; evita gravar texto em latitude/longitude. */
+    function normalizarCoordenadasGPS(lat, lng) {
+        const la = typeof lat === 'number' ? lat : parseFloat(String(lat).replace(',', '.').trim());
+        const lo = typeof lng === 'number' ? lng : parseFloat(String(lng).replace(',', '.').trim());
+        if (Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180) {
+            return { ok: true, lat: la, lng: lo };
+        }
+        return { ok: false, lat: null, lng: null };
+    }
+
+    function montarLinkGoogleMapsOuNull(lat, lng) {
+        const g = normalizarCoordenadasGPS(lat, lng);
+        if (!g.ok) return null;
+        return 'https://www.google.com/maps?q=' + g.lat + ',' + g.lng;
+    }
+
+    function textoCoordenadasParaExibicao(dados) {
+        const g = normalizarCoordenadasGPS(dados.latitude, dados.longitude);
+        if (g.ok) return g.lat + ', ' + g.lng;
+        return 'GPS indisponível neste registo';
+    }
+
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
         if (value === "") { input.value = ""; return; }
@@ -2248,7 +2270,7 @@ window.exportarPDF = function(tipo) {
             dados.forEach(row => {
                 const { ano, mes, dia } = separarDataSegura(row.data);
                 const mesNome = nomeMeses[mes] || mes;
-                body.push([ ano, mesNome, `${dia}/${mes}/${ano}\n${row.hora || ''}`, row.nome, row.tipo, row.obra, `${row.latitude}\n${row.longitude}`, row.foto || '' ]);
+                body.push([ ano, mesNome, `${dia}/${mes}/${ano}\n${row.hora || ''}`, row.nome, row.tipo, row.obra, textoCoordenadasParaExibicao(row), row.foto || '' ]);
             });
             gerarTabela(doc, head, body, startY, 7);
 
@@ -3759,8 +3781,8 @@ window.gerarFolhaPagamento = async function() {
 
         window.__pontoProcessando = true;
         Swal.fire({
-            title: 'Registrando Ponto...',
-            text: 'A obter localização (alguns segundos). Se este aviso ficar preso, toque fora para fechar e tente de novo.',
+            title: 'Registrando ponto...',
+            text: 'A obter GPS e a gravar.',
             allowOutsideClick: true,
             didOpen: function () { Swal.showLoading(); }
         });
@@ -3770,10 +3792,10 @@ window.gerarFolhaPagamento = async function() {
                 if (typeof Swal !== 'undefined' && Swal.close) Swal.close();
             } catch (_) {}
 
+            const geo = normalizarCoordenadasGPS(lat, lng);
             const funcId = localStorage.getItem('funcLogadoId');
             const funcNome = localStorage.getItem('funcLogadoNome');
 
-            // TRAVA A HORA EXATA EM QUE O BOTÃO FOI CLICADO
             const dataObj = new Date();
             const diaStr = String(dataObj.getDate()).padStart(2, '0');
             const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
@@ -3790,8 +3812,8 @@ window.gerarFolhaPagamento = async function() {
                 obra: obra,
                 data: dataAtual,
                 hora: horaAtual,
-                latitude: lat,
-                longitude: lng,
+                latitude: geo.ok ? geo.lat : null,
+                longitude: geo.ok ? geo.lng : null,
                 foto: fotoBase64,
                 timestamp: dataObj.getTime(),
                 client_device_tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown",
@@ -3802,9 +3824,10 @@ window.gerarFolhaPagamento = async function() {
                 try {
                     const docRef = await addDoc(collection(db, "ponto_registros"), payloadPonto);
                     atualizarEstadoAposMarcacao(funcId, tipo, payloadPonto.timestamp);
+                    const avisoGps = geo.ok ? '' : '<br><small style="color:#666;">GPS não obtido nesta batida; o registo foi gravado sem coordenadas.</small>';
                     Swal.fire(
                         'Sucesso!',
-                        `Ponto de ${tipo} registrado às ${horaAtual}.<br><br><b>Protocolo:</b> ${docRef.id}`,
+                        `Ponto de ${tipo} registrado às ${horaAtual}.<br><br><b>Protocolo:</b> ${docRef.id}${avisoGps}`,
                         'success'
                     );
                 } catch (e) {
@@ -3815,7 +3838,6 @@ window.gerarFolhaPagamento = async function() {
                 salvarNoCelular(payloadPonto);
             }
 
-            // Limpa a tela
             document.getElementById('obra-atual').value = '';
             document.getElementById('foto-base64').value = '';
             document.getElementById('foto-tirada').style.display = 'none';
@@ -3842,67 +3864,32 @@ window.gerarFolhaPagamento = async function() {
         }
 
         try {
-            if (!navigator.geolocation) {
-                await processarPontoFinal("Sem GPS", "Sem GPS");
-                return;
-            }
-
-            let failSafe = null;
-            await new Promise(function (resolve) {
-                let settled = false;
-                function done() {
-                    if (settled) return;
-                    settled = true;
-                    if (failSafe) clearTimeout(failSafe);
-                    resolve();
-                }
-
-                failSafe = setTimeout(function () {
-                    if (!window.__pontoProcessando) return;
-                    liberaProcessamento();
-                    try { Swal.close(); } catch (_) {}
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Tempo esgotado',
-                        text: 'O GPS não respondeu a tempo. Verifique se a localização está ligada e tente novamente.'
+            let la = null;
+            let lo = null;
+            if (navigator.geolocation) {
+                try {
+                    const pos = await new Promise(function (res, rej) {
+                        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 4500, maximumAge: 0 });
                     });
-                    done();
-                }, 18000);
-
-                navigator.geolocation.getCurrentPosition(
-                    async function (position) {
-                        try {
-                            await processarPontoFinal(position.coords.latitude, position.coords.longitude);
-                        } catch (err) {
-                            console.error(err);
-                            try { Swal.close(); } catch (_) {}
-                            Swal.fire('Erro', 'Falha ao guardar o ponto. Tente novamente.', 'error');
-                        } finally {
-                            liberaProcessamento();
-                            done();
-                        }
-                    },
-                    async function (error) {
-                        console.warn("Sinal de GPS fraco ou negado. Ponto será registrado sem localização exata.", error);
-                        try {
-                            await processarPontoFinal("Localização não obtida", "Localização não obtida");
-                        } catch (err) {
-                            console.error(err);
-                            try { Swal.close(); } catch (_) {}
-                            Swal.fire('Erro', 'Falha ao guardar o ponto.', 'error');
-                        } finally {
-                            liberaProcessamento();
-                            done();
-                        }
-                    },
-                    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-                );
-            });
+                    la = pos.coords.latitude;
+                    lo = pos.coords.longitude;
+                } catch (e1) {
+                    try {
+                        const pos2 = await new Promise(function (res, rej) {
+                            navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: false, timeout: 3500, maximumAge: 180000 });
+                        });
+                        la = pos2.coords.latitude;
+                        lo = pos2.coords.longitude;
+                    } catch (e2) {
+                        console.warn('GPS indisponível após tentativas rápidas', e2);
+                    }
+                }
+            }
+            await processarPontoFinal(la, lo);
         } catch (e) {
             console.error('baterPonto', e);
             try { Swal.close(); } catch (_) {}
             Swal.fire('Erro', 'Não foi possível concluir o registo.', 'error');
-            liberaProcessamento();
         } finally {
             liberaProcessamento();
         }
@@ -3958,7 +3945,7 @@ window.gerarFolhaPagamento = async function() {
                 dados.cancelado_em_evento = cancelados.has(dados.id);
                 window.dadosExportacaoPonto.push(dados); 
                 
-                dados.linkMaps = "https://www.google.com/maps?q=" + dados.latitude + "," + dados.longitude;   
+                dados.linkMaps = montarLinkGoogleMapsOuNull(dados.latitude, dados.longitude);   
                 
                 const { ano, mes, dia } = separarDataSegura(dados.data);
                 
@@ -4004,14 +3991,21 @@ window.gerarFolhaPagamento = async function() {
                         const fotoThumb = dados.foto ? `<img src="${dados.foto}" onclick="abrirFoto('${dados.foto}')" style="width: 50px; border-radius: 5px; float: right; cursor: pointer; border: 1px solid #ccc; transition: 0.2s;" title="Clique para ampliar" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">` : '';
                         
                         const canceladoBadge = (dados.cancelado_em_evento ? `<div style="margin-top:6px; padding:6px 8px; background:#fff3cd; border:1px solid #ffeeba; color:#856404; border-radius:8px; font-size:12px; font-weight:700;">⚠️ REGISTRO CANCELADO (mantido para auditoria)</div>` : ``);
-                        const btnAcao = (dados.cancelado_em_evento ? `` : `<button onclick="solicitarCancelamentoPonto('${dados.id}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">⚠️ SOLICITAR CANCELAMENTO</button>`);
+                        const coordsTxt = textoCoordenadasParaExibicao(dados);
+                        const btnMaps = dados.linkMaps
+                            ? `<button type="button" class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>`
+                            : `<span style="font-size:12px;color:#888;">📍 Mapa indisponível (sem coordenadas GPS neste registo)</span>`;
+                        const btnAcao = (dados.cancelado_em_evento ? `` : `<button type="button" onclick="solicitarCancelamentoPonto('${dados.id}','${(dados.funcionario_id || funcId).replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">⚠️ SOLICITAR CANCELAMENTO</button>`);
+                        const btnApagarRH = (dados.cancelado_em_evento ? `` : `<button type="button" onclick="excluirPontoGestorRH('${dados.id}')" style="background: #b02a37; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">🗑️ APAGAR BATIDA (RH)</button>`);
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
                                 ${fotoThumb}
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
                                <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
-                                <button class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>
+                                <span style="font-size:12px;color:#555;"><b>GPS:</b> ${coordsTxt}</span><br>
+                                ${btnMaps}
                                 ${btnAcao}
+                                ${btnApagarRH}
                                 ${canceladoBadge}
                             </div>`;
                     });
@@ -4029,7 +4023,7 @@ window.gerarFolhaPagamento = async function() {
         }
     };
 
-    window.solicitarCancelamentoPonto = async function(pontoId) {
+    window.solicitarCancelamentoPonto = async function(pontoId, funcionarioId) {
         const empresaLogada = localStorage.getItem('empresaGestor');
         if (!empresaLogada) {
             return Swal.fire('Atenção', 'Apenas a gestão pode solicitar cancelamento/ajuste de ponto.', 'warning');
@@ -4048,13 +4042,17 @@ window.gerarFolhaPagamento = async function() {
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#1a2a43',
             preConfirm: (val) => {
-                if (!val || String(val).trim().length < 10) {
+                const t = val ? String(val).trim() : '';
+                if (t.length < 10) {
                     Swal.showValidationMessage('Informe uma justificativa com pelo menos 10 caracteres.');
+                    return false;
                 }
-                return val;
+                return t;
             }
         });
         if (!motivo) return;
+
+        const funcIdEvt = funcionarioId || document.getElementById('pt-func-select')?.value || null;
 
         try {
             await addDoc(collection(db, "ponto_eventos"), {
@@ -4062,14 +4060,48 @@ window.gerarFolhaPagamento = async function() {
                 ponto_id: pontoId,
                 empresa_id: empresaLogada,
                 gestor_auth_uid: authUid,
-                funcionario_id: document.getElementById('pt-func-select')?.value || null,
+                funcionario_id: funcIdEvt,
                 motivo: String(motivo).trim(),
                 criado_em: serverTimestamp()
             });
             Swal.fire('Registrado!', 'Solicitação registrada. O registro original foi mantido para auditoria.', 'success');
             buscarPonto();
         } catch (e) {
-            Swal.fire('Erro', 'Não foi possível registrar a solicitação.', 'error');
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível registrar a solicitação. Verifique permissões do Firestore ou a internet.', 'error');
+        }
+    };
+
+    window.excluirPontoGestorRH = async function(pontoId) {
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!empresaLogada) {
+            return Swal.fire('Atenção', 'Apenas o painel da gestão pode apagar registos de ponto.', 'warning');
+        }
+        const r = await Swal.fire({
+            title: 'Apagar batida na base de dados?',
+            html: 'Remove <b>definitivamente</b> este registo de ponto (use em batida errada).<br><br>Digite <b>APAGAR</b> para confirmar.',
+            input: 'text',
+            inputPlaceholder: 'APAGAR',
+            showCancelButton: true,
+            confirmButtonText: 'Apagar',
+            cancelButtonText: 'Voltar',
+            confirmButtonColor: '#d9534f',
+            preConfirm: (val) => {
+                if (String(val || '').trim() !== 'APAGAR') {
+                    Swal.showValidationMessage('Digite APAGAR em maiúsculas para confirmar.');
+                    return false;
+                }
+                return true;
+            }
+        });
+        if (!r.isConfirmed) return;
+        try {
+            await deleteDoc(doc(db, 'ponto_registros', pontoId));
+            Swal.fire('Removido', 'O registo foi apagado.', 'success');
+            buscarPonto();
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível apagar. Confirme as regras de segurança do Firestore (delete) para a coleção ponto_registros.', 'error');
         }
     };
 
