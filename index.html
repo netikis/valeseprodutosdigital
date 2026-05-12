@@ -818,6 +818,7 @@
         </div>
 
         <label>Consultar Ponto do Funcionário:</label>
+        <p style="font-size:11px;color:#666;margin:4px 0 10px 0;line-height:1.45;">Os batimentos ficam na lista abaixo (nuvem: coleção <b>ponto_registros</b>). Um <b>cancelamento</b> só cola o aviso amarelo: o documento continua no mesmo sítio até o RH apagar com <b>APAGAR BATIDA</b> se quiser retirá-lo da base.</p>
         <div style="display: flex; gap: 10px;">
             <select id="pt-func-select" class="lista-funcs" style="margin: 0; flex: 2;">
                 <option value="">A carregar...</option>
@@ -1600,6 +1601,14 @@ function separarDataSegura(dataString) {
         return { lat: null, lng: null };
     }
 
+    function escapeHtmlBasico(s) {
+        return String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
         if (value === "") { input.value = ""; return; }
@@ -2295,13 +2304,28 @@ window.exportarPDF = function(tipo) {
             gerarTabela(doc, head, body, startY, 7);
 
         } else if (tipo === 'ponto') {
-            head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Tipo', 'Obra/Local', 'Coodenadas GPS', 'Selfie']];
+            head = [['Ano', 'Mês', 'Data e Hora', 'Nome', 'Tipo', 'Obra/Local', 'Coordenadas GPS', 'Cancelamento (RH)', 'Selfie']];
             dados.forEach(row => {
                 const { ano, mes, dia } = separarDataSegura(row.data);
                 const mesNome = nomeMeses[mes] || mes;
-                body.push([ ano, mesNome, `${dia}/${mes}/${ano}\n${row.hora || ''}`, row.nome, row.tipo, row.obra, textoCoordenadasParaExibicao(row), row.foto || '' ]);
+                let celCancel = '—';
+                if (row.cancelado_em_evento) {
+                    const mot = String(row.cancelamento_motivo || '(sem texto de motivo)').trim();
+                    celCancel = 'CANCELADO\nMotivo: ' + mot;
+                }
+                body.push([
+                    ano,
+                    mesNome,
+                    `${dia}/${mes}/${ano}\n${row.hora || ''}`,
+                    row.nome,
+                    row.tipo,
+                    row.obra,
+                    textoCoordenadasParaExibicao(row),
+                    celCancel,
+                    row.foto || ''
+                ]);
             });
-            gerarTabela(doc, head, body, startY, 7);
+            gerarTabela(doc, head, body, startY, 8);
 
         } else if (tipo === 'despesas') {
             head = [['Status', 'Vencimento', 'Obra / Local', 'Fornecedor', 'Nota Fiscal', 'Descrição', 'Valor (R$)', 'Recibo']];
@@ -2326,7 +2350,10 @@ window.exportarPDF = function(tipo) {
                 styles: { fontSize: 8, cellPadding: 3, valign: 'middle', textColor: '#333333' }, 
                 headStyles: { fillColor: '#1a2a43', textColor: '#ffffff', fontStyle: 'bold' }, 
                 alternateRowStyles: { fillColor: '#f5f8fa' }, 
-                columnStyles: { [imgIndex]: { cellWidth: 35, minCellHeight: 25, halign: 'center' } },
+                columnStyles: Object.assign(
+                    tipo === 'ponto' ? { 7: { cellWidth: 52 } } : {},
+                    { [imgIndex]: { cellWidth: 35, minCellHeight: 25, halign: 'center' } }
+                ),
                 
                 didParseCell: function(data) { 
                     if (data.column.index === imgIndex && data.cell.section === 'body') { 
@@ -2336,6 +2363,12 @@ window.exportarPDF = function(tipo) {
                         if(data.cell.raw.includes('PAGO')) data.cell.styles.textColor = '#28a745';
                         else data.cell.styles.textColor = '#d9534f';
                         data.cell.styles.fontStyle = 'bold';
+                    }
+                    if (tipo === 'ponto' && data.column.index === 7 && data.cell.section === 'body') {
+                        if (String(data.cell.raw || '').indexOf('CANCELADO') === 0) {
+                            data.cell.styles.textColor = '#8a6d3b';
+                            data.cell.styles.fontStyle = 'bold';
+                        }
                     }
                 },
                 didDrawCell: function(data) { 
@@ -3938,10 +3971,21 @@ window.gerarFolhaPagamento = async function() {
             // Carrega eventos (ex.: cancelamentos) para manter trilha/auditoria sem apagar registros
             const qEvt = query(collection(db, "ponto_eventos"), where("funcionario_id", "==", funcId));
             const snapEvt = await getDocs(qEvt);
-            const cancelados = new Set();
+            const infoCancelamentoPorPonto = new Map();
             snapEvt.forEach((d) => {
                 const ev = d.data();
-                if (ev && ev.tipo === 'CANCELAMENTO' && ev.ponto_id) cancelados.add(ev.ponto_id);
+                if (!(ev && ev.tipo === 'CANCELAMENTO' && ev.ponto_id)) return;
+                let tsMs = 0;
+                const t = ev.criado_em;
+                if (t && typeof t.toMillis === 'function') tsMs = t.toMillis();
+                else if (t && typeof t.seconds === 'number') tsMs = t.seconds * 1000;
+                const prev = infoCancelamentoPorPonto.get(ev.ponto_id);
+                if (!prev || tsMs >= prev.tsMs) {
+                    infoCancelamentoPorPonto.set(ev.ponto_id, {
+                        tsMs: tsMs,
+                        motivo: String(ev.motivo || '—').trim()
+                    });
+                }
             });
             
             if (querySnapshot.empty) { 
@@ -3953,7 +3997,9 @@ window.gerarFolhaPagamento = async function() {
             querySnapshot.forEach((doc) => {
                 const dados = doc.data(); 
                 dados.id = doc.id;
-                dados.cancelado_em_evento = cancelados.has(dados.id);
+                const infoCanc = infoCancelamentoPorPonto.get(dados.id);
+                dados.cancelado_em_evento = Boolean(infoCanc);
+                dados.cancelamento_motivo = infoCanc ? infoCanc.motivo : '';
                 window.dadosExportacaoPonto.push(dados); 
                 
                 dados.linkMaps = montarLinkGoogleMapsOuNull(dados.latitude, dados.longitude);   
@@ -4001,18 +4047,27 @@ window.gerarFolhaPagamento = async function() {
                                   : (dados.tipo === 'Saída' ? '#d9534f' : '#6c757d');
                         const fotoThumb = dados.foto ? `<img src="${dados.foto}" onclick="abrirFoto('${dados.foto}')" style="width: 50px; border-radius: 5px; float: right; cursor: pointer; border: 1px solid #ccc; transition: 0.2s;" title="Clique para ampliar" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">` : '';
                         
-                        const canceladoBadge = (dados.cancelado_em_evento ? `<div style="margin-top:6px; padding:6px 8px; background:#fff3cd; border:1px solid #ffeeba; color:#856404; border-radius:8px; font-size:12px; font-weight:700;">⚠️ REGISTRO CANCELADO (mantido para auditoria)</div>` : ``);
+                        const motivoEsc = escapeHtmlBasico(dados.cancelamento_motivo || '');
+                        const canceladoBadge = (dados.cancelado_em_evento
+                            ? `<div style="margin-top:6px; padding:8px 10px; background:#fff3cd; border:1px solid #ffeeba; color:#5c4a00; border-radius:8px; font-size:12px;">
+                                <div style="font-weight:700;margin-bottom:4px;">⚠️ REGISTRO CANCELADO (mantido para auditoria)</div>
+                                <div style="font-weight:600;">Motivo registado pelo RH:</div>
+                                <div style="margin-top:2px; white-space:pre-wrap;">${motivoEsc}</div>
+                                <div style="margin-top:8px;font-size:11px;color:#856404;">O batimento continua <b>nesta mesma lista</b> (documento na nuvem). Para retirar da base, use <b>APAGAR BATIDA (RH)</b> abaixo.</div>
+                            </div>`
+                            : ``);
                         const coordsTxt = textoCoordenadasParaExibicao(dados);
                         const btnMaps = dados.linkMaps
                             ? `<button type="button" class="btn-maps" onclick="window.open('${dados.linkMaps}', '_blank')">📍 VER NO MAPA</button>`
                             : `<span style="font-size:12px;color:#888;">📍 Mapa indisponível (sem coordenadas GPS neste registo)</span>`;
                         const btnAcao = (dados.cancelado_em_evento ? `` : `<button type="button" onclick="solicitarCancelamentoPonto('${dados.id}','${(dados.funcionario_id || funcId).replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">⚠️ SOLICITAR CANCELAMENTO</button>`);
-                        const btnApagarRH = (dados.cancelado_em_evento ? `` : `<button type="button" onclick="excluirPontoGestorRH('${dados.id}')" style="background: #b02a37; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">🗑️ APAGAR BATIDA (RH)</button>`);
+                        const btnApagarRH = `<button type="button" onclick="excluirPontoGestorRH('${dados.id}')" style="background: #b02a37; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; font-size: 12px;">🗑️ APAGAR BATIDA (RH)</button>`;
                         htmlFinal += `
                             <div class="resultado-item" style="border-left-color: ${cor}">
                                 ${fotoThumb}
                                 <b style="color: ${cor}">${dados.tipo}</b> - Dia ${dados.data} às ${dados.hora || '??'} <br>
                                <span style="font-size: 13px; color: #555;"><b>Local:</b> ${dados.obra}</span><br>
+                                ${dados.cancelado_em_evento ? `<span style="font-size:12px;color:#555;"><b>ID do registo (nuvem / Firestore):</b> ${dados.id}</span><br>` : ''}
                                 <span style="font-size:12px;color:#555;"><b>GPS:</b> ${coordsTxt}</span><br>
                                 ${btnMaps}
                                 ${btnAcao}
@@ -4107,12 +4162,21 @@ window.gerarFolhaPagamento = async function() {
         });
         if (!r.isConfirmed) return;
         try {
+            const qEvApagar = query(collection(db, 'ponto_eventos'), where('ponto_id', '==', pontoId));
+            const snapEvApagar = await getDocs(qEvApagar);
+            for (const dEv of snapEvApagar.docs) {
+                try {
+                    await deleteDoc(doc(db, 'ponto_eventos', dEv.id));
+                } catch (e1) {
+                    console.warn('Não foi possível apagar evento', dEv.id, e1);
+                }
+            }
             await deleteDoc(doc(db, 'ponto_registros', pontoId));
-            Swal.fire('Removido', 'O registo foi apagado.', 'success');
+            Swal.fire('Removido', 'O registo de batida e os eventos ligados (ex.: cancelamento) foram apagados.', 'success');
             buscarPonto();
         } catch (e) {
             console.error(e);
-            Swal.fire('Erro', 'Não foi possível apagar. Confirme as regras de segurança do Firestore (delete) para a coleção ponto_registros.', 'error');
+            Swal.fire('Erro', 'Não foi possível apagar. Confirme as regras de segurança do Firestore (delete) para ponto_registros e ponto_eventos.', 'error');
         }
     };
 
