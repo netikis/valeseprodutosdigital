@@ -1571,6 +1571,32 @@ function separarDataSegura(dataString) {
         return 'GPS indisponível neste registo';
     }
 
+    /** Ordem otimizada para cidade: rede/cache primeiro (rápido), depois GPS fino. */
+    async function obterCoordenadasGeolocalizacaoRapida() {
+        if (!navigator.geolocation) return { lat: null, lng: null };
+        function tentar(opcoes) {
+            return new Promise(function (resolve, reject) {
+                navigator.geolocation.getCurrentPosition(resolve, reject, opcoes);
+            });
+        }
+        const lista = [
+            { enableHighAccuracy: false, maximumAge: 900000, timeout: 2400 },
+            { enableHighAccuracy: false, maximumAge: 120000, timeout: 4000 },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 9000 }
+        ];
+        for (let i = 0; i < lista.length; i++) {
+            try {
+                const pos = await tentar(lista[i]);
+                const la = pos.coords.latitude;
+                const lo = pos.coords.longitude;
+                if (Number.isFinite(la) && Number.isFinite(lo)) return { lat: la, lng: lo };
+            } catch (err) {
+                console.warn('Geolocalização tentativa ' + (i + 1), err && err.code, err && err.message);
+            }
+        }
+        return { lat: null, lng: null };
+    }
+
     window.mascaraMoeda = function(input) {
         let value = input.value.replace(/\D/g, '');
         if (value === "") { input.value = ""; return; }
@@ -3780,12 +3806,14 @@ window.gerarFolhaPagamento = async function() {
         }
 
         window.__pontoProcessando = true;
-        Swal.fire({
-            title: 'Registrando ponto...',
-            text: 'A obter GPS e a gravar.',
-            allowOutsideClick: true,
-            didOpen: function () { Swal.showLoading(); }
-        });
+        let swalAtrasado = setTimeout(function () {
+            Swal.fire({
+                title: 'A gravar ponto...',
+                text: 'A obter localização. Confirme se o GPS / localização do aparelho está ligado.',
+                allowOutsideClick: true,
+                didOpen: function () { Swal.showLoading(); }
+            });
+        }, 400);
 
         async function processarPontoFinal(lat, lng) {
             try {
@@ -3864,33 +3892,23 @@ window.gerarFolhaPagamento = async function() {
         }
 
         try {
-            let la = null;
-            let lo = null;
-            if (navigator.geolocation) {
-                try {
-                    const pos = await new Promise(function (res, rej) {
-                        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 4500, maximumAge: 0 });
-                    });
-                    la = pos.coords.latitude;
-                    lo = pos.coords.longitude;
-                } catch (e1) {
-                    try {
-                        const pos2 = await new Promise(function (res, rej) {
-                            navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: false, timeout: 3500, maximumAge: 180000 });
-                        });
-                        la = pos2.coords.latitude;
-                        lo = pos2.coords.longitude;
-                    } catch (e2) {
-                        console.warn('GPS indisponível após tentativas rápidas', e2);
-                    }
-                }
+            const coords = await obterCoordenadasGeolocalizacaoRapida();
+            if (swalAtrasado) {
+                clearTimeout(swalAtrasado);
+                swalAtrasado = null;
             }
-            await processarPontoFinal(la, lo);
+            try { Swal.close(); } catch (_) {}
+            await processarPontoFinal(coords.lat, coords.lng);
         } catch (e) {
             console.error('baterPonto', e);
             try { Swal.close(); } catch (_) {}
             Swal.fire('Erro', 'Não foi possível concluir o registo.', 'error');
         } finally {
+            if (swalAtrasado) {
+                clearTimeout(swalAtrasado);
+                swalAtrasado = null;
+            }
+            try { Swal.close(); } catch (_) {}
             liberaProcessamento();
         }
     };
