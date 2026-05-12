@@ -1571,7 +1571,10 @@ function separarDataSegura(dataString) {
         return 'GPS indisponível neste registo';
     }
 
-    /** Ordem otimizada para cidade: rede/cache primeiro (rápido), depois GPS fino. */
+    /**
+     * Mesma lógica “certeira” de antes: pedido de alta precisão primeiro (GPS real).
+     * Só depois tenta posição de rede; por último aceita cache recente se ainda não houver fix.
+     */
     async function obterCoordenadasGeolocalizacaoRapida() {
         if (!navigator.geolocation) return { lat: null, lng: null };
         function tentar(opcoes) {
@@ -1579,14 +1582,14 @@ function separarDataSegura(dataString) {
                 navigator.geolocation.getCurrentPosition(resolve, reject, opcoes);
             });
         }
-        const lista = [
-            { enableHighAccuracy: false, maximumAge: 900000, timeout: 2400 },
-            { enableHighAccuracy: false, maximumAge: 120000, timeout: 4000 },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 9000 }
+        const tentativas = [
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 },
+            { enableHighAccuracy: false, maximumAge: 0, timeout: 8000 },
+            { enableHighAccuracy: false, maximumAge: 300000, timeout: 6000 }
         ];
-        for (let i = 0; i < lista.length; i++) {
+        for (let i = 0; i < tentativas.length; i++) {
             try {
-                const pos = await tentar(lista[i]);
+                const pos = await tentar(tentativas[i]);
                 const la = pos.coords.latitude;
                 const lo = pos.coords.longitude;
                 if (Number.isFinite(la) && Number.isFinite(lo)) return { lat: la, lng: lo };
@@ -3806,14 +3809,12 @@ window.gerarFolhaPagamento = async function() {
         }
 
         window.__pontoProcessando = true;
-        let swalAtrasado = setTimeout(function () {
-            Swal.fire({
-                title: 'A gravar ponto...',
-                text: 'A obter localização. Confirme se o GPS / localização do aparelho está ligado.',
-                allowOutsideClick: true,
-                didOpen: function () { Swal.showLoading(); }
-            });
-        }, 400);
+        Swal.fire({
+            title: 'A gravar ponto...',
+            text: 'A obter localização (GPS). Permita o acesso à localização se o navegador pedir.',
+            allowOutsideClick: true,
+            didOpen: function () { Swal.showLoading(); }
+        });
 
         async function processarPontoFinal(lat, lng) {
             try {
@@ -3893,10 +3894,6 @@ window.gerarFolhaPagamento = async function() {
 
         try {
             const coords = await obterCoordenadasGeolocalizacaoRapida();
-            if (swalAtrasado) {
-                clearTimeout(swalAtrasado);
-                swalAtrasado = null;
-            }
             try { Swal.close(); } catch (_) {}
             await processarPontoFinal(coords.lat, coords.lng);
         } catch (e) {
@@ -3904,10 +3901,6 @@ window.gerarFolhaPagamento = async function() {
             try { Swal.close(); } catch (_) {}
             Swal.fire('Erro', 'Não foi possível concluir o registo.', 'error');
         } finally {
-            if (swalAtrasado) {
-                clearTimeout(swalAtrasado);
-                swalAtrasado = null;
-            }
             try { Swal.close(); } catch (_) {}
             liberaProcessamento();
         }
