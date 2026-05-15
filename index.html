@@ -760,6 +760,27 @@
                 <p style="font-size: 11px; color: #888; margin: 6px 0 0 0;">* Se trabalha sábado até meio-dia, use 4. Se não trabalha, deixe 0.</p>
             </div>
         </div>
+
+        <label style="margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Vínculo e férias (folha de pagamento)</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 140px;">
+                <label>Data de entrada (admissão)</label>
+                <input type="date" id="c-data-admissao">
+            </div>
+            <div style="flex: 1; min-width: 140px;">
+                <label>Data de saída (desligamento)</label>
+                <input type="date" id="c-data-demissao">
+            </div>
+            <div style="flex: 1; min-width: 140px;">
+                <label>Início das férias</label>
+                <input type="date" id="c-data-inicio-ferias">
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label>Dias de férias (CLT)</label>
+                <input type="number" id="c-ferias-dias" value="30" min="1" max="30" step="1" title="Período de gozo — padrão legal 30 dias">
+            </div>
+        </div>
+        <p style="font-size: 11px; color: #666; margin: 6px 0 0 0;">Na folha: entrada/saída limitam os dias no mês; início das férias ativa o cálculo CLT (férias + 1/3 constitucional sobre os dias de gozo no mês).</p>
         
         <button class="btn-gold" id="btnCadastrarFunc">SALVAR FUNCIONÁRIO</button>
 
@@ -875,9 +896,10 @@
                 </div>
 
                 <p id="f-explicacao-regras" class="folha-detalhe" style="margin-top:0; margin-bottom:12px; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e0e6ed;">
-                    Este resumo usa as regras cadastradas: <b>salário proporcional por dias trabalhados</b> (salário ÷ 30 × dias com ponto),
-                    <b>hora extra</b> pela base 220h (50% em dia útil; 100% em domingo/feriado),
-                    e <b>atrasos</b> pela hora de desconto (salário ÷ 30 ÷ 8).
+                    Este resumo usa as regras cadastradas: <b>salário proporcional</b> (salário ÷ 30 × dias com ponto, fora férias),
+                    <b>férias CLT</b> (dias de gozo no mês × valor do dia × 4/3, com terço constitucional),
+                    <b>vínculo</b> (entrada/saída limitam dias no mês),
+                    <b>hora extra</b> (base 220h: +50% dia útil; +100% domingo/feriado) e <b>atrasos</b> (salário ÷ 30 ÷ 8).
                 </p>
 
                 <div class="folha-secao-titulo">Salário do período</div>
@@ -898,6 +920,17 @@
                     <strong id="f-salario-base">R$ 0,00</strong>
                 </div>
                 <p id="f-detalhe-salario-proporcional" class="folha-detalhe"></p>
+
+                <div class="folha-secao-titulo">Férias (CLT)</div>
+                <div class="folha-linha">
+                    <span>Dias de férias no mês (gozo):</span>
+                    <strong id="f-dias-ferias-mes">0</strong>
+                </div>
+                <div class="folha-linha acrescimo">
+                    <span>(+) Remuneração de férias + 1/3 constitucional:</span>
+                    <strong id="f-valor-ferias-clt">R$ 0,00</strong>
+                </div>
+                <p id="f-detalhe-ferias-clt" class="folha-detalhe"></p>
 
                 <div class="folha-secao-titulo">Acertos</div>
                 <div class="folha-linha acrescimo">
@@ -1699,6 +1732,47 @@ function separarDataSegura(dataString) {
         if (!Number.isFinite(dia) || !Number.isFinite(mes) || !Number.isFinite(ano) || !Number.isFinite(hh) || !Number.isFinite(mm)) return NaN;
         const dt = new Date(ano, mes, dia, hh, mm, 0, 0);
         return dt.getTime();
+    }
+
+    function parseDataIsoFuncionario(campo) {
+        if (!campo) return null;
+        const s = String(campo).trim();
+        if (!s) return null;
+        if (s.indexOf('-') >= 0) return s.substring(0, 10);
+        const br = dataBrParaInputDateIso(s);
+        return br || null;
+    }
+
+    function isoParaDateLocal(iso) {
+        if (!iso) return null;
+        const p = String(iso).split('-').map(Number);
+        if (p.length !== 3 || !Number.isFinite(p[0])) return null;
+        return new Date(p[0], p[1] - 1, p[2], 12, 0, 0, 0);
+    }
+
+    function formatarDataBrDeIso(iso) {
+        if (!iso) return '—';
+        const p = String(iso).split('-');
+        if (p.length !== 3) return iso;
+        return `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    function isDiaContratoAtivo(isoD, admIso, demIso) {
+        if (admIso && isoD < admIso) return false;
+        if (demIso && isoD > demIso) return false;
+        return true;
+    }
+
+    function isDiaEmFerias(isoD, inicioFeriasIso, diasFerias) {
+        if (!inicioFeriasIso) return false;
+        const ini = isoParaDateLocal(inicioFeriasIso);
+        if (!ini) return false;
+        const dias = Math.min(30, Math.max(1, Number(diasFerias) || 30));
+        const fim = new Date(ini.getTime());
+        fim.setDate(fim.getDate() + dias - 1);
+        const cur = isoParaDateLocal(isoD);
+        if (!cur) return false;
+        return cur >= ini && cur <= fim;
     }
 
     window.mascaraMoeda = function(input) {
@@ -3460,7 +3534,8 @@ window.exportarPDF = function(tipo) {
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
                             <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>
-                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Almoço: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span>
+                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Almoço: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span><br>
+                            <span style="font-size: 10px; color: #666;">Entrada: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_admissao))} | Saída: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_demissao))} | Férias desde: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_inicio_ferias))} (${func.ferias_dias ?? 30} dias)</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
                             <button class="btn-gold" style="padding: 6px 10px; margin: 0; font-size: 11px;" onclick="resetarSenhaFuncionario('${func.id}', '${func.nome}')">🔑 Resetar</button>
@@ -3503,6 +3578,10 @@ window.gerarFolhaPagamento = async function() {
         const horaSaiPadrão = funcionario.hora_saida || "17:00";
         const intervaloMinutosPadrao = Number(funcionario.intervalo_minutos ?? 60);
         const sabadoHorasPadrao = Number(funcionario.sabado_horas ?? 0);
+        const admIso = parseDataIsoFuncionario(funcionario.data_admissao);
+        const demIso = parseDataIsoFuncionario(funcionario.data_demissao);
+        const feriasInicioIso = parseDataIsoFuncionario(funcionario.data_inicio_ferias);
+        const feriasDiasCad = Number(funcionario.ferias_dias ?? 30);
 
         let [eH, eM] = horaEntPadrão.split(':').map(Number);
         let [sH, sM] = horaSaiPadrão.split(':').map(Number);
@@ -3802,6 +3881,7 @@ window.gerarFolhaPagamento = async function() {
             const diasNoMesCalc = new Date(anoNum, mesNum, 0).getDate();
             let horasFaltantes = 0;
             let diasPagos = 0;
+            let diasFeriasNoMes = 0;
             const discriminacaoDias = [];
             const nomesDiasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -3819,6 +3899,33 @@ window.gerarFolhaPagamento = async function() {
                 const dowD = dt.getDay();
                 const nomeSemana = nomesDiasSemana[dowD];
                 const keyDia = `${String(d).padStart(2, '0')}/${String(mesNum).padStart(2, '0')}/${anoNum}`;
+
+                if (!isDiaContratoAtivo(isoD, admIso, demIso)) {
+                    discriminacaoDias.push({
+                        keyDia, nomeSemana, tipoDia: 'Fora do vínculo',
+                        esperadoTxt: '—',
+                        trabalhadoTxt: '—',
+                        diferencaTxt: '—',
+                        diaPagoTxt: 'Não',
+                        situacao: admIso && isoD < admIso
+                            ? `Antes da admissão (${formatarDataBrDeIso(admIso)}).`
+                            : (demIso ? `Após desligamento (${formatarDataBrDeIso(demIso)}).` : 'Dia fora do período contratual.')
+                    });
+                    continue;
+                }
+
+                if (isDiaEmFerias(isoD, feriasInicioIso, feriasDiasCad)) {
+                    diasFeriasNoMes += 1;
+                    discriminacaoDias.push({
+                        keyDia, nomeSemana, tipoDia: 'Férias (gozo)',
+                        esperadoTxt: 'Sem jornada (férias CLT)',
+                        trabalhadoTxt: '—',
+                        diferencaTxt: '—',
+                        diaPagoTxt: 'Férias',
+                        situacao: 'Remuneração de férias + 1/3 constitucional (CLT — art. 7º, XVII e art. 142). Não exige ponto; valor na linha «Férias (CLT)» do holerite.'
+                    });
+                    continue;
+                }
 
                 if (dowD === 0 || feriadosSet.has(isoD)) {
                     const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
@@ -3892,6 +3999,8 @@ window.gerarFolhaPagamento = async function() {
                 });
             }
             const salarioProporcional = valorDiaSalario * diasPagos;
+            const valorBaseFeriasMes = valorDiaSalario * diasFeriasNoMes;
+            const valorFeriasClt = feriasInicioIso && diasFeriasNoMes > 0 ? valorBaseFeriasMes * (4 / 3) : 0;
             const valorDescontoHoras = horasFaltantes * valorHoraDesconto;
 
             // Banco de horas (saldo): crédito - débito (atrasos)
@@ -3911,7 +4020,7 @@ window.gerarFolhaPagamento = async function() {
 
             // 3. CÁLCULO DO LÍQUIDO — valor real do fechamento (pode ser negativo se vales/atrasos excederem créditos)
             const liquidoReceber =
-                (salarioProporcional + valorTotalReceberExtras) -
+                (salarioProporcional + valorFeriasClt + valorTotalReceberExtras) -
                 (totalDinheiro + totalProduto + valorDescontoHoras);
 
             document.getElementById('f-nome-display').innerText = funcionario.nome;
@@ -3924,7 +4033,31 @@ window.gerarFolhaPagamento = async function() {
             const detSal = document.getElementById('f-detalhe-salario-proporcional');
             if (detSal) {
                 detSal.innerHTML = `<b>Conta:</b> ${diasPagos} dias × ${formatarMoeda(valorDiaSalario)} (valor do dia) = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
-                <span style="color:#888;">Só entram dias úteis/sábados (quando houver escala) em que existiu trabalho registrado no ponto.</span>`;
+                <span style="color:#888;">Só entram dias úteis/sábados (com escala) em que houve trabalho no ponto. Dias em <b>férias</b> não entram aqui (vão na linha de férias CLT).</span>`;
+            }
+
+            if (document.getElementById('f-dias-ferias-mes')) {
+                document.getElementById('f-dias-ferias-mes').innerText = String(diasFeriasNoMes);
+            }
+            if (document.getElementById('f-valor-ferias-clt')) {
+                document.getElementById('f-valor-ferias-clt').innerText = formatarMoeda(valorFeriasClt);
+            }
+            const detFer = document.getElementById('f-detalhe-ferias-clt');
+            if (detFer) {
+                if (feriasInicioIso && diasFeriasNoMes > 0) {
+                    const fimFeriasIso = (function () {
+                        const ini = isoParaDateLocal(feriasInicioIso);
+                        if (!ini) return feriasInicioIso;
+                        const f = new Date(ini.getTime());
+                        f.setDate(f.getDate() + Math.min(30, Math.max(1, feriasDiasCad)) - 1);
+                        return `${f.getFullYear()}-${pad2(f.getMonth() + 1)}-${pad2(f.getDate())}`;
+                    })();
+                    detFer.innerHTML = `<b>CLT:</b> remuneração de férias = salário proporcional ao gozo + <b>1/3 constitucional</b> sobre esse valor.<br>
+                    <b>Conta:</b> ${diasFeriasNoMes} dia(s) × ${formatarMoeda(valorDiaSalario)} × 4/3 = <b>${formatarMoeda(valorFeriasClt)}</b>.<br>
+                    <span style="color:#888;">Período cadastrado: ${formatarDataBrDeIso(feriasInicioIso)} a ${formatarDataBrDeIso(fimFeriasIso)} (${feriasDiasCad} dias de gozo). Pagamento deve ocorrer até 2 dias antes do início das férias (art. 145 CLT).</span>`;
+                } else {
+                    detFer.innerHTML = '<span style="color:#888;">Sem início de férias cadastrado neste mês, ou nenhum dia de gozo no período calculado. Cadastre em Editar funcionário → Início das férias.</span>';
+                }
             }
 
             const h50 = Math.floor(totalHorasExtras50Decimais);
@@ -3993,7 +4126,7 @@ window.gerarFolhaPagamento = async function() {
             const detLiq = document.getElementById('f-formula-liquido');
             if (detLiq) {
                 let txtForm = `<b>Fórmula do líquido:</b><br>
-                ${formatarMoeda(salarioProporcional)} (proporcional) + ${formatarMoeda(valorTotalReceberExtras)} (extras)
+                ${formatarMoeda(salarioProporcional)} (proporcional) + ${formatarMoeda(valorFeriasClt)} (férias CLT) + ${formatarMoeda(valorTotalReceberExtras)} (extras)
                 − ${formatarMoeda(totalDinheiro)} (vales) − ${formatarMoeda(totalProduto)} (produtos) − ${formatarMoeda(valorDescontoHoras)} (atrasos)
                 = <b>${formatarMoeda(liquidoReceber)}</b>`;
                 if (liquidoReceber < 0) {
@@ -4067,6 +4200,10 @@ window.gerarFolhaPagamento = async function() {
         const intervaloMinutos = Number(document.getElementById('c-intervalo')?.value || 60);
         const sabadoHoras = Number(document.getElementById('c-sabado-horas')?.value || 0);
         const empresaLogada = localStorage.getItem('empresaGestor');
+        const dataAdmissao = document.getElementById('c-data-admissao') ? document.getElementById('c-data-admissao').value : '';
+        const dataDemissao = document.getElementById('c-data-demissao') ? document.getElementById('c-data-demissao').value : '';
+        const dataInicioFerias = document.getElementById('c-data-inicio-ferias') ? document.getElementById('c-data-inicio-ferias').value : '';
+        const feriasDiasCad = Number(document.getElementById('c-ferias-dias')?.value || 30);
 
         if (!nome || !cpf) {
             return Swal.fire('Atenção', 'Preencha pelo menos o Nome e o CPF!', 'warning');
@@ -4088,6 +4225,10 @@ window.gerarFolhaPagamento = async function() {
                 hora_saida: saida,
                 intervalo_minutos: Number.isFinite(intervaloMinutos) ? intervaloMinutos : 60,
                 sabado_horas: Number.isFinite(sabadoHoras) ? sabadoHoras : 0,
+                data_admissao: dataAdmissao || null,
+                data_demissao: dataDemissao || null,
+                data_inicio_ferias: dataInicioFerias || null,
+                ferias_dias: Number.isFinite(feriasDiasCad) ? Math.min(30, Math.max(1, feriasDiasCad)) : 30,
                 senha: "" // Senha vazia para ele criar no 1º acesso
             });
             
@@ -4101,6 +4242,10 @@ window.gerarFolhaPagamento = async function() {
             if(document.getElementById('c-pix')) document.getElementById('c-pix').value = '';
             if(document.getElementById('c-intervalo')) document.getElementById('c-intervalo').value = '60';
             if(document.getElementById('c-sabado-horas')) document.getElementById('c-sabado-horas').value = '0';
+            if (document.getElementById('c-data-admissao')) document.getElementById('c-data-admissao').value = '';
+            if (document.getElementById('c-data-demissao')) document.getElementById('c-data-demissao').value = '';
+            if (document.getElementById('c-data-inicio-ferias')) document.getElementById('c-data-inicio-ferias').value = '';
+            if (document.getElementById('c-ferias-dias')) document.getElementById('c-ferias-dias').value = '30';
             
             // Recarrega a lista na hora
             carregarListaDeFuncionarios();
@@ -4129,6 +4274,10 @@ window.gerarFolhaPagamento = async function() {
         }
         const entradaEdit = padHoraParaInput(func.hora_entrada, '07:00');
         const saidaEdit = padHoraParaInput(func.hora_saida, '17:00');
+        const vAdm = escapeHtmlBasico(parseDataIsoFuncionario(func.data_admissao) || '');
+        const vDem = escapeHtmlBasico(parseDataIsoFuncionario(func.data_demissao) || '');
+        const vFer = escapeHtmlBasico(parseDataIsoFuncionario(func.data_inicio_ferias) || '');
+        const vFerDias = escapeHtmlBasico(String(func.ferias_dias ?? 30));
 
         Swal.fire({
             title: '✏️ Editar Funcionário',
@@ -4169,6 +4318,16 @@ window.gerarFolhaPagamento = async function() {
 
                     <label style="margin-top: 10px;">Sábado (horas):</label>
                     <input id="edit-f-sabado-horas" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.sabado_horas ?? 0)}" min="0" max="12" step="0.5">
+
+                    <p style="margin:14px 0 6px 0;font-weight:700;color:#1a2a43;border-bottom:1px solid #eee;padding-bottom:4px;">Vínculo e férias</p>
+                    <label style="margin-top: 8px;">Data de entrada (admissão)</label>
+                    <input id="edit-f-admissao" type="date" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${vAdm}">
+                    <label style="margin-top: 8px;">Data de saída (desligamento)</label>
+                    <input id="edit-f-demissao" type="date" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${vDem}">
+                    <label style="margin-top: 8px;">Início das férias</label>
+                    <input id="edit-f-inicio-ferias" type="date" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${vFer}">
+                    <label style="margin-top: 8px;">Dias de férias (CLT)</label>
+                    <input id="edit-f-ferias-dias" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${vFerDias}" min="1" max="30" step="1">
                 </div>
             `,
             showCancelButton: true,
@@ -4177,6 +4336,7 @@ window.gerarFolhaPagamento = async function() {
             confirmButtonText: 'SALVAR',
             cancelButtonText: 'Cancelar',
             preConfirm: () => {
+                const fd = Number(document.getElementById('edit-f-ferias-dias').value || 30);
                 return {
                     nome: document.getElementById('edit-f-nome').value.trim(),
                     salario: document.getElementById('edit-f-salario').value.trim(),
@@ -4185,7 +4345,11 @@ window.gerarFolhaPagamento = async function() {
                     hora_entrada: document.getElementById('edit-f-entrada').value || '07:00',
                     hora_saida: document.getElementById('edit-f-saida').value || '17:00',
                     intervalo_minutos: Number(document.getElementById('edit-f-intervalo').value || 60),
-                    sabado_horas: Number(document.getElementById('edit-f-sabado-horas').value || 0)
+                    sabado_horas: Number(document.getElementById('edit-f-sabado-horas').value || 0),
+                    data_admissao: document.getElementById('edit-f-admissao').value || null,
+                    data_demissao: document.getElementById('edit-f-demissao').value || null,
+                    data_inicio_ferias: document.getElementById('edit-f-inicio-ferias').value || null,
+                    ferias_dias: Number.isFinite(fd) ? Math.min(30, Math.max(1, fd)) : 30
                 }
             }
         }).then(async (result) => {
