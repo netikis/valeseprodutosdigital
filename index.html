@@ -470,8 +470,11 @@
             border: 2px solid #e0e6ed; 
             margin-top: 10px; 
             display: none; 
-            transform: scaleX(-1);
             pointer-events: none;
+        }
+        #video-selfie.camera-espelhada,
+        #foto-tirada.camera-espelhada {
+            transform: scaleX(-1);
         }
         
         #foto-tirada { 
@@ -480,7 +483,23 @@
             border: 2px solid #28a745; 
             margin-top: 10px; 
             display: none; 
-            transform: scaleX(-1); 
+        }
+        .botoes-camera-ponto {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .botoes-camera-ponto button {
+            flex: 1;
+            min-width: 140px;
+            margin: 0;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
         }
 
         .card-folha { 
@@ -1242,12 +1261,18 @@
     <label style="margin-top: 20px;">Em qual local ou obra está agora?</label>
     <input type="text" id="obra-atual" placeholder="Informe a obra ou local atual">
 
-    <label style="margin-top: 15px;">Confirmação de Identidade:</label>
-    <button id="btn-iniciar-camera" type="button" class="btn-logout" style="margin-top: 5px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir Câmera para Selfie</button>
+    <label style="margin-top: 15px;">Confirmação de Identidade (foto):</label>
+    <div class="botoes-camera-ponto" id="botoes-abrir-camera">
+        <button id="btn-camera-frontal" type="button" style="background: #e0e6ed; color: #1a2a43;" onclick="iniciarCamera('user')">🤳 Selfie (frontal)</button>
+        <button id="btn-camera-traseira" type="button" style="background: #1a2a43; color: #fff;" onclick="iniciarCamera('environment')">📷 Câmera traseira</button>
+    </div>
+    <button id="btn-trocar-camera" type="button" class="btn-logout" style="display: none; margin-top: 8px; background: #6c757d; color: #fff; width: 100%;" onclick="alternarCamera()">🔄 Trocar frontal / traseira</button>
+    <p style="font-size: 11px; color: #666; margin: 6px 0 0 0;">Use a <b>frontal</b> para selfie ou a <b>traseira</b> se preferir fotografar o ambiente. No celular, conceda permissão à câmera quando o navegador pedir.</p>
     <video id="video-selfie" autoplay playsinline muted></video>
     <canvas id="canvas-selfie" style="display: none;"></canvas>
     <img id="foto-tirada" src="" alt="Sua foto aparecerá aqui">
     <button id="btn-tirar-foto" type="button" class="btn-gold" style="display: none; margin-top: 10px;" onclick="tirarFoto()">Tirar Foto</button>
+    <button id="btn-iniciar-camera" type="button" class="btn-logout" style="display: none; margin-top: 8px; background: #e0e6ed;" onclick="iniciarCamera()">📷 Abrir câmera novamente</button>
     
     <input type="hidden" id="foto-base64" value="">
 
@@ -3267,23 +3292,83 @@ window.exportarPDF = function(tipo) {
     };
 
     let streamCamera = null;
+    let cameraFacingAtual = 'user';
 
-    window.iniciarCamera = async function() {
-        const video = document.getElementById('video-selfie'); 
-        const btnIniciar = document.getElementById('btn-iniciar-camera'); 
-        const btnTirar = document.getElementById('btn-tirar-foto'); 
-        const imgFoto = document.getElementById('foto-tirada');
-        
-        try {
-            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
-            video.srcObject = streamCamera; 
-            video.style.display = 'block'; 
-            btnIniciar.style.display = 'none'; 
-            btnTirar.style.display = 'block'; 
-            imgFoto.style.display = 'none';
-        } catch (err) { 
-            Swal.fire('Erro', 'Permissão da câmera negada ou não suportada.', 'error'); 
+    function pararCamera() {
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(function (track) { track.stop(); });
+            streamCamera = null;
         }
+        const video = document.getElementById('video-selfie');
+        if (video) video.srcObject = null;
+    }
+
+    function aplicarEspelhoCamera(espelhar) {
+        const video = document.getElementById('video-selfie');
+        const imgFoto = document.getElementById('foto-tirada');
+        if (video) video.classList.toggle('camera-espelhada', !!espelhar);
+        if (imgFoto) imgFoto.classList.toggle('camera-espelhada', !!espelhar);
+    }
+
+    async function obterStreamCamera(facing) {
+        const querTraseira = facing === 'environment';
+        const tentativas = querTraseira
+            ? [
+                { video: { facingMode: { ideal: 'environment' } }, audio: false },
+                { video: { facingMode: 'environment' }, audio: false },
+                { video: true, audio: false }
+            ]
+            : [
+                { video: { facingMode: 'user' }, audio: false },
+                { video: true, audio: false }
+            ];
+        let ultimoErro = null;
+        for (let i = 0; i < tentativas.length; i++) {
+            try {
+                return await navigator.mediaDevices.getUserMedia(tentativas[i]);
+            } catch (err) {
+                ultimoErro = err;
+            }
+        }
+        throw ultimoErro || new Error('camera_unavailable');
+    }
+
+    window.iniciarCamera = async function (facing) {
+        const modo = facing === 'environment' ? 'environment' : 'user';
+        const video = document.getElementById('video-selfie');
+        const btnIniciar = document.getElementById('btn-iniciar-camera');
+        const btnTirar = document.getElementById('btn-tirar-foto');
+        const btnTrocar = document.getElementById('btn-trocar-camera');
+        const blocoAbrir = document.getElementById('botoes-abrir-camera');
+        const imgFoto = document.getElementById('foto-tirada');
+
+        pararCamera();
+        cameraFacingAtual = modo;
+
+        try {
+            streamCamera = await obterStreamCamera(modo);
+            video.srcObject = streamCamera;
+            await video.play().catch(function () {});
+            video.style.display = 'block';
+            if (blocoAbrir) blocoAbrir.style.display = 'none';
+            if (btnIniciar) btnIniciar.style.display = 'none';
+            if (btnTrocar) btnTrocar.style.display = 'block';
+            if (btnTirar) btnTirar.style.display = 'block';
+            if (imgFoto) imgFoto.style.display = 'none';
+            aplicarEspelhoCamera(modo === 'user');
+        } catch (err) {
+            console.warn('Câmera', modo, err);
+            const msg = modo === 'environment'
+                ? 'Não foi possível abrir a câmera traseira. Tente a selfie (frontal) ou verifique a permissão da câmera no celular.'
+                : 'Permissão da câmera negada ou não suportada neste aparelho.';
+            Swal.fire('Erro', msg, 'error');
+            if (blocoAbrir) blocoAbrir.style.display = 'flex';
+        }
+    };
+
+    window.alternarCamera = function () {
+        const proximo = cameraFacingAtual === 'user' ? 'environment' : 'user';
+        iniciarCamera(proximo);
     };
 
     window.tirarFoto = function() {
@@ -3293,6 +3378,8 @@ window.exportarPDF = function(tipo) {
         const inputBase64 = document.getElementById('foto-base64'); 
         const btnTirar = document.getElementById('btn-tirar-foto'); 
         const btnIniciar = document.getElementById('btn-iniciar-camera');
+        const btnTrocar = document.getElementById('btn-trocar-camera');
+        const blocoAbrir = document.getElementById('botoes-abrir-camera');
         
         canvas.width = video.videoWidth; 
         canvas.height = video.videoHeight; 
@@ -3305,12 +3392,30 @@ window.exportarPDF = function(tipo) {
         video.style.display = 'none'; 
         imgFoto.style.display = 'block'; 
         btnTirar.style.display = 'none'; 
-        btnIniciar.style.display = 'block'; 
-        btnIniciar.innerText = "🔄 Tirar Novamente";
-        
-        if (streamCamera) {
-            streamCamera.getTracks().forEach(track => track.stop());
+        if (btnTrocar) btnTrocar.style.display = 'none';
+        if (btnIniciar) {
+            btnIniciar.style.display = 'block';
+            btnIniciar.innerText = '🔄 Tirar outra foto';
         }
+        if (blocoAbrir) blocoAbrir.style.display = 'flex';
+        
+        pararCamera();
+    };
+
+    window.reporUiCameraAposPonto = function () {
+        pararCamera();
+        const blocoAbrir = document.getElementById('botoes-abrir-camera');
+        const btnIniciar = document.getElementById('btn-iniciar-camera');
+        const btnTirar = document.getElementById('btn-tirar-foto');
+        const btnTrocar = document.getElementById('btn-trocar-camera');
+        if (blocoAbrir) blocoAbrir.style.display = 'flex';
+        if (btnIniciar) {
+            btnIniciar.style.display = 'none';
+            btnIniciar.innerText = '📷 Abrir câmera novamente';
+        }
+        if (btnTirar) btnTirar.style.display = 'none';
+        if (btnTrocar) btnTrocar.style.display = 'none';
+        aplicarEspelhoCamera(false);
     };
 
     window.esqueciSenha = function() {
@@ -4554,7 +4659,7 @@ window.gerarFolhaPagamento = async function() {
         }
 
         if (!fotoBase64) {
-            return Swal.fire('Atenção', 'Tire a foto (selfie) antes de bater o ponto!', 'warning');
+            return Swal.fire('Atenção', 'Tire a foto de confirmação (frontal ou traseira) antes de bater o ponto!', 'warning');
         }
 
         let authUid = null;
@@ -4633,12 +4738,8 @@ window.gerarFolhaPagamento = async function() {
             document.getElementById('foto-base64').value = '';
             document.getElementById('foto-tirada').style.display = 'none';
             document.getElementById('video-selfie').style.display = 'none';
-            document.getElementById('btn-iniciar-camera').style.display = 'block';
-            document.getElementById('btn-iniciar-camera').innerText = "📷 Abrir Câmera para Selfie";
-
-            if (streamCamera) {
-                streamCamera.getTracks().forEach(function (track) { track.stop(); });
-                streamCamera = null;
+            if (typeof window.reporUiCameraAposPonto === 'function') {
+                window.reporUiCameraAposPonto();
             }
         }
 
