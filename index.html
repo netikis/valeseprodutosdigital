@@ -1099,6 +1099,7 @@
                     <button id="btnExportarDespesas" class="btn-pdf-relatorio" style="display:none; margin-top: 15px; background-color: var(--dark-navy);" onclick="exportarPDF('despesas')">📥 EXPORTAR RELATÓRIO PDF</button>
                 </div>
 
+                <p style="font-size: 12px; color: #666; margin: 10px 0 0 0;">Contas <b>vencidas</b> e <b>a vencer</b> aparecem por ordem de <b>vencimento</b> (data com ano, do mais antigo ao mais recente). O PDF da busca usa a mesma ordem.</p>
                 <div id="lista-despesas-resultados" style="margin-top: 15px;">
                     <p style="text-align: center; color: #888; font-size: 13px;">Selecione uma etiqueta acima ou digite para procurar.</p>
                 </div>
@@ -1163,6 +1164,7 @@
                     </div>
                     <button type="button" class="btn-enviar" style="margin: 0; padding: 12px 18px;" onclick="carregarRelatorioDespesasTabular()">Carregar tabela</button>
                 </div>
+                <p style="font-size: 12px; color: #666; margin: 8px 0 0 0;">A tabela e o PDF são ordenados pela coluna <b>Vencimento</b> (data completa com <b>ano</b>, do mais antigo ao mais recente). Ex.: <b>05/06/2025</b> vem antes de <b>14/05/2026</b> porque 2025 é anterior a 2026 — não confunda só dia/mês. A coluna <b>Lançamento</b> não segue essa ordem.</p>
                 <button type="button" class="btn-pdf-relatorio" style="margin-top: 12px; background-color: var(--dark-navy);" onclick="exportarPDFRelatorioDespesasTabelaAtual()">📥 Exportar PDF (resultado da tabela)</button>
                 <div id="tabela-relatorio-despesas-wrap" style="margin-top: 15px; overflow-x: auto;"></div>
             </div>
@@ -1829,11 +1831,165 @@ function separarDataSegura(dataString) {
         return new Date(y, m, dd, 12, 0, 0).getTime();
     }
 
+    function obterDataVencimentoDespesa(d) {
+        if (!d) return '';
+        const v = d.data_vencimento ?? d.vencimento ?? d.dataVencimento ?? '';
+        return v == null ? '' : v;
+    }
+
+    /** Converte vencimento em timestamp (ms). ISO tem prioridade; aceita BR, traços e Timestamp Firestore. */
+    function parseDataVencimentoParaTimestamp(dataVenc) {
+        if (dataVenc == null || dataVenc === '') return null;
+
+        if (typeof dataVenc === 'number' && Number.isFinite(dataVenc)) {
+            if (dataVenc > 1e11) return dataVenc;
+            const s = String(Math.floor(dataVenc));
+            if (s.length === 8) {
+                const y = parseInt(s.slice(0, 4), 10);
+                const m = parseInt(s.slice(4, 6), 10) - 1;
+                const d = parseInt(s.slice(6, 8), 10);
+                return new Date(y, m, d, 12, 0, 0).getTime();
+            }
+        }
+
+        if (typeof dataVenc === 'object') {
+            if (typeof dataVenc.toDate === 'function') {
+                const dt = dataVenc.toDate();
+                return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 12, 0, 0).getTime();
+            }
+            if (dataVenc.seconds != null) {
+                const dt = new Date(dataVenc.seconds * 1000);
+                return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 12, 0, 0).getTime();
+            }
+        }
+
+        const s = String(dataVenc).trim();
+        if (!s) return null;
+
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) {
+            const y = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10) - 1;
+            const d = parseInt(m[3], 10);
+            if (y >= 1900 && y <= 2100 && mo >= 0 && mo <= 11 && d >= 1 && d <= 31) {
+                return new Date(y, mo, d, 12, 0, 0).getTime();
+            }
+        }
+
+        m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (m) {
+            const d = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10) - 1;
+            const y = parseInt(m[3], 10);
+            if (y >= 1900 && y <= 2100 && mo >= 0 && mo <= 11 && d >= 1 && d <= 31) {
+                return new Date(y, mo, d, 12, 0, 0).getTime();
+            }
+        }
+
+        m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (m) {
+            const d = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10) - 1;
+            const y = parseInt(m[3], 10);
+            if (y >= 1900 && y <= 2100 && mo >= 0 && mo <= 11 && d >= 1 && d <= 31) {
+                return new Date(y, mo, d, 12, 0, 0).getTime();
+            }
+        }
+
+        const { ano, mes, dia } = separarDataSegura(s);
+        if (!ano || ano === 'Outros') return null;
+        const y = parseInt(ano, 10);
+        const mo = parseInt(mes, 10) - 1;
+        const d = parseInt(dia, 10);
+        if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+        if (y < 1900 || y > 2100 || mo < 0 || mo > 11 || d < 1 || d > 31) return null;
+        return new Date(y, mo, d, 12, 0, 0).getTime();
+    }
+
+    function dataVencimentoTsDespesa(d) {
+        if (!d) return null;
+        const gravado = d.data_vencimento_ts;
+        if (gravado != null && gravado !== '' && Number.isFinite(Number(gravado))) {
+            return Number(gravado);
+        }
+        return parseDataVencimentoParaTimestamp(obterDataVencimentoDespesa(d));
+    }
+
+    function dataVencimentoParaInputDateIso(dataVenc) {
+        const ts = parseDataVencimentoParaTimestamp(dataVenc);
+        if (ts != null) {
+            const dt = new Date(ts);
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        }
+        if (!dataVenc) return '';
+        const s = String(dataVenc).trim();
+        if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+            const p = s.split('-');
+            return `${p[0]}-${String(p[1]).padStart(2, '0')}-${String(p[2]).padStart(2, '0')}`;
+        }
+        return dataBrParaInputDateIso(s);
+    }
+
     function formatarVencimentoIsoParaBR(dataVenc) {
         if (!dataVenc) return '—';
-        const partes = String(dataVenc).split('-');
-        if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
-        return String(dataVenc);
+        const ts = parseDataVencimentoParaTimestamp(dataVenc);
+        if (ts != null) {
+            const dt = new Date(ts);
+            const dia = String(dt.getDate()).padStart(2, '0');
+            const mes = String(dt.getMonth() + 1).padStart(2, '0');
+            const ano = dt.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+        const { ano, mes, dia } = separarDataSegura(dataVenc);
+        if (!ano || ano === 'Outros') return String(dataVenc);
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    function formatarVencimentoDespesaExibir(d) {
+        return formatarVencimentoIsoParaBR(obterDataVencimentoDespesa(d));
+    }
+
+    /** Vencimento na tabela: ano em destaque (vermelho se já passou). */
+    function formatarVencimentoDespesaExibirHtml(d) {
+        const ts = dataVencimentoTsDespesa(d);
+        if (ts == null) return escapeHtmlBasico('—');
+        const dt = new Date(ts);
+        const dia = String(dt.getDate()).padStart(2, '0');
+        const mes = String(dt.getMonth() + 1).padStart(2, '0');
+        const ano = dt.getFullYear();
+        const hoje = new Date();
+        hoje.setHours(12, 0, 0, 0);
+        const corAno = dt.getTime() < hoje.getTime() ? '#dc3545' : '#1a2a43';
+        return escapeHtmlBasico(dia + '/' + mes + '/') + '<span style="font-weight:800;color:' + corAno + ';">' + ano + '</span>';
+    }
+
+    function relatorioDespesasTemVariosAnosVencimento(arr) {
+        const anos = new Set();
+        arr.forEach(d => {
+            const ts = dataVencimentoTsDespesa(d);
+            if (ts != null) anos.add(new Date(ts).getFullYear());
+        });
+        return anos.size > 1;
+    }
+
+    function despesaEstaVencida(d) {
+        const ts = dataVencimentoTsDespesa(d);
+        if (ts == null) return false;
+        const hoje = new Date();
+        hoje.setHours(12, 0, 0, 0);
+        return ts < hoje.getTime();
+    }
+
+    /** Ordem cronológica de vencimento (mais antigo primeiro); sem data válida vai para o fim. */
+    function ordenarRelatorioDespesasPorVencimento(arr) {
+        arr.sort((a, b) => {
+            const ta = dataVencimentoTsDespesa(a);
+            const tb = dataVencimentoTsDespesa(b);
+            const va = ta != null ? ta : Number.MAX_SAFE_INTEGER;
+            const vb = tb != null ? tb : Number.MAX_SAFE_INTEGER;
+            if (va !== vb) return va - vb;
+            return String(a.obra_nome || '').localeCompare(String(b.obra_nome || ''), 'pt-BR');
+        });
     }
 
     function diaLancamentoDespExibir(d) {
@@ -1997,6 +2153,7 @@ window.carregarFiltrosDespesas = async function() {
                 loja_nome: loja, loja_lower: loja.toLowerCase(), 
                 nota_fiscal: nf,
                 data_vencimento: vencimento,
+                data_vencimento_ts: parseDataVencimentoParaTimestamp(vencimento),
                 valor_string: valor, valor_numero: parseMoedaLocal(valor), 
                 descricao: desc, foto_recibo: fotoBase64, 
                 data: dataAtual, timestamp: dataObj.getTime(), status: "pendente" 
@@ -2046,6 +2203,7 @@ window.carregarFiltrosDespesas = async function() {
                 loja_lower: loja.toLowerCase(),
                 nota_fiscal: nf,
                 data_vencimento: vencimento,
+                data_vencimento_ts: parseDataVencimentoParaTimestamp(vencimento),
                 valor_string: valor,
                 valor_numero: parseMoedaLocal(valor),
                 descricao: desc,
@@ -2136,7 +2294,7 @@ window.carregarFiltrosDespesas = async function() {
         const vObra = escapeHtmlBasico(despesa.obra_nome || '');
         const vLoja = escapeHtmlBasico(despesa.loja_nome || '');
         const vNf = escapeHtmlBasico(despesa.nota_fiscal || '');
-        const vVen = escapeHtmlBasico(despesa.data_vencimento || '');
+        const vVen = escapeHtmlBasico(dataVencimentoParaInputDateIso(obterDataVencimentoDespesa(despesa)) || '');
         const vVal = escapeHtmlBasico(despesa.valor_string || '');
         const vDesc = escapeHtmlBasico(despesa.descricao || '');
 
@@ -2176,6 +2334,7 @@ window.carregarFiltrosDespesas = async function() {
                     loja_lower: document.getElementById('edit-loja').value.trim().toLowerCase(),
                     nota_fiscal: document.getElementById('edit-nf').value.trim(),
                     data_vencimento: document.getElementById('edit-vencimento').value,
+                    data_vencimento_ts: parseDataVencimentoParaTimestamp(document.getElementById('edit-vencimento').value),
                     valor_string: document.getElementById('edit-valor').value,
                     valor_numero: parseMoedaLocal(document.getElementById('edit-valor').value),
                     descricao: document.getElementById('edit-desc').value.trim()
@@ -2210,7 +2369,7 @@ window.carregarFiltrosDespesas = async function() {
         const vObra = escapeHtmlBasico(despesa.obra_nome || '');
         const vLoja = escapeHtmlBasico(despesa.loja_nome || '');
         const vNf = escapeHtmlBasico(despesa.nota_fiscal || '');
-        const vVen = escapeHtmlBasico(despesa.data_vencimento || '');
+        const vVen = escapeHtmlBasico(dataVencimentoParaInputDateIso(obterDataVencimentoDespesa(despesa)) || '');
         const vVal = escapeHtmlBasico(despesa.valor_string || '');
         const vDesc = escapeHtmlBasico(despesa.descricao || '');
         const vChq = escapeHtmlBasico(String(despesa.cheque_boleto_num || '').trim());
@@ -2271,6 +2430,7 @@ window.carregarFiltrosDespesas = async function() {
                     data: inputDateIsoParaDataBr(dl),
                     timestamp: timestampMeioDiaDataIso(dl),
                     data_vencimento: document.getElementById('edit-rel-vencimento').value,
+                    data_vencimento_ts: parseDataVencimentoParaTimestamp(document.getElementById('edit-rel-vencimento').value),
                     valor_string: document.getElementById('edit-rel-valor').value,
                     valor_numero: parseMoedaLocal(document.getElementById('edit-rel-valor').value),
                     descricao: document.getElementById('edit-rel-desc').value.trim(),
@@ -2371,7 +2531,6 @@ window.carregarFiltrosDespesas = async function() {
             const querySnapshot = await getDocs(q);
             let arr = [];
             querySnapshot.forEach(docu => arr.push({ id: docu.id, ...docu.data() }));
-            arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             arr = arr.filter(d => {
                 const o = (d.obra_lower || (d.obra_nome || '').toLowerCase());
                 const l = (d.loja_lower || (d.loja_nome || '').toLowerCase());
@@ -2381,6 +2540,7 @@ window.carregarFiltrosDespesas = async function() {
                 if (stFiltro === 'pago' && st !== 'pago') return false;
                 return true;
             });
+            ordenarRelatorioDespesasPorVencimento(arr);
             window._despesasRelatorioExport = arr;
             arr.forEach(d => { window._mapRelatorioDespesasParaEdicao[d.id] = d; });
 
@@ -2390,13 +2550,20 @@ window.carregarFiltrosDespesas = async function() {
                 return;
             }
 
-            let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e0e6ed;">';
+            let html = '';
+            if (relatorioDespesasTemVariosAnosVencimento(arr)) {
+                html += '<p style="font-size:12px;background:#fff8e6;border:1px solid #ffc107;border-radius:8px;padding:10px;margin:0 0 10px 0;color:#856404;">'
+                    + '<b>Há vencimentos de anos diferentes.</b> A ordem usa o <b>ano inteiro</b>: '
+                    + 'junho de <b>2025</b> aparece antes de maio de <b>2026</b>. '
+                    + 'Datas em vermelho na coluna Vencimento já passaram.</p>';
+            }
+            html += '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e0e6ed;">';
             html += '<thead><tr style="background:var(--dark-navy);color:#fff;text-align:left;">';
             html += '<th style="padding:8px;border:1px solid #152a45;">Obra</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Nome (fornec.)</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Chq. / boleto / NF</th>';
+            html += '<th style="padding:8px;border:1px solid #152a45;" title="Tabela ordenada por esta coluna (mais antigo primeiro)">Vencimento ▲</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Lançamento</th>';
-            html += '<th style="padding:8px;border:1px solid #152a45;">Vencimento</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Valor</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Estado</th>';
             html += '<th style="padding:8px;border:1px solid #152a45;">Observação</th>';
@@ -2416,8 +2583,8 @@ window.carregarFiltrosDespesas = async function() {
                 html += '<td style="padding:6px;border:1px solid #eee;">' + escapeHtmlBasico(d.obra_nome || '') + '</td>';
                 html += '<td style="padding:6px;border:1px solid #eee;">' + escapeHtmlBasico(d.loja_nome || '') + '</td>';
                 html += '<td style="padding:6px;border:1px solid #eee;">' + refDoc + '</td>';
+                html += '<td style="padding:6px;border:1px solid #eee;font-weight:600;white-space:nowrap;">' + formatarVencimentoDespesaExibirHtml(d) + '</td>';
                 html += '<td style="padding:6px;border:1px solid #eee;">' + escapeHtmlBasico(diaLancamentoDespExibir(d)) + '</td>';
-                html += '<td style="padding:6px;border:1px solid #eee;">' + escapeHtmlBasico(formatarVencimentoIsoParaBR(d.data_vencimento)) + '</td>';
                 html += '<td style="padding:6px;border:1px solid #eee;white-space:nowrap;"><b>R$ ' + escapeHtmlBasico(String(d.valor_string || '0')) + '</b></td>';
                 html += '<td style="padding:6px;border:1px solid #eee;">' + badge + '</td>';
                 html += '<td style="padding:6px;border:1px solid #eee;max-width:220px;font-size:11px;color:#444;" title="' + titleObs + '">' + (obsShort || '—') + '</td>';
@@ -2443,7 +2610,9 @@ window.carregarFiltrosDespesas = async function() {
     window.exportarPDFRelatorioDespesasTabelaAtual = function () {
         const arr = window._despesasRelatorioExport;
         if (!arr || !arr.length) return Swal.fire('Atenção', 'Carregue a tabela primeiro (botão «Carregar tabela»).', 'warning');
-        window.dadosExportacaoDespesas = arr.slice();
+        const copia = arr.slice();
+        ordenarRelatorioDespesasPorVencimento(copia);
+        window.dadosExportacaoDespesas = copia;
         exportarPDF('despesas');
     };
 
@@ -2470,62 +2639,44 @@ window.carregarFiltrosDespesas = async function() {
             let htmlVencidas = ""; let htmlAVencer = ""; let htmlPagas = "";
             let somaVencidas = 0; let somaAVencer = 0; let somaPagas = 0; let encontrou = false;
             
-            let despesasArray = [];
-            querySnapshot.forEach(doc => despesasArray.push({id: doc.id, ...doc.data()}));
-            despesasArray.sort((a, b) => b.timestamp - a.timestamp);
-
-            let pendentesArray = []; let agrupadoPagas = {};
-
-            despesasArray.forEach((d) => {
-                const nomeDaObraParaBusca = (d.obra_lower || d.obra_nome || "").toLowerCase();
-                const nomeDaLojaParaBusca = (d.loja_lower || d.loja_nome || "").toLowerCase();
-
+            let matching = [];
+            querySnapshot.forEach(doc => {
+                const d = { id: doc.id, ...doc.data() };
+                const nomeDaObraParaBusca = (d.obra_lower || d.obra_nome || '').toLowerCase();
+                const nomeDaLojaParaBusca = (d.loja_lower || d.loja_nome || '').toLowerCase();
                 if (nomeDaObraParaBusca.includes(termoBusca) || nomeDaLojaParaBusca.includes(termoBusca)) {
-                    encontrou = true; window.dadosExportacaoDespesas.push(d);
-
-                    if (d.status === "pendente" || !d.status) {
-                        pendentesArray.push(d);
-                    } else if (d.status === "pago") {
-                        somaPagas += (d.valor_numero || 0);
-                        const { ano, mes, dia } = separarDataSegura(d.data_pagamento || d.data);
-
-                        if (!agrupadoPagas[ano]) agrupadoPagas[ano] = {}; 
-                        if (!agrupadoPagas[ano][mes]) agrupadoPagas[ano][mes] = [];
-                        
-                        d.diaFormatado = dia; agrupadoPagas[ano][mes].push(d);
-                    }
+                    matching.push(d);
                 }
             });
 
-            if (!encontrou) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada.</p>`; return; }
+            if (!matching.length) { divLista.innerHTML = `<p style="color:#d9534f; text-align:center;">Nenhuma despesa encontrada.</p>`; return; }
 
-           function formatarVencimento(dataVenc) {
-                if(!dataVenc) return 'Sem prazo';
-                const partes = dataVenc.split('-');
-                if(partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
-                return dataVenc;
+            encontrou = true;
+            ordenarRelatorioDespesasPorVencimento(matching);
+            window.dadosExportacaoDespesas = matching.slice();
+
+            let pendentesArray = matching.filter(d => d.status === 'pendente' || !d.status);
+            let agrupadoPagas = {};
+
+            matching.filter(d => d.status === 'pago').forEach(d => {
+                somaPagas += (d.valor_numero || 0);
+                const { ano, mes, dia } = separarDataSegura(d.data_pagamento || d.data);
+                if (!agrupadoPagas[ano]) agrupadoPagas[ano] = {};
+                if (!agrupadoPagas[ano][mes]) agrupadoPagas[ano][mes] = [];
+                d.diaFormatado = dia;
+                agrupadoPagas[ano][mes].push(d);
+            });
+
+            let avisoAnosHtml = '';
+            if (relatorioDespesasTemVariosAnosVencimento(pendentesArray)) {
+                avisoAnosHtml = '<p style="font-size:12px;background:#fff8e6;border:1px solid #ffc107;border-radius:8px;padding:10px;margin:0 0 12px 0;color:#856404;">'
+                    + '<b>Vencimentos em anos diferentes.</b> A ordem usa o <b>ano</b> (ex.: 05/06/<b>2025</b> antes de 14/05/<b>2026</b>).</p>';
             }
-
-            // Capturamos a data de hoje (zerando as horas para comparar só o dia)
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
 
             pendentesArray.forEach(d => {
                 const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
-                
-                // Lógica para descobrir se a nota está vencida
-               let isVencida = false;
-               if (d.data_vencimento) {
-               const partesVenc = d.data_vencimento.split('-');
-               if (partesVenc.length === 3) {
-               // CORREÇÃO: Pegar as partes corretas (Ano = [0], Mês = [1], Dia = [2])
-               const dataVencObj = new Date(partesVenc[0], partesVenc[1] - 1, partesVenc[2]);
-        
-               if (dataVencObj < hoje) {
-               isVencida = true;
-        }
-    }
-}
+                const isVencida = despesaEstaVencida(d);
+                const vencTexto = formatarVencimentoDespesaExibirHtml(d);
 
                 // Ajusta as cores e textos dependendo se está vencida ou não
                 const corBorda = isVencida ? '#dc3545' : '#ffc107'; // Vermelho ou Amarelo
@@ -2540,7 +2691,7 @@ window.carregarFiltrosDespesas = async function() {
                         <span style="font-size: 13px; color: #555;"><b>Obra:</b> ${d.obra_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Fornecedor:</b> ${d.loja_nome}</span><br>
                         <span style="font-size: 13px; color: #555;"><b>Nota Fiscal:</b> ${d.nota_fiscal || 'Sem NF'}</span><br>
-                        <span style="font-size: 13px; color: ${corTexto};"><b>Vencimento:</b> ${formatarVencimento(d.data_vencimento)}</span><br>
+                        <span style="font-size: 13px; color: ${corTexto};"><b>Vencimento:</b> ${vencTexto}</span><br>
                         <span style="font-size: 12px; color: #888;">Inserido em: ${d.data}</span>
                         <div style="font-size: 12px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">${d.descricao}</div>
                         <div style="display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee;">
@@ -2565,6 +2716,7 @@ window.carregarFiltrosDespesas = async function() {
                 let chavesMes = Object.keys(agrupadoPagas[ano]).sort((a, b) => { if (a === 'Outros') return 1; if (b === 'Outros') return -1; return Number(b) - Number(a); });
                 chavesMes.forEach(mes => {
                     const nomeDoMes = nomeMeses[mes] || mes; htmlPagas += `<details class="pasta-mes"><summary>${nomeDoMes}</summary><div class="folder-content">`;
+                    ordenarRelatorioDespesasPorVencimento(agrupadoPagas[ano][mes]);
                     agrupadoPagas[ano][mes].forEach(d => {
                         const fotoHtml = d.foto_recibo ? `<img src="${d.foto_recibo}" onclick="abrirFoto('${d.foto_recibo}')" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed; float: right; cursor: pointer;">` : '';
                         htmlPagas += `
@@ -2597,11 +2749,11 @@ window.carregarFiltrosDespesas = async function() {
                 </div>
             `;
             
-            divTotal.style.display = 'block'; if (btnExportar) btnExportar.style.display = 'block'; divLista.innerHTML = "";
+            divTotal.style.display = 'block'; if (btnExportar) btnExportar.style.display = 'block'; divLista.innerHTML = avisoAnosHtml;
             
-            // Renderiza na tela em três seções diferentes
-            if (htmlVencidas !== "") divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">🔴 Contas Vencidas (Atrasadas)</h4>` + htmlVencidas;
-            if (htmlAVencer !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #ffc107; border-bottom: 2px solid #ffc107; padding-bottom: 5px;">🟡 Contas a Vencer (No Prazo)</h4>` + htmlAVencer;
+            // Renderiza na tela em três seções diferentes (pendentes já em ordem de vencimento)
+            if (htmlVencidas !== "") divLista.innerHTML += `<h4 style="margin: 10px 0 5px 0; color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">🔴 Contas Vencidas (Atrasadas) — por vencimento ▲</h4>` + htmlVencidas;
+            if (htmlAVencer !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #ffc107; border-bottom: 2px solid #ffc107; padding-bottom: 5px;">🟡 Contas a Vencer (No Prazo) — por vencimento ▲</h4>` + htmlAVencer;
             if (htmlPagas !== "") divLista.innerHTML += `<h4 style="margin: 30px 0 5px 0; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">✅ Histórico de Contas Pagas</h4>` + htmlPagas;
 
         } catch (e) { divLista.innerHTML = `<p style="color:red; text-align:center;">Erro ao buscar despesas.</p>`; }
@@ -2957,13 +3109,15 @@ window.exportarPDF = function(tipo) {
             gerarTabela(doc, head, body, startY, 8);
 
         } else if (tipo === 'despesas') {
-            head = [['Estado', 'Lançamento', 'Vencimento', 'Obra', 'Nome (fornec.)', 'Cheque / boleto / NF', 'Valor (R$)', 'Observação', 'Descrição', 'Recibo']];
-            dados.forEach(row => {
+            head = [['Estado', 'Vencimento', 'Lançamento', 'Obra', 'Nome (fornec.)', 'Cheque / boleto / NF', 'Valor (R$)', 'Observação', 'Descrição', 'Recibo']];
+            const dadosOrdenados = dados.slice();
+            ordenarRelatorioDespesasPorVencimento(dadosOrdenados);
+            dadosOrdenados.forEach(row => {
                 let statusTexto = row.status === 'pago' ? `PAGO\n${row.data_pagamento || ''}` : 'PENDENTE';
                 body.push([
                     statusTexto,
+                    formatarVencimentoDespesaExibir(row),
                     diaLancamentoDespExibir(row),
-                    formatarVencimentoIsoParaBR(row.data_vencimento),
                     row.obra_nome || '',
                     row.loja_nome || '',
                     refChequeBoletoDesp(row),
