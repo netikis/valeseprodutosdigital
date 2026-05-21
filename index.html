@@ -2052,11 +2052,23 @@ function separarDataSegura(dataString) {
 
     function dataVencimentoTsDespesa(d) {
         if (!d) return null;
+        const doCampo = parseDataVencimentoParaTimestamp(obterDataVencimentoDespesa(d));
+        if (doCampo != null) return doCampo;
         const gravado = d.data_vencimento_ts;
         if (gravado != null && gravado !== '' && Number.isFinite(Number(gravado))) {
             return Number(gravado);
         }
-        return parseDataVencimentoParaTimestamp(obterDataVencimentoDespesa(d));
+        return null;
+    }
+
+    function tsLancamentoDespesa(d) {
+        if (!d) return 0;
+        if (d.data_lancamento) {
+            const t = parseDataVencimentoParaTimestamp(d.data_lancamento);
+            if (t != null) return t;
+        }
+        if (d.timestamp != null && Number.isFinite(Number(d.timestamp))) return Number(d.timestamp);
+        return parseDataVencimentoParaTimestamp(d.data) || 0;
     }
 
     function dataVencimentoParaInputDateIso(dataVenc) {
@@ -2132,7 +2144,11 @@ function separarDataSegura(dataString) {
             const va = ta != null ? ta : Number.MAX_SAFE_INTEGER;
             const vb = tb != null ? tb : Number.MAX_SAFE_INTEGER;
             if (va !== vb) return va - vb;
-            return String(a.obra_nome || '').localeCompare(String(b.obra_nome || ''), 'pt-BR');
+            const la = tsLancamentoDespesa(a);
+            const lb = tsLancamentoDespesa(b);
+            if (la !== lb) return la - lb;
+            return String(a.obra_nome || '').localeCompare(String(b.obra_nome || ''), 'pt-BR')
+                || String(a.loja_nome || '').localeCompare(String(b.loja_nome || ''), 'pt-BR');
         });
     }
 
@@ -4306,6 +4322,9 @@ window.exportarPDF = function(tipo) {
 
         if (aba === 'despesas') {
             carregarFiltrosDespesas();
+            if (typeof window.carregarRelatorioDespesasTabular === 'function') {
+                window.carregarRelatorioDespesasTabular();
+            }
         }
         if (aba === 'pedidos') {
             buscarPedidosMaterial();
@@ -6916,39 +6935,18 @@ async function monitorarVencimentosObras() {
         const hojeMeioDia = new Date();
         hojeMeioDia.setHours(12, 0, 0, 0); 
         
-        let htmlAlertas = "";
+        const filaAlertas = [];
         let emitirSom = false;
 
-        querySnapshot.forEach((doc) => {
-            const dados = doc.data();
-            const idDoc = doc.id;
-            
+        querySnapshot.forEach((docSnap) => {
+            const dados = docSnap.data();
+            const idDoc = docSnap.id;
             const statusAtual = dados.status || dados.Status || "";
-            const dataVencimentoBanco = dados.vencimento || dados.data_vencimento || dados.dataVencimento || dados.data;
-            
-            if (statusAtual !== "Pago" && statusAtual !== "pago" && dataVencimentoBanco) {
-                
-                let dataVenc;
-                if (dataVencimentoBanco.includes('/')) {
-                    const partes = dataVencimentoBanco.split('/');
-                    const dia = parseInt(partes.shift(), 10);
-                    const mes = parseInt(partes.shift(), 10) - 1;
-                    const ano = parseInt(partes.shift(), 10);
-                    dataVenc = new Date(ano, mes, dia);
-                } else {
-                    const partes = dataVencimentoBanco.split('-');
-                    const ano = parseInt(partes.shift(), 10);
-                    const mes = parseInt(partes.shift(), 10) - 1;
-                    const dia = parseInt(partes.shift(), 10);
-                    dataVenc = new Date(ano, mes, dia);
-                }
-                
-                dataVenc.setHours(12, 0, 0, 0);
+            const tsVenc = dataVencimentoTsDespesa(dados);
 
-                const diffMs = dataVenc.getTime() - hojeMeioDia.getTime();
+            if (statusAtual !== "Pago" && statusAtual !== "pago" && tsVenc != null) {
+                const diffMs = tsVenc - hojeMeioDia.getTime();
                 const diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-                // OK do dia: silencia só até o fim do dia; no dia seguinte volta se ainda não estiver PAGO.
                 const silenciadoHoje = localStorage.getItem(`novo_aviso_${idDoc}_${hojeFormatado}`);
 
                 if (!silenciadoHoje) {
@@ -6974,12 +6972,17 @@ async function monitorarVencimentosObras() {
                         const nomeObra = dados.obra_nome || dados.obra || "Obra não informada";
                         const nomeDespesa = dados.descricao || "Sem descrição";
                         const linkVer = dados.foto_recibo || dados.arquivoUrl || dados.link || dados.arquivo || "#";
-                        
-                        htmlAlertas += montarPainelAlerta(idDoc, nomeLoja, nomeObra, nomeDespesa, tituloAlerta, classeUrgencia, linkVer);
+                        filaAlertas.push({
+                            ts: tsVenc,
+                            html: montarPainelAlerta(idDoc, nomeLoja, nomeObra, nomeDespesa, tituloAlerta, classeUrgencia, linkVer)
+                        });
                     }
                 }
             }
         });
+
+        filaAlertas.sort((a, b) => a.ts - b.ts);
+        const htmlAlertas = filaAlertas.map(a => a.html).join('');
 
         if (htmlAlertas !== "") {
             renderizarAlertasNoCanto(htmlAlertas, emitirSom);
