@@ -528,11 +528,54 @@
         
         .folha-linha.desconto { color: #d9534f; }
         .folha-linha.acrescimo { color: #28a745; }
+        .folha-linha.recebimento-plus {
+            color: #0d6efd;
+            background: #f0f7ff;
+            padding: 14px 12px;
+            border-radius: 8px;
+            border: 1px dashed #6ea8fe;
+            margin: 12px 0 10px 0;
+            line-height: 1.5;
+        }
+        .folha-bloco-plus-aviso {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.65;
+            margin: 0 0 14px 0;
+            padding: 12px 14px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            border: 1px solid #cfe2ff;
+        }
+        .folha-detalhe-ajuda-custo {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.7;
+            margin: 0 0 14px 0;
+            padding: 14px 14px;
+            background: #fafcff;
+            border-radius: 8px;
+            border: 1px dashed #b6d4fe;
+        }
+        .folha-detalhe-ajuda-custo .linha-plus {
+            display: block;
+            margin: 0 0 10px 0;
+        }
+        .folha-detalhe-ajuda-custo .linha-plus:last-child {
+            margin-bottom: 0;
+        }
+        #f-ajuda-custo-wrap {
+            margin-top: 4px;
+        }
+        #f-ajuda-custo-wrap summary {
+            padding: 10px 4px;
+            line-height: 1.5;
+        }
         .folha-detalhe {
             font-size: 11px;
             color: #666;
-            line-height: 1.45;
-            margin: -4px 0 10px 0;
+            line-height: 1.55;
+            margin: 6px 0 12px 0;
             padding: 0 2px;
         }
         .folha-secao-titulo {
@@ -719,6 +762,7 @@
         <div class="tab" onclick="mudarAba('criar', this)">💰 Vales</div>
         <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
+        <div class="tab" onclick="mudarAba('ajuda-custo', this)">🧳 Ajuda de Custo</div>
         <div class="tab" onclick="mudarAba('folha', this)">📄 Folha Pagamento</div>
         <div class="tab" onclick="mudarAba('calendario', this)">📅 Calendário</div>
         <div class="tab" style="background: #eef2f5; color: #1a2a43; border: 1px solid #1a2a43;" onclick="mudarAba('terceiros', this)">👷 Terceiros</div>
@@ -875,6 +919,87 @@
         </div>
     </div>
 
+    <div id="aba-ajuda-custo" class="view-section">
+        <div style="background: #eef2f5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #1a2a43;">
+            <h3 style="margin: 0; color: var(--dark-navy); text-align: center;">🧳 Ajuda de Custo</h3>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #555; text-align: center;">
+                Lançamentos por funcionário (dia, mês e ano). Na folha aparecem em <b>Recebimentos (PLUS)</b> — valor à parte, <b>sem somar nem descontar</b> do líquido.
+            </p>
+        </div>
+
+        <label>Funcionário</label>
+        <select id="ac-func-select" class="lista-funcs" style="margin-bottom: 10px;">
+            <option value="">A carregar...</option>
+        </select>
+
+        <label style="margin-top: 12px;">Data do lançamento</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 72px;">
+                <label style="font-size: 11px; color: #666;">Dia</label>
+                <input type="number" id="ac-dia" min="1" max="31" placeholder="DD" style="margin-top: 4px;">
+            </div>
+            <div style="flex: 1.5; min-width: 120px;">
+                <label style="font-size: 11px; color: #666;">Mês</label>
+                <select id="ac-mes" style="margin-top: 4px;">
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 88px;">
+                <label style="font-size: 11px; color: #666;">Ano</label>
+                <input type="number" id="ac-ano" min="2000" max="2100" value="2026" style="margin-top: 4px;">
+            </div>
+        </div>
+
+        <label style="margin-top: 12px;">Valor (R$)</label>
+        <input type="text" id="ac-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+
+        <label style="margin-top: 12px;">Discriminação / motivo da ajuda</label>
+        <textarea id="ac-discriminacao" rows="3" placeholder="Ex.: deslocamento obra X, alimentação viagem, combustível..."></textarea>
+
+        <button type="button" class="btn-gold" style="margin-top: 14px; width: 100%;" onclick="salvarAjudaCusto()">➕ LANÇAR AJUDA DE CUSTO</button>
+
+        <hr style="margin: 22px 0; border: none; border-top: 1px solid #e0e6ed;">
+
+        <label>Consultar lançamentos do funcionário</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 2; min-width: 160px;">
+                <select id="ac-lista-func" class="lista-funcs" style="margin: 0;">
+                    <option value="">Todos (empresa)</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 11px; color: #666;">Mês ref.</label>
+                <select id="ac-lista-mes" style="margin: 0;">
+                    <option value="">Todos</option>
+                    <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
+                    <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
+                    <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
+                    <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 80px;">
+                <label style="font-size: 11px; color: #666;">Ano ref.</label>
+                <input type="number" id="ac-lista-ano" value="2026" style="margin: 0;">
+            </div>
+            <button type="button" class="btn-enviar" style="margin: 0; padding: 12px 16px; flex: 1; min-width: 120px;" onclick="carregarAjudaCustoLista()">Atualizar lista</button>
+        </div>
+
+        <div id="lista-ajuda-custo" style="margin-top: 15px;">
+            <p style="text-align: center; color: #888; font-size: 13px;">Os lançamentos aparecem aqui.</p>
+        </div>
+    </div>
+
     <div id="aba-folha" class="view-section">
         <label>Gerar Acerto Mensal (Folha/Holerite)</label>
         <select id="folha-func-select" class="lista-funcs" style="margin-bottom: 10px;">
@@ -908,6 +1033,7 @@
         <button class="btn-enviar" onclick="gerarFolhaPagamento()">💰 CALCULAR FECHAMENTO</button>
 
         <div id="resultado-folha" style="display: none;">
+            <button type="button" id="btnExportarHoleriteFolha" class="btn-pdf-relatorio" style="width:100%; margin-bottom:14px; padding:14px; font-size:14px;" onclick="exportarPDFHoleriteFolha()">🖨️ EXPORTAR ESPELHO DE HOLERITE (PDF PARA IMPRIMIR)</button>
             <div class="card-folha">
                 <div style="text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: var(--dark-navy);" id="f-nome-display">Nome</h3>
@@ -917,6 +1043,7 @@
                 <p id="f-explicacao-regras" class="folha-detalhe" style="margin-top:0; margin-bottom:12px; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e0e6ed;">
                     Este resumo usa as regras cadastradas: <b>salário proporcional</b> (salário ÷ 30 × dias com ponto, fora férias),
                     <b>férias CLT</b> (dias de gozo no mês × valor do dia × 4/3, com terço constitucional),
+                    <b>ajuda de custo</b> (PLUS em recebimentos — só informativo, <b>não entra</b> no líquido),
                     <b>vínculo</b> (entrada/saída limitam dias no mês),
                     <b>hora extra</b> (base 220h: +50% dia útil; +100% domingo/feriado) e <b>atrasos</b> (salário ÷ 30 ÷ 8).
                 </p>
@@ -964,6 +1091,7 @@
                 </div>
                 <p id="f-detalhe-banco-horas" class="folha-detalhe"></p>
 
+                <div class="folha-secao-titulo">Descontos</div>
                 <div class="folha-linha desconto">
                     <span>(-) Vales / Adiantamentos:</span>
                     <strong id="f-valor-vales">R$ 0,00</strong>
@@ -983,6 +1111,21 @@
                     <span id="f-valor-liquido" style="font-size: 18px; font-weight: 700;">R$ 0,00</span>
                 </div>
                 <p id="f-formula-liquido" class="folha-detalhe" style="margin-top:10px; text-align:center;"></p>
+
+                <div class="folha-secao-titulo" style="margin-top:20px; color:#0d6efd;">Recebimentos (PLUS — à parte do líquido)</div>
+                <p class="folha-bloco-plus-aviso">
+                    Valores abaixo são <b>pagamento adicional</b> ao colaborador.<br>
+                    <b>Não somam</b> nem <b>descontam</b> do líquido acima — aparecem só para registo e pagamento à parte.
+                </p>
+                <div class="folha-linha recebimento-plus">
+                    <span id="f-ajuda-custo-texto">🧳 Ajuda de custo — PLUS (0 lançamentos):</span>
+                    <strong id="f-valor-ajuda-custo">R$ 0,00</strong>
+                </div>
+                <div id="f-detalhe-ajuda-custo" class="folha-detalhe-ajuda-custo"></div>
+                <details id="f-ajuda-custo-wrap" style="margin-bottom:16px;">
+                    <summary style="cursor:pointer; font-size:13px; font-weight:600; color:#0d6efd;">📋 Ver discriminação das ajudas de custo no mês</summary>
+                    <div id="f-tabela-ajuda-custo" style="margin-top:8px; overflow-x:auto; max-height:200px; overflow-y:auto; border:1px solid #e0e6ed; border-radius:8px; font-size:11px;"></div>
+                </details>
 
                 <details id="f-discriminacao-wrap" open style="margin-top:18px; border-top:1px solid #eee; padding-top:12px;">
                     <summary style="cursor:pointer; font-weight:700; color:var(--dark-navy); font-size:13px;">📋 Discriminação dia a dia (jornada esperada × ponto)</summary>
@@ -1599,6 +1742,7 @@
         carregarListaDeFuncionarios();
         const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
         document.getElementById('folha-mes').value = mesAtual;
+        initAjudaCustoDatasPadrao();
         document.getElementById('backup-mes').value = mesAtual;
         
         // CORREÇÃO: Aguardar a tela e as funções carregarem antes de puxar o alerta
@@ -2023,6 +2167,259 @@ function separarDataSegura(dataString) {
 
     /** Linhas do tópico «Relatório de despesas» (separado de `despesas_obras`). */
     const COLECAO_RELATORIO_DESPESAS = 'relatorio_despesas';
+    const COLECAO_AJUDA_CUSTO = 'ajuda_custo';
+
+    function montarDataIsoDiaMesAno(dia, mes, ano) {
+        const d = parseInt(String(dia || '').trim(), 10);
+        const m = parseInt(String(mes || '').trim(), 10);
+        const y = parseInt(String(ano || '').trim(), 10);
+        if (!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return null;
+        if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > 2100) return null;
+        const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (parseDataVencimentoParaTimestamp(iso) == null) return null;
+        return iso;
+    }
+
+    function dataBrDeIsoAjuda(iso) {
+        return inputDateIsoParaDataBr(iso) || '';
+    }
+
+    function camposDiaMesAnoDeRegistoAjuda(reg) {
+        if (reg && reg.data_iso) {
+            const p = String(reg.data_iso).split('-');
+            if (p.length === 3) return { dia: p[2], mes: p[1], ano: p[0] };
+        }
+        const s = separarDataSegura(reg && (reg.data || reg.data_iso));
+        if (s.ano && s.ano !== 'Outros') return { dia: s.dia, mes: s.mes, ano: s.ano };
+        return { dia: '', mes: '', ano: '' };
+    }
+
+    function initAjudaCustoDatasPadrao() {
+        const ag = new Date();
+        const elD = document.getElementById('ac-dia');
+        const elM = document.getElementById('ac-mes');
+        const elA = document.getElementById('ac-ano');
+        const elLa = document.getElementById('ac-lista-ano');
+        if (elD && !elD.value) elD.value = String(ag.getDate());
+        if (elM && !elM.value) elM.value = String(ag.getMonth() + 1).padStart(2, '0');
+        if (elA && !elA.value) elA.value = String(ag.getFullYear());
+        if (elLa && !elLa.value) elLa.value = String(ag.getFullYear());
+    }
+
+    window.salvarAjudaCusto = async function () {
+        const funcId = document.getElementById('ac-func-select') && document.getElementById('ac-func-select').value;
+        const dia = document.getElementById('ac-dia') && document.getElementById('ac-dia').value;
+        const mes = document.getElementById('ac-mes') && document.getElementById('ac-mes').value;
+        const ano = document.getElementById('ac-ano') && document.getElementById('ac-ano').value;
+        const valor = document.getElementById('ac-valor') && document.getElementById('ac-valor').value;
+        const discriminacao = document.getElementById('ac-discriminacao') ? document.getElementById('ac-discriminacao').value.trim() : '';
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        if (!funcId) return Swal.fire('Atenção', 'Selecione o funcionário.', 'warning');
+        if (!valor) return Swal.fire('Atenção', 'Informe o valor.', 'warning');
+        if (!discriminacao) return Swal.fire('Atenção', 'Descreva a discriminação / motivo da ajuda de custo.', 'warning');
+
+        const dataIso = montarDataIsoDiaMesAno(dia, mes, ano);
+        if (!dataIso) return Swal.fire('Atenção', 'Data inválida. Verifique dia, mês e ano.', 'warning');
+
+        const funcionario = window.listaFuncionarios && window.listaFuncionarios[funcId];
+        const nomeFunc = funcionario ? funcionario.nome : 'Funcionário';
+        const partes = dataIso.split('-');
+
+        try {
+            await addDoc(collection(db, COLECAO_AJUDA_CUSTO), {
+                empresa_id: empresaLogada,
+                funcionario_id: funcId,
+                funcionario_nome: nomeFunc,
+                valor_string: valor,
+                valor_numero: parseMoedaLocal(valor),
+                data: dataBrDeIsoAjuda(dataIso),
+                data_iso: dataIso,
+                dia: partes[2],
+                mes: partes[1],
+                ano: partes[0],
+                discriminacao: discriminacao,
+                timestamp: timestampMeioDiaDataIso(dataIso)
+            });
+            Swal.fire('Sucesso!', 'Ajuda de custo lançada. Aparece na folha (PLUS) do mês ' + partes[1] + '/' + partes[0] + ', sem alterar o líquido.', 'success');
+            if (document.getElementById('ac-valor')) document.getElementById('ac-valor').value = '';
+            if (document.getElementById('ac-discriminacao')) document.getElementById('ac-discriminacao').value = '';
+            const elLf = document.getElementById('ac-lista-func');
+            if (elLf) elLf.value = funcId;
+            const elLm = document.getElementById('ac-lista-mes');
+            if (elLm) elLm.value = partes[1];
+            const elLa = document.getElementById('ac-lista-ano');
+            if (elLa) elLa.value = partes[0];
+            carregarAjudaCustoLista();
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível guardar a ajuda de custo.', 'error');
+        }
+    };
+
+    window.carregarAjudaCustoLista = async function () {
+        const wrap = document.getElementById('lista-ajuda-custo');
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!wrap) return;
+        if (!empresaLogada) return Swal.fire('Atenção', 'Empresa não definida.', 'warning');
+
+        const funcFiltro = document.getElementById('ac-lista-func') && document.getElementById('ac-lista-func').value;
+        const mesFiltro = document.getElementById('ac-lista-mes') && document.getElementById('ac-lista-mes').value;
+        const anoFiltro = document.getElementById('ac-lista-ano') && document.getElementById('ac-lista-ano').value;
+
+        wrap.innerHTML = '<p style="text-align:center;color:#888;">A carregar...</p>';
+        window._mapAjudaCustoEdicao = {};
+
+        try {
+            const q = query(collection(db, COLECAO_AJUDA_CUSTO), where('empresa_id', '==', empresaLogada));
+            const snap = await getDocs(q);
+            let arr = [];
+            snap.forEach(docu => arr.push({ id: docu.id, ...docu.data() }));
+
+            arr = arr.filter(a => {
+                if (funcFiltro && a.funcionario_id !== funcFiltro) return false;
+                if (mesFiltro && String(a.mes || '') !== String(mesFiltro)) {
+                    const ref = separarDataSegura(a.data || a.data_iso);
+                    if (String(ref.mes).padStart(2, '0') !== String(mesFiltro).padStart(2, '0')) return false;
+                }
+                if (anoFiltro && String(a.ano || '') !== String(anoFiltro)) {
+                    const ref = separarDataSegura(a.data || a.data_iso);
+                    if (String(ref.ano) !== String(anoFiltro)) return false;
+                }
+                return true;
+            });
+
+            arr.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            arr.forEach(a => { window._mapAjudaCustoEdicao[a.id] = a; });
+
+            if (!arr.length) {
+                wrap.innerHTML = '<p style="text-align:center;color:#888;">Nenhum lançamento com os filtros actuais.</p>';
+                return;
+            }
+
+            let soma = 0;
+            let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e0e6ed;">';
+            html += '<thead><tr style="background:var(--dark-navy);color:#fff;text-align:left;">';
+            html += '<th style="padding:8px;">Funcionário</th><th style="padding:8px;">Data</th><th style="padding:8px;">Valor</th>';
+            html += '<th style="padding:8px;">Discriminação</th><th style="padding:8px;">Acções</th></tr></thead><tbody>';
+
+            arr.forEach(a => {
+                soma += (a.valor_numero || parseMoedaLocal(a.valor_string) || 0);
+                const dataEx = escapeHtmlBasico(a.data || dataBrDeIsoAjuda(a.data_iso) || '—');
+                const disc = escapeHtmlBasico(String(a.discriminacao || '').trim());
+                const discShort = disc.length > 80 ? disc.slice(0, 77) + '…' : disc;
+                html += '<tr style="border-bottom:1px solid #eee;vertical-align:top;">';
+                html += '<td style="padding:6px;">' + escapeHtmlBasico(a.funcionario_nome || '') + '</td>';
+                html += '<td style="padding:6px;white-space:nowrap;font-weight:600;">' + dataEx + '</td>';
+                html += '<td style="padding:6px;white-space:nowrap;"><b>R$ ' + escapeHtmlBasico(String(a.valor_string || '0')) + '</b></td>';
+                html += '<td style="padding:6px;max-width:220px;font-size:11px;" title="' + escapeAttrBasico(a.discriminacao) + '">' + (discShort || '—') + '</td>';
+                html += '<td style="padding:6px;min-width:120px;">';
+                html += '<button type="button" onclick="editarAjudaCusto(\'' + a.id + '\')" style="display:block;width:100%;margin-bottom:4px;background:#4285F4;color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;">✏️ Editar</button>';
+                html += '<button type="button" onclick="excluirAjudaCusto(\'' + a.id + '\')" style="display:block;width:100%;background:#d9534f;color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;">🗑️ Excluir</button>';
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            html += '<p style="text-align:right;margin-top:10px;font-size:13px;color:var(--dark-navy);"><b>Total listado:</b> ' + formatarMoeda(soma) + '</p>';
+            wrap.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            wrap.innerHTML = '<p style="text-align:center;color:#d9534f;">Erro ao carregar ajudas de custo.</p>';
+        }
+    };
+
+    window.editarAjudaCusto = function (id) {
+        const reg = window._mapAjudaCustoEdicao && window._mapAjudaCustoEdicao[id];
+        if (!reg) return Swal.fire('Erro', 'Registo não encontrado. Atualize a lista.', 'error');
+
+        const campos = camposDiaMesAnoDeRegistoAjuda(reg);
+        const vDisc = escapeHtmlBasico(reg.discriminacao || '');
+        const vVal = escapeHtmlBasico(reg.valor_string || '');
+        const vNome = escapeHtmlBasico(reg.funcionario_nome || '');
+
+        Swal.fire({
+            title: '✏️ Editar ajuda de custo',
+            html: `
+                <div style="text-align:left;font-size:13px;">
+                    <p style="margin:0 0 10px 0;color:#666;"><b>${vNome}</b></p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <div style="flex:1;min-width:60px;"><label>Dia</label>
+                        <input type="number" id="edit-ac-dia" class="swal2-input" min="1" max="31" style="margin:0;width:100%;height:40px;" value="${escapeHtmlBasico(campos.dia)}"></div>
+                        <div style="flex:1.2;min-width:90px;"><label>Mês</label>
+                        <select id="edit-ac-mes" class="swal2-input" style="margin:0;width:100%;height:40px;">
+                            ${['01','02','03','04','05','06','07','08','09','10','11','12'].map(m => `<option value="${m}" ${campos.mes === m ? 'selected' : ''}>${m}</option>`).join('')}
+                        </select></div>
+                        <div style="flex:1;min-width:70px;"><label>Ano</label>
+                        <input type="number" id="edit-ac-ano" class="swal2-input" style="margin:0;width:100%;height:40px;" value="${escapeHtmlBasico(campos.ano)}"></div>
+                    </div>
+                    <label style="margin-top:10px;">Valor (R$)</label>
+                    <input id="edit-ac-valor" class="swal2-input" style="margin:0;width:100%;height:40px;" value="${vVal}" oninput="mascaraMoeda(this)">
+                    <label style="margin-top:10px;">Discriminação</label>
+                    <textarea id="edit-ac-disc" class="swal2-textarea" style="margin:0;width:100%;height:70px;">${vDisc}</textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'SALVAR',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const disc = document.getElementById('edit-ac-disc').value.trim();
+                if (!disc) {
+                    Swal.showValidationMessage('Informe a discriminação.');
+                    return false;
+                }
+                const iso = montarDataIsoDiaMesAno(
+                    document.getElementById('edit-ac-dia').value,
+                    document.getElementById('edit-ac-mes').value,
+                    document.getElementById('edit-ac-ano').value
+                );
+                if (!iso) {
+                    Swal.showValidationMessage('Data inválida.');
+                    return false;
+                }
+                const p = iso.split('-');
+                return {
+                    valor_string: document.getElementById('edit-ac-valor').value,
+                    valor_numero: parseMoedaLocal(document.getElementById('edit-ac-valor').value),
+                    data_iso: iso,
+                    data: dataBrDeIsoAjuda(iso),
+                    dia: p[2],
+                    mes: p[1],
+                    ano: p[0],
+                    discriminacao: disc,
+                    timestamp: timestampMeioDiaDataIso(iso)
+                };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await updateDoc(doc(db, COLECAO_AJUDA_CUSTO, id), result.value);
+                    Swal.fire('Atualizado!', 'Ajuda de custo corrigida.', 'success');
+                    carregarAjudaCustoLista();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível actualizar.', 'error');
+                }
+            }
+        });
+    };
+
+    window.excluirAjudaCusto = async function (id) {
+        Swal.fire({
+            title: 'Apagar ajuda de custo?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            confirmButtonText: 'Sim, apagar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, COLECAO_AJUDA_CUSTO, id));
+                    Swal.fire('Apagado!', '', 'success');
+                    carregarAjudaCustoLista();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível apagar.', 'error');
+                }
+            }
+        });
+    };
 
     document.getElementById('d-anexo').addEventListener('change', function(e) {
         const file = e.target.files;
@@ -3262,6 +3659,257 @@ window.exportarPDF = function(tipo) {
         doc.save('discriminacao_folha_' + safeNome + '_' + safeRef + '.pdf');
     };
 
+    function pdfHoleriteQuebraTexto(doc, texto, larguraMm) {
+        return doc.splitTextToSize(String(texto || ''), larguraMm);
+    }
+
+    function pdfHoleriteSecaoBarra(doc, y, titulo, rgb, largura, margem) {
+        const h = 8;
+        doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+        doc.rect(margem, y, largura, h, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(titulo, margem + 4, y + 5.5);
+        return y + h + 4;
+    }
+
+    function pdfHoleriteLabelResumido(label, maxChars) {
+        const s = String(label || '');
+        const lim = maxChars || 48;
+        return s.length > lim ? s.slice(0, lim - 1) + '…' : s;
+    }
+
+    /** Linha compacta para caber o holerite numa única página A4. */
+    function pdfHoleriteLinhaItem(doc, y, x, largura, label, valor, corValor, indice, cfg) {
+        const c = cfg || {};
+        const padTop = c.padTop != null ? c.padTop : 3;
+        const valorW = 32;
+        const labelW = largura - valorW - 3;
+        const fs = c.fontSize || 9;
+        const alturaMin = c.alturaMin || 8.5;
+        doc.setFontSize(fs);
+        const linhas = pdfHoleriteQuebraTexto(doc, pdfHoleriteLabelResumido(label, 52), labelW);
+        const maxLinhas = c.maxLinhasLabel || 2;
+        const linhasUsar = linhas.slice(0, maxLinhas);
+        const alturaLinha = 4.2;
+        const altura = Math.max(alturaMin, padTop + linhasUsar.length * alturaLinha + 3);
+
+        if (indice % 2 === 0) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(x, y, largura, altura, 'F');
+        }
+        doc.setDrawColor(235, 238, 242);
+        doc.line(x, y + altura, x + largura, y + altura);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(fs);
+        doc.setTextColor(55, 55, 55);
+        doc.text(linhasUsar, x + 2, y + padTop + 3.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs + 0.5);
+        if (corValor) doc.setTextColor(corValor[0], corValor[1], corValor[2]);
+        else doc.setTextColor(26, 42, 67);
+        doc.text(String(valor), x + largura - 2, y + padTop + 3.5, { align: 'right' });
+
+        return y + altura;
+    }
+
+    function pdfHoleriteRodapeFixo(doc, margem, largura, footerY) {
+        doc.setDrawColor(200, 210, 220);
+        doc.line(margem, footerY, margem + largura, footerY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(130, 130, 130);
+        doc.text('Documento gerado pelo Portal Gestor — conferir ponto, vales e lançamentos do período.', margem, footerY + 5);
+        const assW = (largura - 10) / 2;
+        const assY = footerY + 14;
+        doc.setDrawColor(170, 170, 170);
+        doc.line(margem, assY, margem + assW, assY);
+        doc.line(margem + assW + 10, assY, margem + largura, assY);
+        doc.setFontSize(8);
+        doc.setTextColor(90, 90, 90);
+        doc.text('Assinatura do empregador', margem + assW / 2, assY + 4, { align: 'center' });
+        doc.text('Assinatura do colaborador', margem + assW + 10 + assW / 2, assY + 4, { align: 'center' });
+    }
+
+    window.exportarPDFHoleriteFolha = function () {
+        const pack = window.folhaHoleritePDF;
+        if (!pack) {
+            return Swal.fire('Atenção', 'Calcule a folha primeiro (botão «Calcular fechamento»).', 'warning');
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageH = doc.internal.pageSize.getHeight();
+        const margem = 12;
+        const largura = 186;
+        const meio = margem + largura / 2;
+        const colW = largura / 2 - 2;
+        const gapCol = 3;
+        const FOOTER_Y = pageH - 24;
+        const linCfg = { fontSize: 9, alturaMin: 8.5, padTop: 3, maxLinhasLabel: 2 };
+
+        let y = 6;
+
+        doc.setFillColor(26, 42, 67);
+        doc.rect(0, 0, 210, 34, 'F');
+        doc.setFillColor(212, 160, 23);
+        doc.rect(0, 34, 210, 1.2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(String(pack.empresaNome || 'Empresa').toUpperCase(), margem, 12);
+        doc.setFontSize(13);
+        doc.text('ESPELHO DE HOLERITE', margem, 19);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(225, 225, 225);
+        doc.text('Demonstrativo de pagamento', margem, 26);
+        doc.text('Ref.: ' + (pack.mesRef || '') + '  |  ' + (pack.emitidoEm || ''), margem, 31);
+
+        y = 38;
+        const boxH = 26;
+        doc.setDrawColor(200, 210, 220);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(margem, y, largura, boxH, 2, 2, 'FD');
+        doc.setTextColor(26, 42, 67);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text('COLABORADOR', margem + 4, y + 6);
+        doc.setFontSize(10.5);
+        doc.text(String(pack.funcionarioNome || ''), margem + 4, y + 12);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(70, 70, 70);
+        doc.text('CPF: ' + (pack.cpf || '—') + '   PIX: ' + (pack.pix || '—'), margem + 4, y + 18);
+        const colDirX = margem + largura / 2 + 2;
+        doc.text('Dias pagos: ' + String(pack.diasPagos != null ? pack.diasPagos : '0'), colDirX, y + 12);
+        doc.text('Contrato: ' + formatarMoeda(pack.salarioContrato), colDirX, y + 18);
+        doc.text('Jorn.: ' + pdfHoleriteLabelResumido(pack.horario, 42), colDirX, y + 23);
+
+        y += boxH + 5;
+
+        const yColsTop = y;
+        const hdrH = 7;
+        doc.setFillColor(40, 167, 69);
+        doc.rect(margem, yColsTop, colW, hdrH, 'F');
+        doc.setFillColor(217, 83, 79);
+        doc.rect(meio + gapCol / 2, yColsTop, colW, hdrH, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PROVENTOS', margem + 3, yColsTop + 5);
+        doc.text('DESCONTOS', meio + gapCol / 2 + 3, yColsTop + 5);
+
+        let yP = yColsTop + hdrH + 1;
+        let yD = yColsTop + hdrH + 1;
+        (pack.proventos || []).forEach(function (item, i) {
+            yP = pdfHoleriteLinhaItem(doc, yP, margem, colW, item.label, formatarMoeda(item.valor), [35, 120, 75], i, linCfg);
+        });
+        (pack.descontos || []).forEach(function (item, i) {
+            yD = pdfHoleriteLinhaItem(doc, yD, meio + gapCol / 2, colW, item.label, formatarMoeda(item.valor), [190, 65, 65], i, linCfg);
+        });
+
+        y = Math.max(yP, yD) + 2;
+        doc.setDrawColor(210, 215, 220);
+        doc.line(meio, yColsTop, meio, y);
+        doc.setFillColor(238, 242, 246);
+        doc.rect(margem, y, largura, 9, 'F');
+        y += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(26, 42, 67);
+        doc.text('Total proventos', margem + 3, y);
+        doc.setTextColor(35, 110, 70);
+        doc.text(formatarMoeda(pack.totalProventos), margem + colW - 2, y, { align: 'right' });
+        doc.setTextColor(26, 42, 67);
+        doc.text('Total descontos', meio + 5, y);
+        doc.setTextColor(190, 65, 65);
+        doc.text(formatarMoeda(pack.totalDescontos), margem + largura - 3, y, { align: 'right' });
+
+        y += 11;
+        const corLiq = pack.liquidoNegativo ? [192, 43, 43] : [26, 42, 67];
+        const liqH = 15;
+        doc.setFillColor(corLiq[0], corLiq[1], corLiq[2]);
+        doc.roundedRect(margem, y, largura, liqH, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        const lblLiq = pack.liquidoNegativo ? 'SALDO NEGATIVO' : 'LÍQUIDO A RECEBER';
+        doc.text(lblLiq, margem + 6, y + 9.5);
+        doc.setFontSize(14);
+        doc.text(formatarMoeda(pack.liquido), margem + largura - 6, y + 10, { align: 'right' });
+        y += liqH + 5;
+
+        if (pack.bancoHorasTxt && y < FOOTER_Y - 28) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Banco de horas (info.): ' + pack.bancoHorasTxt, margem, y);
+            y += 5;
+        }
+
+        const temPlus = pack.ajudaCustoTotal > 0 || (pack.ajudaCustoItens && pack.ajudaCustoItens.length);
+        if (temPlus && y < FOOTER_Y - 20) {
+            y = pdfHoleriteSecaoBarra(doc, y, 'RECEBIMENTOS PLUS (fora do líquido)', [13, 110, 253], largura, margem);
+            doc.setFontSize(7.5);
+            doc.setTextColor(75, 75, 75);
+            doc.text('Pagamento adicional — não compõe o líquido.', margem + 2, y);
+            y += 5;
+            y = pdfHoleriteLinhaItem(doc, y, margem, largura, 'Ajuda de custo — total PLUS', formatarMoeda(pack.ajudaCustoTotal || 0), [13, 90, 200], 0, linCfg);
+
+            const itensPlus = pack.ajudaCustoItens || [];
+            if (itensPlus.length && y < FOOTER_Y - 12) {
+                const rowH = 6;
+                const maxRows = Math.max(1, Math.min(itensPlus.length, Math.floor((FOOTER_Y - y - 10) / rowH)));
+                const bodyAj = itensPlus.slice(0, maxRows).map(function (it) {
+                    const disc = pdfHoleriteLabelResumido(it.discriminacao, 55);
+                    const val = it.valor_fmt ? ('R$ ' + it.valor_fmt) : formatarMoeda(it.valor);
+                    return [it.data || '', val, disc];
+                });
+                if (itensPlus.length > maxRows) {
+                    bodyAj.push(['…', '…', '+' + (itensPlus.length - maxRows) + ' lanç. (ver sistema)']);
+                }
+                doc.autoTable({
+                    startY: y,
+                    head: [['Data', 'Valor', 'Discriminação']],
+                    body: bodyAj,
+                    theme: 'striped',
+                    pageBreak: 'avoid',
+                    rowPageBreak: 'avoid',
+                    showFoot: 'never',
+                    styles: {
+                        fontSize: 7.5,
+                        cellPadding: 2,
+                        textColor: [45, 45, 45],
+                        overflow: 'linebreak'
+                    },
+                    headStyles: { fillColor: [26, 42, 67], fontSize: 7.5, cellPadding: 2.5 },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    margin: { left: margem, right: margem, bottom: pageH - FOOTER_Y + 4 },
+                    tableWidth: largura,
+                    columnStyles: {
+                        0: { cellWidth: 22 },
+                        1: { cellWidth: 28, halign: 'right' },
+                        2: { cellWidth: 'auto' }
+                    }
+                });
+                y = Math.min(doc.lastAutoTable.finalY + 3, FOOTER_Y - 2);
+            }
+        }
+
+        while (doc.internal.getNumberOfPages() > 1) {
+            doc.deletePage(doc.internal.getNumberOfPages());
+        }
+
+        pdfHoleriteRodapeFixo(doc, margem, largura, FOOTER_Y);
+
+        const safeNome = String(pack.funcionarioNome || 'funcionario').replace(/[^\w\u00C0-\u024F\s-]/gi, '').replace(/\s+/g, '_');
+        const safeRef = String(pack.mesAnoRef || '').replace(/\//g, '-');
+        doc.save('holerite_' + safeNome + '_' + safeRef + '.pdf');
+    };
+
     window.fazerBackupMes = async function() {
         const mesSelected = document.getElementById('backup-mes').value;
         const anoSelected = document.getElementById('backup-ano').value;
@@ -3665,6 +4313,10 @@ window.exportarPDF = function(tipo) {
         if (aba === 'calendario') {
             carregarFeriados();
         }
+        if (aba === 'ajuda-custo') {
+            initAjudaCustoDatasPadrao();
+            carregarAjudaCustoLista();
+        }
     };
 
     window.salvarFeriado = async function() {
@@ -3804,7 +4456,13 @@ window.exportarPDF = function(tipo) {
                     </div>`;
             });
             
-            document.querySelectorAll('.lista-funcs').forEach(select => select.innerHTML = opcoesHTML);
+            document.querySelectorAll('.lista-funcs').forEach(select => {
+                if (select.id === 'ac-lista-func') {
+                    select.innerHTML = '<option value="">Todos (empresa)</option>' + opcoesHTML;
+                } else {
+                    select.innerHTML = opcoesHTML;
+                }
+            });
             
             if (document.getElementById('lista-funcionarios-gerencial')) {
                 document.getElementById('lista-funcionarios-gerencial').innerHTML = gerenciaHTML;
@@ -3975,6 +4633,37 @@ window.gerarFolhaPagamento = async function() {
                     console.log("❌ Ignorado: Empresa ou Status diferente. Empresa:", vale.empresa_id, " | Status:", vale.status);
                 }
             });
+
+            // 1b. AJUDA DE CUSTO (lançamentos do mês de referência)
+            let totalAjudaCusto = 0;
+            let itensAjudaCusto = [];
+            try {
+                const qAjuda = query(collection(db, COLECAO_AJUDA_CUSTO), where('funcionario_id', '==', funcId));
+                const ajudaSnap = await getDocs(qAjuda);
+                ajudaSnap.forEach(docu => {
+                    const a = docu.data();
+                    if (a.empresa_id !== empresaLogada) return;
+                    const ref = separarDataSegura(a.data || a.data_iso);
+                    if (Number(ref.mes) === Number(mesSelected) && Number(ref.ano) === Number(anoSelected)) {
+                        const v = parseMoedaLocal(a.valor_string) || a.valor_numero || 0;
+                        totalAjudaCusto += v;
+                        itensAjudaCusto.push({
+                            id: docu.id,
+                            data: a.data || dataBrDeIsoAjuda(a.data_iso),
+                            discriminacao: a.discriminacao || '',
+                            valor: v,
+                            valor_fmt: a.valor_string || formatarMoeda(v)
+                        });
+                    }
+                });
+                itensAjudaCusto.sort((x, y) => {
+                    const tx = parseDataVencimentoParaTimestamp(x.data) || 0;
+                    const ty = parseDataVencimentoParaTimestamp(y.data) || 0;
+                    return tx - ty;
+                });
+            } catch (eAj) {
+                console.warn('Ajuda de custo:', eAj);
+            }
 
             // 2. BUSCA DE PONTOS (ignora registros cancelados por evento de auditoria)
             const qPonto = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
@@ -4357,6 +5046,46 @@ window.gerarFolhaPagamento = async function() {
                 <span style="color:#888;"><b>Saldo</b> = crédito − débito. Este saldo é informativo; o desconto em R$ vem só dos atrasos (linha abaixo).</span>`;
             }
             
+            const nAjuda = itensAjudaCusto.length;
+            if (document.getElementById('f-ajuda-custo-texto')) {
+                document.getElementById('f-ajuda-custo-texto').innerText =
+                    `🧳 Ajuda de custo — PLUS (${nAjuda} lançamento${nAjuda === 1 ? '' : 's'}):`;
+            }
+            if (document.getElementById('f-valor-ajuda-custo')) {
+                document.getElementById('f-valor-ajuda-custo').innerText = formatarMoeda(totalAjudaCusto);
+            }
+            const detAj = document.getElementById('f-detalhe-ajuda-custo');
+            if (detAj) {
+                if (nAjuda > 0) {
+                    detAj.innerHTML =
+                        '<span class="linha-plus"><b>Total PLUS:</b> ' + formatarMoeda(totalAjudaCusto) + ' — lançamentos com data em ' + mesSelected + '/' + anoSelected + '.</span>' +
+                        '<span class="linha-plus" style="color:#0d6efd;"><b>Não entra no líquido.</b> Pague este valor à parte do fechamento salarial (ajuda de custo / reembolso).</span>';
+                } else {
+                    detAj.innerHTML = '<span class="linha-plus" style="color:#888;">Nenhuma ajuda de custo neste mês. O líquido acima não inclui PLUS.</span>';
+                }
+            }
+            const tabAj = document.getElementById('f-tabela-ajuda-custo');
+            if (tabAj) {
+                if (nAjuda > 0) {
+                    tabAj.innerHTML = `
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead><tr style="background:#eef2f5;">
+                                <th style="text-align:left;padding:6px;">Data</th>
+                                <th style="text-align:left;padding:6px;">Valor</th>
+                                <th style="text-align:left;padding:6px;">Discriminação</th>
+                            </tr></thead>
+                            <tbody>${itensAjudaCusto.map(it => `
+                                <tr style="border-bottom:1px solid #eee;">
+                                    <td style="padding:6px;white-space:nowrap;">${escapeHtmlBasico(it.data)}</td>
+                                    <td style="padding:6px;">R$ ${escapeHtmlBasico(it.valor_fmt)}</td>
+                                    <td style="padding:6px;">${escapeHtmlBasico(it.discriminacao)}</td>
+                                </tr>`).join('')}</tbody>
+                        </table>`;
+                } else {
+                    tabAj.innerHTML = '<p style="padding:8px;color:#888;margin:0;">Sem lançamentos.</p>';
+                }
+            }
+
             document.getElementById('f-valor-vales').innerText = formatarMoeda(totalDinheiro);
             document.getElementById('f-valor-produtos').innerText = formatarMoeda(totalProduto);
 
@@ -4388,6 +5117,9 @@ window.gerarFolhaPagamento = async function() {
                 ${formatarMoeda(salarioProporcional)} (proporcional) + ${formatarMoeda(valorFeriasClt)} (férias CLT) + ${formatarMoeda(valorTotalReceberExtras)} (extras)
                 − ${formatarMoeda(totalDinheiro)} (vales) − ${formatarMoeda(totalProduto)} (produtos) − ${formatarMoeda(valorDescontoHoras)} (atrasos)
                 = <b>${formatarMoeda(liquidoReceber)}</b>`;
+                if (nAjuda > 0) {
+                    txtForm += `<br><br><span style="color:#0d6efd;"><b>Recebimento PLUS (fora do líquido):</b> Ajuda de custo ${formatarMoeda(totalAjudaCusto)} — pago à parte, sem somar nem descontar do valor acima.</span>`;
+                }
                 if (liquidoReceber < 0) {
                     txtForm +=
                         `<br><span style="color:#922b21;font-size:12px;">Saldo negativo: neste fechamento, descontos e vales somam mais do que o proporcional + extras. Na prática não há valor a pagar ao colaborador nesta vista — reveja vales, batidas ou proporcional.</span>`;
@@ -4439,6 +5171,47 @@ window.gerarFolhaPagamento = async function() {
             } else {
                 window.folhaDiscriminacaoPDF = null;
             }
+
+            const mesNomeRef = nomeMeses[mesSelected] || mesSelected;
+            const proventosPdf = [
+                { label: 'Salário proporcional (' + diasPagos + ' dias × ' + formatarMoeda(valorDiaSalario) + ')', valor: salarioProporcional },
+                { label: 'Férias + 1/3 constitucional (' + diasFeriasNoMes + ' dias)', valor: valorFeriasClt },
+                {
+                    label: 'Horas extras (' + h50 + 'h ' + m50 + 'm +50% · ' + h100 + 'h ' + m100 + 'm +100%)',
+                    valor: valorTotalReceberExtras
+                }
+            ];
+            const descontosPdf = [
+                { label: 'Vales / adiantamentos', valor: totalDinheiro },
+                { label: 'Produtos / materiais', valor: totalProduto },
+                {
+                    label: 'Atrasos / horas devidas (' + horasFaltDisplay + 'h ' + minFaltDisplay + 'm)',
+                    valor: valorDescontoHoras
+                }
+            ];
+
+            window.folhaHoleritePDF = {
+                empresaNome: localStorage.getItem('empresaGestor') || 'Empresa',
+                funcionarioNome: funcionario.nome,
+                cpf: funcionario.cpf || '',
+                pix: funcionario.pix || '',
+                horario: (horaEntPadrão || '—') + ' às ' + (horaSaiPadrão || '—') + ' (alm. ' + (intervaloMinutosPadrao ?? 60) + ' min)',
+                mesRef: mesNomeRef + ' / ' + anoSelected,
+                mesAnoRef: String(mesSelected).padStart(2, '0') + '/' + anoSelected,
+                emitidoEm: new Date().toLocaleString('pt-BR'),
+                salarioContrato: salarioBase,
+                valorDia: valorDiaSalario,
+                diasPagos: diasPagos,
+                proventos: proventosPdf,
+                descontos: descontosPdf,
+                totalProventos: salarioProporcional + valorFeriasClt + valorTotalReceberExtras,
+                totalDescontos: totalDinheiro + totalProduto + valorDescontoHoras,
+                liquido: liquidoReceber,
+                liquidoNegativo: liquidoReceber < 0,
+                bancoHorasTxt: (typeof sinalBanco !== 'undefined' ? sinalBanco : '') + bancoH + 'h ' + bancoM + 'm',
+                ajudaCustoTotal: totalAjudaCusto,
+                ajudaCustoItens: itensAjudaCusto.slice()
+            };
 
             document.getElementById('resultado-folha').style.display = 'block';
             Swal.close();
