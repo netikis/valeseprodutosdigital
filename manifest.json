@@ -1,7 +1,7 @@
-{
-  "name": "Sistema de Gestão - FH",
-    "short_name": "FH CONSTRUÇÕES",
-  "description": "Sistema de Gestão, Ponto Digital e Vales",
+  "name":{
+ "Sistema de Gestão - FH Construções",
+  "short_name": "FH CONSTRUÇÕES",
+  "description": "Ponto digital, vales e recibos",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f4f7f6",
@@ -11,12 +11,12 @@
     {
       "src": "https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg",
       "sizes": "192x192",
-      "type": "image/jpeg/png"
+      "type": "image/jpeg"
     },
     {
       "src": "https://i.postimg.cc/zDRJMSTn/69420f5a-5b80-457e-8146-00485162d7f2.jpg",
       "sizes": "512x512",
-      "type": "image/jpeg/png"
+      "type": "image/jpeg"
     }
   ]
 }
