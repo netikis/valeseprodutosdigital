@@ -1,4 +1,5 @@
-const CACHE_NAME = 'fh-gestao-v2';
+const CACHE_NAME = 'fh-construcoes-v2';
+
 const urlsToCache = [
   './',
   './index.html',
@@ -12,61 +13,68 @@ const urlsToCache = [
   'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js'
 ];
 
-// Instala o Service Worker e guarda os ficheiros em cache
+function isHtmlRequest(request) {
+  if (request.mode === 'navigate') return true;
+  try {
+    const url = new URL(request.url);
+    return url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+  } catch (_) {
+    return false;
+  }
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache aberto com sucesso');
-        // Tenta fazer o cache dos recursos, ignorando os que falharem para não parar o processo
-        return Promise.allSettled(
-          urlsToCache.map(url => cache.add(url).catch(err => console.log('Falha ao fazer cache de:', url)))
-        );
-      })
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(
+        urlsToCache.map(url => cache.add(url).catch(err => console.log('Cache skip:', url, err)))
+      )
+    )
   );
-  self.skipWaiting(); // Força a ativação imediata
+  self.skipWaiting();
 });
 
-// Interceta os pedidos: Se estiver offline, serve o que está no cache!
 self.addEventListener('fetch', event => {
-  // Ignora chamadas diretas ao Firebase Firestore/Autenticação para não interferir com a base de dados
-  if (event.request.url.includes('firestore.googleapis.com')) {
+  if (event.request.url.includes('firestore.googleapis.com')) return;
+
+  if (isHtmlRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match('./index.html') || caches.match('./'))
+    );
     return;
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Retorna o cache se encontrar, senão vai à internet (fetch)
-        return response || fetch(event.request).then(fetchResponse => {
-            return caches.open(CACHE_NAME).then(cache => {
-                // Guarda o novo ficheiro no cache para o futuro
-                cache.put(event.request.url, fetchResponse.clone());
-                return fetchResponse;
-            });
-        });
-      }).catch(() => {
-          // Se falhar (sem internet) e for um pedido de navegação, retorna a página principal
-          if (event.request.mode === 'navigate') {
-              return caches.match('./index.html') || caches.match('./');
-          }
-      })
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(response => {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      });
+    }).catch(() => {
+      if (event.request.mode === 'navigate') {
+        return caches.match('./index.html') || caches.match('./');
+      }
+    })
   );
 });
 
-// Limpa caches antigos quando o sistema é atualizado
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
+    caches.keys().then(names =>
+      Promise.all(
+        names.map(name => {
+          if (name !== CACHE_NAME) return caches.delete(name);
         })
-      );
-    })
+      )
+    ).then(() => self.clients.claim())
   );
-  return self.clients.claim();
 });
