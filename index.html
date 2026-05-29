@@ -830,7 +830,18 @@
             </div>
         </div>
 
-        <label style="margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Vínculo e férias (folha de pagamento)</label>
+        <label style="margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Remuneração (folha de pagamento)</label>
+        <label>Tipo de salário</label>
+        <select id="c-tipo-remuneracao" style="margin-bottom: 8px;">
+            <option value="mensal">Mensal (CLT) — salário do mês + DSR; desconto por falta</option>
+            <option value="ponto">Por ponto — só paga dias com registro de batida</option>
+        </select>
+        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">
+            <b>Mensal:</b> domingos, feriados e sábados sem escala entram no salário (DSR). Falta = dia útil/sábado de escala sem ponto.<br>
+            <b>Por ponto:</b> cada dia pago exige batida (regra anterior).
+        </p>
+
+        <label style="margin-top: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Vínculo e férias (folha de pagamento)</label>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 140px;">
                 <label>Data de entrada (admissão)</label>
@@ -1137,12 +1148,9 @@
                 </div>
 
                 <p id="f-explicacao-regras" class="folha-detalhe" style="margin-top:0; margin-bottom:12px; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e0e6ed;">
-                    Este resumo usa as regras cadastradas: <b>salário proporcional</b> (salário ÷ 30 × dias com ponto, fora férias),
-                    <b>férias CLT</b> (dias de gozo no mês × valor do dia × 4/3, com terço constitucional),
-                    <b>ajuda de custo</b> (PLUS em recebimentos — só informativo, <b>não entra</b> no líquido),
-                    <b>descontos lançados</b> (INSS, IRRF, etc. — entram no líquido),
-                    <b>vínculo</b> (entrada/saída limitam dias no mês),
-                    <b>hora extra</b> (base 220h: +50% dia útil; +100% domingo/feriado) e <b>atrasos</b> (salário ÷ 30 ÷ 8).
+                    <b>Mensal (CLT):</b> salário do mês (÷ 30) com DSR — domingos/feriados/sábados sem escala entram; desconto por <b>falta</b> (dia útil/sábado de escala sem ponto).<br>
+                    <b>Por ponto:</b> salário ÷ 30 × só dias com batida.<br>
+                    Em ambos: <b>férias CLT</b>, <b>extras</b> (+50% / +100%), <b>atrasos</b> (÷ 30 ÷ 8), vales/produtos e descontos lançados (INSS). Ajuda de custo é PLUS (fora do líquido).
                 </p>
 
                 <div class="folha-secao-titulo">Salário do período</div>
@@ -1155,8 +1163,16 @@
                     <strong id="f-valor-dia-salario">R$ 0,00</strong>
                 </div>
                 <div class="folha-linha">
-                    <span>Dias pagos (com registro de trabalho):</span>
+                    <span id="f-label-dias-pagos">Dias pagos (com registro de trabalho):</span>
                     <strong id="f-dias-pagos">0</strong>
+                </div>
+                <div class="folha-linha" id="f-linha-faltas-mensal" style="display:none;">
+                    <span>Faltas (desconto 1 dia cada):</span>
+                    <strong id="f-faltas-mensal">0</strong>
+                </div>
+                <div class="folha-linha">
+                    <span>Tipo de remuneração:</span>
+                    <strong id="f-tipo-remuneracao-display">—</strong>
                 </div>
                 <div class="folha-linha acrescimo">
                     <span>(+) Salário proporcional:</span>
@@ -2045,6 +2061,28 @@ function separarDataSegura(dataString) {
         const cur = isoParaDateLocal(isoD);
         if (!cur) return false;
         return cur >= ini && cur <= fim;
+    }
+
+    function normalizarTipoRemuneracao(tipo) {
+        const s = String(tipo || 'ponto').toLowerCase().trim();
+        return s === 'mensal' ? 'mensal' : 'ponto';
+    }
+
+    function labelTipoRemuneracao(tipo) {
+        return normalizarTipoRemuneracao(tipo) === 'mensal' ? 'Mensal (CLT)' : 'Por ponto';
+    }
+
+    function isDiaUtilTrabalhoFolha(dowD, isoD, feriadosSet, sabadoHorasPadrao) {
+        if (dowD === 0 || feriadosSet.has(isoD)) return false;
+        if (dowD === 6 && !(Number.isFinite(sabadoHorasPadrao) && sabadoHorasPadrao > 0)) return false;
+        return true;
+    }
+
+    function mesCalendarioInteiroNoVinculo(anoNum, mesNum, diasNoMesCalc, admIso, demIso) {
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const primeiro = `${anoNum}-${pad2(mesNum)}-01`;
+        const ultimo = `${anoNum}-${pad2(mesNum)}-${pad2(diasNoMesCalc)}`;
+        return isDiaContratoAtivo(primeiro, admIso, demIso) && isDiaContratoAtivo(ultimo, admIso, demIso);
     }
 
     window.mascaraMoeda = function(input) {
@@ -4788,7 +4826,7 @@ window.exportarPDF = function(tipo) {
                             <b style="color:var(--dark-navy);">${func.nome}</b><br>
                             <span style="font-size: 11px; color: #666;">📱 ${func.tel} | CPF: ${func.cpf}</span><br>
                             <span style="font-size: 11px; color: #d4a017; font-weight: bold;">💸 PIX: ${func.pix || 'Não informado'}</span><br>
-                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Almoço: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span><br>
+                            <span style="font-size: 11px; color: #28a745;">R$ ${func.salario || '0,00'} | ${labelTipoRemuneracao(func.tipo_remuneracao)} | Horário: ${func.hora_entrada || '07:00'} às ${func.hora_saida || '17:00'} | Almoço: ${(func.intervalo_minutos ?? 60)} min | Sábado: ${(func.sabado_horas ?? 0)}h</span><br>
                             <span style="font-size: 10px; color: #666;">Entrada: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_admissao))} | Saída: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_demissao))} | Férias desde: ${formatarDataBrDeIso(parseDataIsoFuncionario(func.data_inicio_ferias))} (${func.ferias_dias ?? 30} dias)</span>
                         </div>
                         <div style="display: flex; gap: 5px; flex-direction: column;">
@@ -4800,7 +4838,7 @@ window.exportarPDF = function(tipo) {
             });
             
             document.querySelectorAll('.lista-funcs').forEach(select => {
-                if (select.id === 'ac-lista-func') {
+                if (select.id === 'ac-lista-func' || select.id === 'df-lista-func') {
                     select.innerHTML = '<option value="">Todos (empresa)</option>' + opcoesHTML;
                 } else {
                     select.innerHTML = opcoesHTML;
@@ -4842,6 +4880,7 @@ window.gerarFolhaPagamento = async function() {
         const demIso = parseDataIsoFuncionario(funcionario.data_demissao);
         const feriasInicioIso = parseDataIsoFuncionario(funcionario.data_inicio_ferias);
         const feriasDiasCad = Number(funcionario.ferias_dias ?? 30);
+        const tipoRemuneracao = normalizarTipoRemuneracao(funcionario.tipo_remuneracao);
 
         let [eH, eM] = horaEntPadrão.split(':').map(Number);
         let [sH, sM] = horaSaiPadrão.split(':').map(Number);
@@ -5198,6 +5237,8 @@ window.gerarFolhaPagamento = async function() {
             const diasNoMesCalc = new Date(anoNum, mesNum, 0).getDate();
             let horasFaltantes = 0;
             let diasPagos = 0;
+            let diasNoVinculoCalendario = 0;
+            let faltasInjustificadas = 0;
             let diasFeriasNoMes = 0;
             const discriminacaoDias = [];
             const nomesDiasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -5244,6 +5285,10 @@ window.gerarFolhaPagamento = async function() {
                     continue;
                 }
 
+                if (tipoRemuneracao === 'mensal') {
+                    diasNoVinculoCalendario += 1;
+                }
+
                 if (dowD === 0 || feriadosSet.has(isoD)) {
                     const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
                     const workedD = horasTrabalhadasParaDesconto(rD, 24);
@@ -5252,10 +5297,14 @@ window.gerarFolhaPagamento = async function() {
                         esperadoTxt: '0h (descanso)',
                         trabalhadoTxt: formatarHorasDecimais(workedD),
                         diferencaTxt: formatarHorasDecimais(0 - workedD),
-                        diaPagoTxt: 'Não',
+                        diaPagoTxt: tipoRemuneracao === 'mensal' ? 'Incluído (DSR)' : 'Não',
                         situacao: workedD > 0
-                            ? 'Há registro de trabalho em descanso/feriado (pago como hora extra +100% na folha, conforme regra).'
-                            : 'Sem registro de ponto.'
+                            ? (tipoRemuneracao === 'mensal'
+                                ? 'Trabalho em descanso/feriado — pago como hora extra +100%. Dia de DSR incluído no salário mensal.'
+                                : 'Há registro de trabalho em descanso/feriado (pago como hora extra +100% na folha, conforme regra).')
+                            : (tipoRemuneracao === 'mensal'
+                                ? 'Descanso sem ponto — incluído no salário mensal (DSR).'
+                                : 'Sem registro de ponto.')
                     });
                     continue;
                 }
@@ -5268,10 +5317,14 @@ window.gerarFolhaPagamento = async function() {
                         esperadoTxt: '0h (não devido)',
                         trabalhadoTxt: formatarHorasDecimais(workedD),
                         diferencaTxt: formatarHorasDecimais(0 - workedD),
-                        diaPagoTxt: 'Não',
+                        diaPagoTxt: tipoRemuneracao === 'mensal' ? 'Incluído (mensal)' : 'Não',
                         situacao: workedD > 0
-                            ? 'Há trabalho em sábado sem jornada cadastrada (conta como crédito de banco de horas, não como dia pago).'
-                            : '—'
+                            ? (tipoRemuneracao === 'mensal'
+                                ? 'Trabalho em sábado sem escala — crédito de banco de horas. Sábado sem jornada entra no mensal (DSR).'
+                                : 'Há trabalho em sábado sem jornada cadastrada (conta como crédito de banco de horas, não como dia pago).')
+                            : (tipoRemuneracao === 'mensal'
+                                ? 'Sábado sem jornada — incluído no salário mensal.'
+                                : '—')
                     });
                     continue;
                 }
@@ -5288,16 +5341,30 @@ window.gerarFolhaPagamento = async function() {
                 const rD = calcularHorasDoDia(diasTrabalhados[keyDia] || []);
                 const workedD = horasTrabalhadasParaDesconto(rD, expectedD);
                 const faltaD = workedD > 0 ? Math.max(0, expectedD - workedD) : null;
-                const diaPago = workedD > 0;
+                let diaPago = workedD > 0;
                 let situacao = '';
-                if (diaPago) {
+
+                if (tipoRemuneracao === 'mensal') {
+                    if (workedD > 0) {
+                        diasPagos += 1;
+                        horasFaltantes += Math.max(0, expectedD - workedD);
+                        diaPago = true;
+                        situacao = (faltaD === 0)
+                            ? 'Jornada do dia cumprida (sem horas devidas).'
+                            : `Atraso e/ou saída antecipada: faltaram ${formatarHorasDecimais(faltaD)} para completar a jornada esperada.`;
+                    } else {
+                        faltasInjustificadas += 1;
+                        diaPago = false;
+                        situacao = 'Falta injustificada (sem registro de ponto) — desconto de 1 dia (salário ÷ 30) no modo mensal CLT.';
+                    }
+                } else if (diaPago) {
                     diasPagos += 1;
                     horasFaltantes += Math.max(0, expectedD - workedD);
                     situacao = (faltaD === 0)
                         ? 'Jornada do dia cumprida (sem horas devidas).'
                         : `Atraso e/ou saída antecipada: faltaram ${formatarHorasDecimais(faltaD)} para completar a jornada esperada.`;
                 } else {
-                    situacao = 'Sem registro de ponto neste dia — não entra como “dia pago” no salário proporcional e não soma atraso em horas (regra atual).';
+                    situacao = 'Sem registro de ponto neste dia — não entra como “dia pago” no salário proporcional e não soma atraso em horas (regra por ponto).';
                 }
 
                 const esperadoTxtLinha = (dowD === 6)
@@ -5311,11 +5378,29 @@ window.gerarFolhaPagamento = async function() {
                     esperadoTxt: esperadoTxtLinha,
                     trabalhadoTxt: formatarHorasDecimais(workedD),
                     diferencaTxt: formatarHorasDecimais(expectedD - workedD),
-                    diaPagoTxt: diaPago ? 'Sim' : 'Não',
+                    diaPagoTxt: tipoRemuneracao === 'mensal'
+                        ? (diaPago ? 'Sim' : 'Falta')
+                        : (diaPago ? 'Sim' : 'Não'),
                     situacao
                 });
             }
-            const salarioProporcional = valorDiaSalario * diasPagos;
+            let salarioProporcional;
+            let diasPagosExibir;
+            const mesCheio = mesCalendarioInteiroNoVinculo(anoNum, mesNum, diasNoMesCalc, admIso, demIso);
+
+            if (tipoRemuneracao === 'mensal') {
+                if (mesCheio) {
+                    salarioProporcional = salarioBase - (faltasInjustificadas * valorDiaSalario);
+                    diasPagosExibir = 30 - faltasInjustificadas;
+                } else {
+                    salarioProporcional = (valorDiaSalario * diasNoVinculoCalendario) - (faltasInjustificadas * valorDiaSalario);
+                    diasPagosExibir = Math.max(0, diasNoVinculoCalendario - faltasInjustificadas);
+                }
+                salarioProporcional = Math.max(0, salarioProporcional);
+            } else {
+                salarioProporcional = valorDiaSalario * diasPagos;
+                diasPagosExibir = diasPagos;
+            }
             const valorBaseFeriasMes = valorDiaSalario * diasFeriasNoMes;
             const valorFeriasClt = feriasInicioIso && diasFeriasNoMes > 0 ? valorBaseFeriasMes * (4 / 3) : 0;
             const valorDescontoHoras = horasFaltantes * valorHoraDesconto;
@@ -5345,12 +5430,47 @@ window.gerarFolhaPagamento = async function() {
 
             document.getElementById('f-salario-mensal-contrato').innerText = formatarMoeda(salarioBase);
             document.getElementById('f-valor-dia-salario').innerText = formatarMoeda(valorDiaSalario);
-            document.getElementById('f-dias-pagos').innerText = String(diasPagos);
+
+            const elLabelDias = document.getElementById('f-label-dias-pagos');
+            if (elLabelDias) {
+                elLabelDias.innerText = tipoRemuneracao === 'mensal'
+                    ? 'Dias referência no mês (incl. DSR / descanso):'
+                    : 'Dias pagos (com registro de trabalho):';
+            }
+            document.getElementById('f-dias-pagos').innerText = String(
+                tipoRemuneracao === 'mensal' ? diasNoVinculoCalendario : diasPagosExibir
+            );
+
+            const elLinhaFaltas = document.getElementById('f-linha-faltas-mensal');
+            const elFaltas = document.getElementById('f-faltas-mensal');
+            if (elLinhaFaltas && elFaltas) {
+                if (tipoRemuneracao === 'mensal') {
+                    elLinhaFaltas.style.display = 'flex';
+                    elFaltas.innerText = String(faltasInjustificadas);
+                } else {
+                    elLinhaFaltas.style.display = 'none';
+                }
+            }
+            const elTipoRem = document.getElementById('f-tipo-remuneracao-display');
+            if (elTipoRem) elTipoRem.innerText = labelTipoRemuneracao(tipoRemuneracao);
+
             document.getElementById('f-salario-base').innerText = formatarMoeda(salarioProporcional);
             const detSal = document.getElementById('f-detalhe-salario-proporcional');
             if (detSal) {
-                detSal.innerHTML = `<b>Conta:</b> ${diasPagos} dias × ${formatarMoeda(valorDiaSalario)} (valor do dia) = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
-                <span style="color:#888;">Só entram dias úteis/sábados (com escala) em que houve trabalho no ponto. Dias em <b>férias</b> não entram aqui (vão na linha de férias CLT).</span>`;
+                if (tipoRemuneracao === 'mensal') {
+                    if (mesCheio) {
+                        detSal.innerHTML = `<b>Modo mensal CLT</b> — mês inteiro no vínculo.<br>
+                        <b>Conta:</b> ${formatarMoeda(salarioBase)} (salário contrato)${faltasInjustificadas > 0 ? ' − ' + faltasInjustificadas + ' falta(s) × ' + formatarMoeda(valorDiaSalario) : ''} = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
+                        <span style="color:#888;">Domingos, feriados e sábados sem escala entram no salário (DSR). Falta = dia útil ou sábado de escala sem ponto.</span>`;
+                    } else {
+                        detSal.innerHTML = `<b>Modo mensal CLT</b> — mês parcial (admissão/desligamento).<br>
+                        <b>Conta:</b> ${diasNoVinculoCalendario} dia(s) no vínculo × ${formatarMoeda(valorDiaSalario)}${faltasInjustificadas > 0 ? ' − ' + faltasInjustificadas + ' falta(s) × ' + formatarMoeda(valorDiaSalario) : ''} = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
+                        <span style="color:#888;">Inclui fins de semana e feriados dentro do período contratual (DSR).</span>`;
+                    }
+                } else {
+                    detSal.innerHTML = `<b>Modo por ponto</b> — ${diasPagosExibir} dias × ${formatarMoeda(valorDiaSalario)} (valor do dia) = <b>${formatarMoeda(salarioProporcional)}</b>.<br>
+                    <span style="color:#888;">Só entram dias úteis/sábados (com escala) em que houve batida de ponto. Dias em <b>férias</b> não entram aqui (vão na linha de férias CLT).</span>`;
+                }
             }
 
             if (document.getElementById('f-dias-ferias-mes')) {
@@ -5554,7 +5674,7 @@ window.gerarFolhaPagamento = async function() {
                     funcionarioNome: funcionario.nome,
                     mesRef: `${String(mesSelected).padStart(2, '0')}/${anoSelected}`,
                     emitidoEm: new Date().toLocaleString('pt-BR'),
-                    diasPagos: diasPagos,
+                    diasPagos: diasPagosExibir,
                     salarioProporcionalFmt: formatarMoeda(salarioProporcional),
                     liquidoFmt: formatarMoeda(liquidoReceber),
                     linhas: discriminacaoDias
@@ -5564,8 +5684,13 @@ window.gerarFolhaPagamento = async function() {
             }
 
             const mesNomeRef = nomeMeses[mesSelected] || mesSelected;
+            const labelSalProp = tipoRemuneracao === 'mensal'
+                ? (mesCheio
+                    ? 'Salário mensal CLT' + (faltasInjustificadas > 0 ? ' (− ' + faltasInjustificadas + ' falta(s))' : '')
+                    : 'Salário mensal CLT (' + diasNoVinculoCalendario + ' dias no vínculo)')
+                : ('Salário proporcional (' + diasPagosExibir + ' dias × ' + formatarMoeda(valorDiaSalario) + ')');
             const proventosPdf = [
-                { label: 'Salário proporcional (' + diasPagos + ' dias × ' + formatarMoeda(valorDiaSalario) + ')', valor: salarioProporcional },
+                { label: labelSalProp, valor: salarioProporcional },
                 { label: 'Férias + 1/3 constitucional (' + diasFeriasNoMes + ' dias)', valor: valorFeriasClt },
                 {
                     label: 'Horas extras (' + h50 + 'h ' + m50 + 'm +50% · ' + h100 + 'h ' + m100 + 'm +100%)',
@@ -5598,7 +5723,7 @@ window.gerarFolhaPagamento = async function() {
                 emitidoEm: new Date().toLocaleString('pt-BR'),
                 salarioContrato: salarioBase,
                 valorDia: valorDiaSalario,
-                diasPagos: diasPagos,
+                diasPagos: diasPagosExibir,
                 proventos: proventosPdf,
                 descontos: descontosPdf,
                 totalProventos: salarioProporcional + valorFeriasClt + valorTotalReceberExtras,
@@ -5607,7 +5732,9 @@ window.gerarFolhaPagamento = async function() {
                 liquidoNegativo: liquidoReceber < 0,
                 bancoHorasTxt: (typeof sinalBanco !== 'undefined' ? sinalBanco : '') + bancoH + 'h ' + bancoM + 'm',
                 ajudaCustoTotal: totalAjudaCusto,
-                ajudaCustoItens: itensAjudaCusto.slice()
+                ajudaCustoItens: itensAjudaCusto.slice(),
+                tipoRemuneracao: tipoRemuneracao,
+                faltasMensal: faltasInjustificadas
             };
 
             document.getElementById('resultado-folha').style.display = 'block';
@@ -5633,6 +5760,7 @@ window.gerarFolhaPagamento = async function() {
         const dataDemissao = document.getElementById('c-data-demissao') ? document.getElementById('c-data-demissao').value : '';
         const dataInicioFerias = document.getElementById('c-data-inicio-ferias') ? document.getElementById('c-data-inicio-ferias').value : '';
         const feriasDiasCad = Number(document.getElementById('c-ferias-dias')?.value || 30);
+        const tipoRemuneracaoCad = document.getElementById('c-tipo-remuneracao') ? document.getElementById('c-tipo-remuneracao').value : 'mensal';
 
         if (!nome || !cpf) {
             return Swal.fire('Atenção', 'Preencha pelo menos o Nome e o CPF!', 'warning');
@@ -5658,6 +5786,7 @@ window.gerarFolhaPagamento = async function() {
                 data_demissao: dataDemissao || null,
                 data_inicio_ferias: dataInicioFerias || null,
                 ferias_dias: Number.isFinite(feriasDiasCad) ? Math.min(30, Math.max(1, feriasDiasCad)) : 30,
+                tipo_remuneracao: normalizarTipoRemuneracao(tipoRemuneracaoCad),
                 senha: "" // Senha vazia para ele criar no 1º acesso
             });
             
@@ -5675,6 +5804,7 @@ window.gerarFolhaPagamento = async function() {
             if (document.getElementById('c-data-demissao')) document.getElementById('c-data-demissao').value = '';
             if (document.getElementById('c-data-inicio-ferias')) document.getElementById('c-data-inicio-ferias').value = '';
             if (document.getElementById('c-ferias-dias')) document.getElementById('c-ferias-dias').value = '30';
+            if (document.getElementById('c-tipo-remuneracao')) document.getElementById('c-tipo-remuneracao').value = 'mensal';
             
             // Recarrega a lista na hora
             carregarListaDeFuncionarios();
@@ -5707,6 +5837,7 @@ window.gerarFolhaPagamento = async function() {
         const vDem = escapeHtmlBasico(parseDataIsoFuncionario(func.data_demissao) || '');
         const vFer = escapeHtmlBasico(parseDataIsoFuncionario(func.data_inicio_ferias) || '');
         const vFerDias = escapeHtmlBasico(String(func.ferias_dias ?? 30));
+        const tipoRemEdit = normalizarTipoRemuneracao(func.tipo_remuneracao);
 
         Swal.fire({
             title: '✏️ Editar Funcionário',
@@ -5748,6 +5879,12 @@ window.gerarFolhaPagamento = async function() {
                     <label style="margin-top: 10px;">Sábado (horas):</label>
                     <input id="edit-f-sabado-horas" type="number" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${(func.sabado_horas ?? 0)}" min="0" max="12" step="0.5">
 
+                    <label style="margin-top: 10px;">Tipo de salário (folha)</label>
+                    <select id="edit-f-tipo-remuneracao" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;">
+                        <option value="mensal" ${tipoRemEdit === 'mensal' ? 'selected' : ''}>Mensal (CLT)</option>
+                        <option value="ponto" ${tipoRemEdit === 'ponto' ? 'selected' : ''}>Por ponto</option>
+                    </select>
+
                     <p style="margin:14px 0 6px 0;font-weight:700;color:#1a2a43;border-bottom:1px solid #eee;padding-bottom:4px;">Vínculo e férias</p>
                     <label style="margin-top: 8px;">Data de entrada (admissão)</label>
                     <input id="edit-f-admissao" type="date" class="swal2-input" style="margin: 0; width: 100%; height: 40px; font-size: 14px;" value="${vAdm}">
@@ -5778,7 +5915,8 @@ window.gerarFolhaPagamento = async function() {
                     data_admissao: document.getElementById('edit-f-admissao').value || null,
                     data_demissao: document.getElementById('edit-f-demissao').value || null,
                     data_inicio_ferias: document.getElementById('edit-f-inicio-ferias').value || null,
-                    ferias_dias: Number.isFinite(fd) ? Math.min(30, Math.max(1, fd)) : 30
+                    ferias_dias: Number.isFinite(fd) ? Math.min(30, Math.max(1, fd)) : 30,
+                    tipo_remuneracao: normalizarTipoRemuneracao(document.getElementById('edit-f-tipo-remuneracao').value)
                 }
             }
         }).then(async (result) => {
