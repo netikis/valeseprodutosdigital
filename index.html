@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestor 360</title>
-    <meta name="description" content="Gestor 360 — despesas, holerite e ponto integrados num só portal.">
+    <title>FH Construções</title>
+    <meta name="description" content="Ponto digital, vales e gestão — FH Construções / Gestor 360 (painel RH).">
     
     <link rel="manifest" href="./manifest.json">
     
@@ -669,11 +669,12 @@
 </script>
 
 <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then(registration => {
-            console.log('ServiceWorker registado com sucesso!', registration.scope);
+            registration.update();
+            console.log('ServiceWorker registado:', registration.scope);
           }, err => {
             console.log('Falha ao registar o ServiceWorker:', err);
           });
@@ -690,12 +691,12 @@
 <div class="main-card login-card" id="tela-escolha-inicial" style="display: none; text-align: center;">
     <div class="header-logo">
         <img src="https://image2url.com/r2/default/images/1774578957071-f27e2520-816d-436f-a537-ee8a160f90ca.jpeg" crossorigin="anonymous" alt="Logo" class="logo-img">
-        <div class="title-top">Gestor 360</div>
-        <p style="font-size: 12px; color: #666; margin: 6px 0 0 0;">Despesas, holerite e ponto — tudo integrado</p>
+        <div class="title-top">FH Construções</div>
+        <p style="font-size: 12px; color: #666; margin: 6px 0 0 0;">Ponto digital, vales e recibos</p>
     </div>
     <p style="font-size: 14px; color: #555; margin-bottom: 25px;">Selecione o seu tipo de acesso para continuar:</p>
 
-    <button class="btn-enviar" onclick="escolherGestao()">👔 GESTOR 360 — Gestão RH</button>
+    <button class="btn-enviar" onclick="escolherGestao()">👔 GESTÃO RH / GESTOR</button>
     <button class="btn-gold" onclick="escolherFuncionario()" style="background: #28a745; color: white;">📍 SOU FUNCIONÁRIO - BATER PONTO</button>
 </div>
 
@@ -767,6 +768,7 @@
         <div class="tab" onclick="mudarAba('buscar', this)">📁 Arquivo</div>
         <div class="tab" onclick="mudarAba('ponto', this)">📍 Ponto</div>
         <div class="tab" onclick="mudarAba('ajuda-custo', this)">🧳 Ajuda de Custo</div>
+        <div class="tab" onclick="mudarAba('descontos-folha', this)">📋 Descontos Folha</div>
         <div class="tab" onclick="mudarAba('folha', this)">📄 Folha Pagamento</div>
         <div class="tab" onclick="mudarAba('calendario', this)">📅 Calendário</div>
         <div class="tab" style="background: #eef2f5; color: #1a2a43; border: 1px solid #1a2a43;" onclick="mudarAba('terceiros', this)">👷 Terceiros</div>
@@ -1004,6 +1006,96 @@
         </div>
     </div>
 
+    <div id="aba-descontos-folha" class="view-section">
+        <div style="background: #fff5f5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #dc3545;">
+            <h3 style="margin: 0; color: #922b21; text-align: center;">📋 Descontos na Folha</h3>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #555; text-align: center;">
+                Lançamentos por funcionário e <b>mês de referência</b> (INSS, IRRF, vale transporte, etc.).
+                Entram no holerite em <b>Descontos</b> e <b>reduzem o líquido</b> a receber.
+            </p>
+        </div>
+
+        <label>Funcionário</label>
+        <select id="df-func-select" class="lista-funcs" style="margin-bottom: 10px;">
+            <option value="">A carregar...</option>
+        </select>
+
+        <label style="margin-top: 12px;">Mês de referência da folha</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1.5; min-width: 120px;">
+                <label style="font-size: 11px; color: #666;">Mês</label>
+                <select id="df-mes-ref" style="margin-top: 4px;">
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 88px;">
+                <label style="font-size: 11px; color: #666;">Ano</label>
+                <input type="number" id="df-ano-ref" min="2000" max="2100" value="2026" style="margin-top: 4px;">
+            </div>
+        </div>
+
+        <label style="margin-top: 12px;">Tipo de desconto</label>
+        <select id="df-tipo" style="margin-bottom: 0;">
+            <option value="INSS">INSS</option>
+            <option value="IRRF">IRRF / IRPF</option>
+            <option value="Vale Transporte">Vale Transporte</option>
+            <option value="Vale Refeição">Vale Refeição</option>
+            <option value="Pensão alimentícia">Pensão alimentícia</option>
+            <option value="Empréstimo consignado">Empréstimo consignado</option>
+            <option value="Plano de saúde">Plano de saúde</option>
+            <option value="Outros">Outros</option>
+        </select>
+
+        <label style="margin-top: 12px;">Valor do desconto (R$)</label>
+        <input type="text" id="df-valor" placeholder="0,00" oninput="mascaraMoeda(this)">
+
+        <label style="margin-top: 12px;">Observação (opcional)</label>
+        <textarea id="df-observacao" rows="2" placeholder="Ex.: competência 05/2026, parcela 3/12, convênio..."></textarea>
+
+        <button type="button" class="btn-enviar" style="margin-top: 14px; width: 100%; background: #dc3545;" onclick="salvarDescontoFolha()">➖ LANÇAR DESCONTO NA FOLHA</button>
+
+        <hr style="margin: 22px 0; border: none; border-top: 1px solid #e0e6ed;">
+
+        <label>Consultar descontos lançados</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 2; min-width: 160px;">
+                <select id="df-lista-func" class="lista-funcs" style="margin: 0;">
+                    <option value="">Todos (empresa)</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 11px; color: #666;">Mês ref.</label>
+                <select id="df-lista-mes" style="margin: 0;">
+                    <option value="">Todos</option>
+                    <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
+                    <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
+                    <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
+                    <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 80px;">
+                <label style="font-size: 11px; color: #666;">Ano ref.</label>
+                <input type="number" id="df-lista-ano" value="2026" style="margin: 0;">
+            </div>
+            <button type="button" class="btn-enviar" style="margin: 0; padding: 12px 16px; flex: 1; min-width: 120px;" onclick="carregarDescontosFolhaLista()">Atualizar lista</button>
+        </div>
+
+        <div id="lista-descontos-folha" style="margin-top: 15px;">
+            <p style="text-align: center; color: #888; font-size: 13px;">Os descontos lançados aparecem aqui.</p>
+        </div>
+    </div>
+
     <div id="aba-folha" class="view-section">
         <label>Gerar Acerto Mensal (Folha/Holerite)</label>
         <select id="folha-func-select" class="lista-funcs" style="margin-bottom: 10px;">
@@ -1048,6 +1140,7 @@
                     Este resumo usa as regras cadastradas: <b>salário proporcional</b> (salário ÷ 30 × dias com ponto, fora férias),
                     <b>férias CLT</b> (dias de gozo no mês × valor do dia × 4/3, com terço constitucional),
                     <b>ajuda de custo</b> (PLUS em recebimentos — só informativo, <b>não entra</b> no líquido),
+                    <b>descontos lançados</b> (INSS, IRRF, etc. — entram no líquido),
                     <b>vínculo</b> (entrada/saída limitam dias no mês),
                     <b>hora extra</b> (base 220h: +50% dia útil; +100% domingo/feriado) e <b>atrasos</b> (salário ÷ 30 ÷ 8).
                 </p>
@@ -1109,6 +1202,9 @@
                     <strong id="f-valor-desconto-horas">R$ 0,00</strong>
                 </div>
                 <p id="f-detalhe-desconto-atrasos" class="folha-detalhe"></p>
+
+                <div id="f-bloco-descontos-lancados"></div>
+                <p id="f-detalhe-descontos-lancados" class="folha-detalhe"></p>
                 
                 <div class="folha-linha destaque">
                     <span id="f-label-liquido">LÍQUIDO A RECEBER:</span>
@@ -1662,7 +1758,7 @@
         document.title = "Gestor 360"; 
         iniciarPainelGestor();
     } else {
-        document.title = "Gestor 360"; 
+        document.title = "FH Construções"; 
         document.getElementById('tela-escolha-inicial').style.display = 'block';
     }
 
@@ -1747,6 +1843,7 @@
         const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
         document.getElementById('folha-mes').value = mesAtual;
         initAjudaCustoDatasPadrao();
+        initDescontosFolhaDatasPadrao();
         document.getElementById('backup-mes').value = mesAtual;
         
         // CORREÇÃO: Aguardar a tela e as funções carregarem antes de puxar o alerta
@@ -2188,16 +2285,33 @@ function separarDataSegura(dataString) {
     /** Linhas do tópico «Relatório de despesas» (separado de `despesas_obras`). */
     const COLECAO_RELATORIO_DESPESAS = 'relatorio_despesas';
     const COLECAO_AJUDA_CUSTO = 'ajuda_custo';
+    const COLECAO_DESCONTOS_FOLHA = 'descontos_folha';
 
-    function montarDataIsoDiaMesAno(dia, mes, ano) {
-        const d = parseInt(String(dia || '').trim(), 10);
-        const m = parseInt(String(mes || '').trim(), 10);
-        const y = parseInt(String(ano || '').trim(), 10);
-        if (!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return null;
-        if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > 2100) return null;
-        const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        if (parseDataVencimentoParaTimestamp(iso) == null) return null;
-        return iso;
+    const TIPOS_DESCONTO_FOLHA_OPTS = [
+        'INSS', 'IRRF', 'Vale Transporte', 'Vale Refeição',
+        'Pensão alimentícia', 'Empréstimo consignado', 'Plano de saúde', 'Outros'
+    ];
+
+    function labelDescontoFolhaExibir(item) {
+        const tipo = String(item.tipo_desconto || 'Outros').trim();
+        const obs = String(item.observacao || '').trim();
+        if (obs && tipo === 'Outros') return 'Outros — ' + obs;
+        if (obs) return tipo + ' (' + obs + ')';
+        return tipo;
+    }
+
+    function initDescontosFolhaDatasPadrao() {
+        const ag = new Date();
+        const mes = String(ag.getMonth() + 1).padStart(2, '0');
+        const ano = String(ag.getFullYear());
+        const elM = document.getElementById('df-mes-ref');
+        const elA = document.getElementById('df-ano-ref');
+        const elLa = document.getElementById('df-lista-ano');
+        const elLm = document.getElementById('df-lista-mes');
+        if (elM && !elM.value) elM.value = mes;
+        if (elA && !elA.value) elA.value = ano;
+        if (elLa && !elLa.value) elLa.value = ano;
+        if (elLm && !elLm.value) elLm.value = mes;
     }
 
     function dataBrDeIsoAjuda(iso) {
@@ -2440,6 +2554,208 @@ function separarDataSegura(dataString) {
             }
         });
     };
+
+    window.salvarDescontoFolha = async function () {
+        const funcId = document.getElementById('df-func-select') && document.getElementById('df-func-select').value;
+        const mesRef = document.getElementById('df-mes-ref') && document.getElementById('df-mes-ref').value;
+        const anoRef = document.getElementById('df-ano-ref') && document.getElementById('df-ano-ref').value;
+        const tipo = document.getElementById('df-tipo') && document.getElementById('df-tipo').value;
+        const valor = document.getElementById('df-valor') && document.getElementById('df-valor').value;
+        const observacao = document.getElementById('df-observacao') ? document.getElementById('df-observacao').value.trim() : '';
+        const empresaLogada = localStorage.getItem('empresaGestor');
+
+        if (!funcId) return Swal.fire('Atenção', 'Selecione o funcionário.', 'warning');
+        if (!mesRef || !anoRef) return Swal.fire('Atenção', 'Informe mês e ano de referência da folha.', 'warning');
+        if (!valor) return Swal.fire('Atenção', 'Informe o valor do desconto.', 'warning');
+        const vNum = parseMoedaLocal(valor);
+        if (!vNum || vNum <= 0) return Swal.fire('Atenção', 'Valor do desconto inválido.', 'warning');
+
+        const funcionario = window.listaFuncionarios && window.listaFuncionarios[funcId];
+        const nomeFunc = funcionario ? funcionario.nome : 'Funcionário';
+
+        try {
+            await addDoc(collection(db, COLECAO_DESCONTOS_FOLHA), {
+                empresa_id: empresaLogada,
+                funcionario_id: funcId,
+                funcionario_nome: nomeFunc,
+                tipo_desconto: tipo || 'Outros',
+                valor_string: valor,
+                valor_numero: vNum,
+                mes_ref: String(mesRef).padStart(2, '0'),
+                ano_ref: String(anoRef),
+                observacao: observacao || null,
+                timestamp: Date.now()
+            });
+            Swal.fire('Sucesso!', 'Desconto lançado. Aparece no holerite de ' + mesRef + '/' + anoRef + ' e reduz o líquido.', 'success');
+            if (document.getElementById('df-valor')) document.getElementById('df-valor').value = '';
+            if (document.getElementById('df-observacao')) document.getElementById('df-observacao').value = '';
+            const elLf = document.getElementById('df-lista-func');
+            if (elLf) elLf.value = funcId;
+            const elLm = document.getElementById('df-lista-mes');
+            if (elLm) elLm.value = String(mesRef).padStart(2, '0');
+            const elLa = document.getElementById('df-lista-ano');
+            if (elLa) elLa.value = String(anoRef);
+            carregarDescontosFolhaLista();
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Não foi possível guardar o desconto.', 'error');
+        }
+    };
+
+    window.carregarDescontosFolhaLista = async function () {
+        const wrap = document.getElementById('lista-descontos-folha');
+        const empresaLogada = localStorage.getItem('empresaGestor');
+        if (!wrap) return;
+        if (!empresaLogada) return Swal.fire('Atenção', 'Empresa não definida.', 'warning');
+
+        const funcFiltro = document.getElementById('df-lista-func') && document.getElementById('df-lista-func').value;
+        const mesFiltro = document.getElementById('df-lista-mes') && document.getElementById('df-lista-mes').value;
+        const anoFiltro = document.getElementById('df-lista-ano') && document.getElementById('df-lista-ano').value;
+
+        wrap.innerHTML = '<p style="text-align:center;color:#888;">A carregar...</p>';
+        window._mapDescontoFolhaEdicao = {};
+
+        try {
+            const q = query(collection(db, COLECAO_DESCONTOS_FOLHA), where('empresa_id', '==', empresaLogada));
+            const snap = await getDocs(q);
+            let arr = [];
+            snap.forEach(docu => arr.push({ id: docu.id, ...docu.data() }));
+
+            arr = arr.filter(d => {
+                if (funcFiltro && d.funcionario_id !== funcFiltro) return false;
+                if (mesFiltro && String(d.mes_ref || '').padStart(2, '0') !== String(mesFiltro).padStart(2, '0')) return false;
+                if (anoFiltro && String(d.ano_ref || '') !== String(anoFiltro)) return false;
+                return true;
+            });
+
+            arr.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            arr.forEach(d => { window._mapDescontoFolhaEdicao[d.id] = d; });
+
+            if (!arr.length) {
+                wrap.innerHTML = '<p style="text-align:center;color:#888;">Nenhum desconto com os filtros actuais.</p>';
+                return;
+            }
+
+            let soma = 0;
+            let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e0e6ed;">';
+            html += '<thead><tr style="background:#922b21;color:#fff;text-align:left;">';
+            html += '<th style="padding:8px;">Funcionário</th><th style="padding:8px;">Ref.</th><th style="padding:8px;">Tipo</th>';
+            html += '<th style="padding:8px;">Valor</th><th style="padding:8px;">Obs.</th><th style="padding:8px;">Acções</th></tr></thead><tbody>';
+
+            arr.forEach(d => {
+                soma += (d.valor_numero || parseMoedaLocal(d.valor_string) || 0);
+                const ref = (d.mes_ref || '??') + '/' + (d.ano_ref || '????');
+                const obs = escapeHtmlBasico(String(d.observacao || '').trim());
+                const obsShort = obs.length > 60 ? obs.slice(0, 57) + '…' : obs;
+                html += '<tr style="border-bottom:1px solid #eee;vertical-align:top;">';
+                html += '<td style="padding:6px;">' + escapeHtmlBasico(d.funcionario_nome || '') + '</td>';
+                html += '<td style="padding:6px;white-space:nowrap;font-weight:600;">' + escapeHtmlBasico(ref) + '</td>';
+                html += '<td style="padding:6px;">' + escapeHtmlBasico(d.tipo_desconto || 'Outros') + '</td>';
+                html += '<td style="padding:6px;white-space:nowrap;color:#dc3545;"><b>R$ ' + escapeHtmlBasico(String(d.valor_string || '0')) + '</b></td>';
+                html += '<td style="padding:6px;max-width:160px;font-size:11px;" title="' + escapeAttrBasico(d.observacao) + '">' + (obsShort || '—') + '</td>';
+                html += '<td style="padding:6px;min-width:120px;">';
+                html += '<button type="button" onclick="editarDescontoFolha(\'' + d.id + '\')" style="display:block;width:100%;margin-bottom:4px;background:#4285F4;color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;">✏️ Editar</button>';
+                html += '<button type="button" onclick="excluirDescontoFolha(\'' + d.id + '\')" style="display:block;width:100%;background:#d9534f;color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;">🗑️ Excluir</button>';
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            html += '<p style="text-align:right;margin-top:10px;font-size:13px;color:#922b21;"><b>Total descontos listados:</b> ' + formatarMoeda(soma) + '</p>';
+            wrap.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            wrap.innerHTML = '<p style="text-align:center;color:#d9534f;">Erro ao carregar descontos.</p>';
+        }
+    };
+
+    window.editarDescontoFolha = function (id) {
+        const reg = window._mapDescontoFolhaEdicao && window._mapDescontoFolhaEdicao[id];
+        if (!reg) return Swal.fire('Erro', 'Registo não encontrado. Atualize a lista.', 'error');
+
+        const optsTipo = TIPOS_DESCONTO_FOLHA_OPTS.map(t =>
+            `<option value="${t}" ${reg.tipo_desconto === t ? 'selected' : ''}>${t}</option>`
+        ).join('');
+        const optsMes = ['01','02','03','04','05','06','07','08','09','10','11','12'].map(m =>
+            `<option value="${m}" ${String(reg.mes_ref).padStart(2, '0') === m ? 'selected' : ''}>${m}</option>`
+        ).join('');
+
+        Swal.fire({
+            title: '✏️ Editar desconto na folha',
+            html: `
+                <div style="text-align:left;font-size:13px;">
+                    <p style="margin:0 0 10px 0;color:#666;"><b>${escapeHtmlBasico(reg.funcionario_nome || '')}</b></p>
+                    <label>Mês ref.</label>
+                    <select id="edit-df-mes" class="swal2-input" style="margin:0;width:100%;height:40px;">${optsMes}</select>
+                    <label style="margin-top:8px;">Ano ref.</label>
+                    <input type="number" id="edit-df-ano" class="swal2-input" style="margin:0;width:100%;height:40px;" value="${escapeHtmlBasico(reg.ano_ref || '')}">
+                    <label style="margin-top:8px;">Tipo</label>
+                    <select id="edit-df-tipo" class="swal2-input" style="margin:0;width:100%;height:40px;">${optsTipo}</select>
+                    <label style="margin-top:8px;">Valor (R$)</label>
+                    <input id="edit-df-valor" class="swal2-input" style="margin:0;width:100%;height:40px;" value="${escapeHtmlBasico(reg.valor_string || '')}" oninput="mascaraMoeda(this)">
+                    <label style="margin-top:8px;">Observação</label>
+                    <textarea id="edit-df-obs" class="swal2-textarea" style="margin:0;width:100%;height:60px;">${escapeHtmlBasico(reg.observacao || '')}</textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'SALVAR',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const v = parseMoedaLocal(document.getElementById('edit-df-valor').value);
+                if (!v || v <= 0) {
+                    Swal.showValidationMessage('Informe um valor válido.');
+                    return false;
+                }
+                return {
+                    mes_ref: document.getElementById('edit-df-mes').value,
+                    ano_ref: String(document.getElementById('edit-df-ano').value),
+                    tipo_desconto: document.getElementById('edit-df-tipo').value,
+                    valor_string: document.getElementById('edit-df-valor').value,
+                    valor_numero: v,
+                    observacao: document.getElementById('edit-df-obs').value.trim() || null
+                };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await updateDoc(doc(db, COLECAO_DESCONTOS_FOLHA, id), result.value);
+                    Swal.fire('Atualizado!', 'Desconto corrigido.', 'success');
+                    carregarDescontosFolhaLista();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível actualizar.', 'error');
+                }
+            }
+        });
+    };
+
+    window.excluirDescontoFolha = async function (id) {
+        Swal.fire({
+            title: 'Apagar desconto da folha?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d9534f',
+            confirmButtonText: 'Sim, apagar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, COLECAO_DESCONTOS_FOLHA, id));
+                    Swal.fire('Apagado!', '', 'success');
+                    carregarDescontosFolhaLista();
+                } catch (e) {
+                    Swal.fire('Erro', 'Não foi possível apagar.', 'error');
+                }
+            }
+        });
+    };
+
+    function montarDataIsoDiaMesAno(dia, mes, ano) {
+        const d = parseInt(String(dia || '').trim(), 10);
+        const m = parseInt(String(mes || '').trim(), 10);
+        const y = parseInt(String(ano || '').trim(), 10);
+        if (!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return null;
+        if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > 2100) return null;
+        const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (parseDataVencimentoParaTimestamp(iso) == null) return null;
+        return iso;
+    }
 
     document.getElementById('d-anexo').addEventListener('change', function(e) {
         const file = e.target.files;
@@ -4340,6 +4656,10 @@ window.exportarPDF = function(tipo) {
             initAjudaCustoDatasPadrao();
             carregarAjudaCustoLista();
         }
+        if (aba === 'descontos-folha') {
+            initDescontosFolhaDatasPadrao();
+            carregarDescontosFolhaLista();
+        }
     };
 
     window.salvarFeriado = async function() {
@@ -4688,6 +5008,32 @@ window.gerarFolhaPagamento = async function() {
                 console.warn('Ajuda de custo:', eAj);
             }
 
+            // 1c. DESCONTOS LANÇADOS NA FOLHA (INSS, IRRF, etc. — mês de referência)
+            let totalDescontosLancados = 0;
+            let itensDescontosFolha = [];
+            try {
+                const qDesc = query(collection(db, COLECAO_DESCONTOS_FOLHA), where('funcionario_id', '==', funcId));
+                const descSnap = await getDocs(qDesc);
+                descSnap.forEach(docu => {
+                    const d = docu.data();
+                    if (d.empresa_id !== empresaLogada) return;
+                    if (String(d.mes_ref || '').padStart(2, '0') !== String(mesSelected).padStart(2, '0')) return;
+                    if (String(d.ano_ref || '') !== String(anoSelected)) return;
+                    const v = parseMoedaLocal(d.valor_string) || d.valor_numero || 0;
+                    totalDescontosLancados += v;
+                    itensDescontosFolha.push({
+                        id: docu.id,
+                        tipo_desconto: d.tipo_desconto || 'Outros',
+                        observacao: d.observacao || '',
+                        valor: v,
+                        valor_fmt: d.valor_string || formatarMoeda(v)
+                    });
+                });
+                itensDescontosFolha.sort((a, b) => String(a.tipo_desconto).localeCompare(String(b.tipo_desconto), 'pt-BR'));
+            } catch (eDf) {
+                console.warn('Descontos folha:', eDf);
+            }
+
             // 2. BUSCA DE PONTOS (ignora registros cancelados por evento de auditoria)
             const qPonto = query(collection(db, "ponto_registros"), where("funcionario_id", "==", funcId));
             const pontoSnap = await getDocs(qPonto);
@@ -4992,7 +5338,7 @@ window.gerarFolhaPagamento = async function() {
             // 3. CÁLCULO DO LÍQUIDO — valor real do fechamento (pode ser negativo se vales/atrasos excederem créditos)
             const liquidoReceber =
                 (salarioProporcional + valorFeriasClt + valorTotalReceberExtras) -
-                (totalDinheiro + totalProduto + valorDescontoHoras);
+                (totalDinheiro + totalProduto + valorDescontoHoras + totalDescontosLancados);
 
             document.getElementById('f-nome-display').innerText = funcionario.nome;
             document.getElementById('f-periodo-display').innerText = `Referência: ${mesSelected} / ${anoSelected}`;
@@ -5123,6 +5469,28 @@ window.gerarFolhaPagamento = async function() {
                 <b>Conta:</b> ${horasFaltDisplay}h ${minFaltDisplay}m × ${formatarMoeda(valorHoraDesconto)}/h = <b>${formatarMoeda(valorDescontoHoras)}</b>.<br>
                 <span style="color:#888;">São somadas, dia a dia, as horas que faltaram para completar a jornada esperada em cada dia em que houve trabalho.</span>`;
             }
+
+            const nDescLanc = itensDescontosFolha.length;
+            const blocoDesc = document.getElementById('f-bloco-descontos-lancados');
+            const detDescLanc = document.getElementById('f-detalhe-descontos-lancados');
+            if (blocoDesc) {
+                if (nDescLanc > 0) {
+                    blocoDesc.innerHTML = itensDescontosFolha.map(it => `
+                        <div class="folha-linha desconto">
+                            <span>(−) ${escapeHtmlBasico(labelDescontoFolhaExibir(it))}:</span>
+                            <strong>${formatarMoeda(it.valor)}</strong>
+                        </div>`).join('');
+                } else {
+                    blocoDesc.innerHTML = '';
+                }
+            }
+            if (detDescLanc) {
+                if (nDescLanc > 0) {
+                    detDescLanc.innerHTML = `<b>Descontos lançados pelo RH</b> (aba Descontos Folha) para ${mesSelected}/${anoSelected}: total <b>${formatarMoeda(totalDescontosLancados)}</b>. INSS, IRRF e demais tipos entram no líquido.`;
+                } else {
+                    detDescLanc.innerHTML = '<span style="color:#888;">Nenhum desconto lançado (INSS, etc.) neste mês. Use a aba «Descontos Folha» para incluir.</span>';
+                }
+            }
             
             const elValorLiq = document.getElementById('f-valor-liquido');
             const elLabelLiq = document.getElementById('f-label-liquido');
@@ -5138,7 +5506,7 @@ window.gerarFolhaPagamento = async function() {
             if (detLiq) {
                 let txtForm = `<b>Fórmula do líquido:</b><br>
                 ${formatarMoeda(salarioProporcional)} (proporcional) + ${formatarMoeda(valorFeriasClt)} (férias CLT) + ${formatarMoeda(valorTotalReceberExtras)} (extras)
-                − ${formatarMoeda(totalDinheiro)} (vales) − ${formatarMoeda(totalProduto)} (produtos) − ${formatarMoeda(valorDescontoHoras)} (atrasos)
+                − ${formatarMoeda(totalDinheiro)} (vales) − ${formatarMoeda(totalProduto)} (produtos) − ${formatarMoeda(valorDescontoHoras)} (atrasos)${totalDescontosLancados > 0 ? ' − ' + formatarMoeda(totalDescontosLancados) + ' (INSS/outros)' : ''}
                 = <b>${formatarMoeda(liquidoReceber)}</b>`;
                 if (nAjuda > 0) {
                     txtForm += `<br><br><span style="color:#0d6efd;"><b>Recebimento PLUS (fora do líquido):</b> Ajuda de custo ${formatarMoeda(totalAjudaCusto)} — pago à parte, sem somar nem descontar do valor acima.</span>`;
@@ -5212,6 +5580,12 @@ window.gerarFolhaPagamento = async function() {
                     valor: valorDescontoHoras
                 }
             ];
+            itensDescontosFolha.forEach(it => {
+                descontosPdf.push({
+                    label: labelDescontoFolhaExibir(it),
+                    valor: it.valor
+                });
+            });
 
             window.folhaHoleritePDF = {
                 empresaNome: localStorage.getItem('empresaGestor') || 'Empresa',
@@ -5228,7 +5602,7 @@ window.gerarFolhaPagamento = async function() {
                 proventos: proventosPdf,
                 descontos: descontosPdf,
                 totalProventos: salarioProporcional + valorFeriasClt + valorTotalReceberExtras,
-                totalDescontos: totalDinheiro + totalProduto + valorDescontoHoras,
+                totalDescontos: totalDinheiro + totalProduto + valorDescontoHoras + totalDescontosLancados,
                 liquido: liquidoReceber,
                 liquidoNegativo: liquidoReceber < 0,
                 bancoHorasTxt: (typeof sinalBanco !== 'undefined' ? sinalBanco : '') + bancoH + 'h ' + bancoM + 'm',
